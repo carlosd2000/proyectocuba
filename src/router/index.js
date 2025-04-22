@@ -19,6 +19,11 @@ const router = createRouter({
       name: 'Parlet',     
       component: () => import('../views/Parlet.vue'),
     },
+    {
+      path: '/listas',
+      name: 'Listas',     
+      component: () => import('../views/Listas.vue'),
+    },
   ],
 })
 
