@@ -5,7 +5,7 @@
     <div class="col-12">
         <div class="col-12 row p-0 m-0">
             <div class="col-6 d-flex justify-content-start">
-                <p class="fs-1">Jugada diaria</p>
+                <h4 class="display-10">Jugada diaria</h4>
             </div>
             <div class="col-6 d-flex justify-content-end">
                 <button>
