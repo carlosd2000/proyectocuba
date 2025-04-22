@@ -1,9 +1,23 @@
 <script setup>
-
+import Header from '../components/Header.vue'
+import Dailyplay from '../components/Dailyplay.vue'
+import Tools from '../components/Tools.vue'
 </script>
 
 <template>
-  <h1>hola </h1>
+  <div class="col-12 m-0 p-0">
+    <header class="col-12 border border-dark border-3">
+      <Header />
+    </header>
+    <main>
+      <div class="col-12 border border-dark border-3">
+        <dailyplay />
+      </div>
+      <div class="col-12 border border-dark border-3">
+        <tools />
+      </div>
+    </main>
+  </div>
 </template>
 
 <style scoped>
