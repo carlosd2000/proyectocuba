@@ -5,11 +5,11 @@
     <div class="col-12">
         <div class="col-12 row p-0 m-0">
             <div class="col-6 d-flex justify-content-start">
-                <h1>Herramientas</h1>
+                <p>Herramientas</p>
             </div>
             <div class="col-6 d-flex justify-content-end">
                 <button>
-                    <img src="/chevron-down.svg" alt="">
+                    <i class="bi bi-chevron-down"></i>
                 </button>
             </div>
         </div>

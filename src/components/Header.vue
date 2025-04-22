@@ -11,7 +11,7 @@
         <p class="m-0 p-1">$20,000,000.00</p>
       </div>
       <div class="col-2 p-2 m-0 d-flex justify-content-end align-items-center">
-        <img src="/bell.svg" alt="bell">
+        <i class="bi bi-bell"></i>
       </div>
     </div>
   </div>
