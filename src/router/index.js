@@ -14,6 +14,11 @@ const router = createRouter({
       name: 'anadirjugada',       
       component: () => import('../views/AñadirJugada.vue'),
     },
+    {
+      path: '/parlet',
+      name: 'Parlet',     
+      component: () => import('../views/Parlet.vue'),
+    },
   ],
 })
 

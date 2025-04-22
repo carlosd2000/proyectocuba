@@ -1,8 +1,9 @@
 <script setup>
 import Header from '../components/Header.vue';
-import Inputs from '../components/Inputs.vue';
+import Inputparlet from '../components/Inputparlet.vue';
 import Horario from '../components/Horario.vue';
 import Pagar from '../components/Pagar.vue';
+
 </script>
 
 <template>
@@ -13,8 +14,9 @@ import Pagar from '../components/Pagar.vue';
   </div>
  
  
-  <Inputs/>
+  <Inputparlet/>
   <Pagar    />
+
 
 </template>
 
