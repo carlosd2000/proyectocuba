@@ -1,4 +1,5 @@
 <script setup>
+
 </script>
 
 <template>
@@ -9,7 +10,7 @@
                 <i class="bi bi-chevron-down"></i>
             </button>
         </div>
-        <div class="col-12 p-0 mt-2 mb-2 d-flex flex-nowrap align-items-center justify-content-between">
+        <div class="col-12 p-0 mt-2 d-flex flex-nowrap align-items-center justify-content-between">
             <div class="col-5 m-0 p-0 d-flex flex-nowrap align-items-center">
                 <p class="">Dia</p>
                 <button class="btn btn-light m-0 p-1 ml-1 bg-transparent">
@@ -20,15 +21,15 @@
                 <p class="pe-2 text-truncate">$20,000,000.00</p>
             </div>
         </div>
-        <div class="col-12 row p-0 m-0 mt-2 mb-2 d-flex justify-content-between align-items-center">
+        <div class="col-12 row p-0 m-0 d-flex justify-content-between align-items-center">
             <div class="col-3 buttons-heith">
-                <button class="w-100 btn border-0 d-flex flex-column align-items-center justify-content-center py-1">
+                <button class="w-100 btn border-0 d-flex flex-column align-items-center justify-content-center py-1" @click="$router.push('/anadirjugada')">
                     <i class="bi bi-plus-lg"></i>
                     <span class="text-center">Añadir<br>Jugada</span>
                 </button>
             </div>
             <div class="col-3 buttons-heith">
-                <button class="w-100 btn border-0 d-flex flex-column align-items-center justify-content-center py-1">
+                <button class="w-100 btn border-0 d-flex flex-column align-items-center justify-content-center py-1" @click="$router.push('/parlet')">
                     <i class="bi bi-plus-lg"></i>
                     <span class="text-center">Añadir<br>Parlet</span>
                 </button>
@@ -41,13 +42,13 @@
             </div>
             <div class="col-3 buttons-heith">
                 <button class="w-100 btn border-0 d-flex flex-column align-items-center justify-content-center py-1">
-                    <img src="/plus.svg" alt="">
+                    <i class="bi bi-plus-lg"></i>
                     <span class="text-center">Añadir<br>Centena</span>
                 </button>
             </div>
         </div>
-        <div class="col-12 p-0 m-0 mt-2 mb-2 d-flex justify-content-center">
-            <button class="col-12 row p-2 bg-warning btn-list">
+        <div class="col-12 p-0 m-0 mt-5 mb-2 d-flex justify-content-center">
+            <button class="col-12 row p-1 bg-warning btn-list" @click="$router.push('/listas')">
                 <p class="m-1">Lista</p>
                 <i class="bi bi-card-list m-1"></i>
             </button>
@@ -71,13 +72,23 @@
     border: #000000 solid 2px;
     box-shadow: #000000 2px 2px 2px;
     border-radius: 6px;
+    background-color: #ffc107; /* Color original */
+    color: #000000; /* Texto negro */
+}
+
+.btn-list:active {
+    background-color: #ffffff; /* Fondo blanco */
+    color: #000000; /* Texto negro */
 }
 p{
     padding: 0px;
     margin: 1px;
 }
 span {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+}
+i{
+    font-size: 1.5rem;
 }
 button {
     border: none;
