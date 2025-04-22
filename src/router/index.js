@@ -11,7 +11,7 @@ const router = createRouter({
     },
     {
       path: '/anadirjugada',
-      name: 'AñadirJugada',
+      name: 'anadirjugada',       
       component: () => import('../views/AñadirJugada.vue'),
     },
   ],
