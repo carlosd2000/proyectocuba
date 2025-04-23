@@ -2,7 +2,7 @@
 import Header from '../components/Header.vue';
 import Calendario from '../components/Calendario.vue';
 import Results from '../components/results.vue';
-
+import Pestañas from '../components/Pestañas.vue';
 </script>
 
 <template>
@@ -10,6 +10,7 @@ import Results from '../components/results.vue';
     <Header />
     <Calendario/>
     <Results/>
+    <Pestañas/>
   </div>
 
 

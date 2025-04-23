@@ -21,8 +21,14 @@
         <!-- Columna 5: círculo solo en fila 3 -->
         <div class="position-relative celda">
           <template v-if="fila === 3">
-            <span class="simbolo">$</span>
-            <input type="number" class="form-input circular ps-3 mx-auto d-block" min="0" step="1" @keypress="soloEnteros($event)" />
+            <input
+            type="number"
+            placeholder="$"
+            class="form-input circular mx-auto d-block"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
+          />
           </template>
         </div>
       </div>
@@ -99,5 +105,13 @@
   .celda {
     width: 36px;
   }
+  /* Para navegadores WebKit (Chrome, Safari) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {    
+  -webkit-appearance: none;    
+  margin: 0;}
+  /* Para Firefox */
+input[type="number"] {    
+  -moz-appearance: textfield;}
   </style>
   
