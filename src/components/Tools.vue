@@ -52,7 +52,7 @@
 .buttons-heith {
     margin: 0px;
     padding: 0px;
-    height: 50px;
+    height: 100%;
     width: 100px;
     transform: scale(0.9);
 }
