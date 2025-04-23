@@ -1,6 +1,6 @@
 <template>
     <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
-    <div class="col-6 m-0 p-0 row d-flex justify-content-center align-items-center">
+    <div class="col-8 m-0 p-0 row d-flex justify-content-center align-items-center">
         <div class="col-4 d-flex flex-column justify-content-center align-items-center">
             <p>Bruto</p>
             <span>999999</span>
@@ -16,3 +16,12 @@
     </div>
     </div>
 </template>
+<style scoped>
+p{
+    padding: 0px;
+    margin: 1px;
+}
+span {
+    font-size: 1.2rem;
+}
+</style>    

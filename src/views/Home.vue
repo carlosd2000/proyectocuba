@@ -6,7 +6,7 @@ import Tools from '../components/Tools.vue'
 
 <template>
   <div class="d-flex flex-column justify-content-center align-items-center">
-    <header class="col-12 m-0 p-0">
+    <header class="col-12 m-0 p-0 row">
       <Header/>
     </header>
     <main class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
