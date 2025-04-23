@@ -13,7 +13,7 @@
       </div>
   
       <!-- Contenido de las pestañas -->
-      <div class="tabs-content mt-3">
+      <div class="tabs-content mt-0">
         <div v-if="activeTab === 'Lista'">
           <lista/>
         </div>

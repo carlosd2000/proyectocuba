@@ -11,13 +11,16 @@ const apuestas = ref([
         apuesta3: { numero:2, valor1: 33, valor2: 32 , valor3: 44},
         apuesta4: { numero:2, valor1: 33, valor2: 32 },
         apuesta5: { numero:2, valor1: 33, valor2: 32 },
+        apuesta6: { numero:2, valor1: 33, valor2: 32 },
+        apuesta7: { numero:2, valor1: 33, valor2: 32 },
+        apuesta8: { numero:2, valor1: 33, valor2: 32 },
     },
     {
         id_apuesta: 103,
         nombre: "Carlos",
-        apuesta1: { numero:4, valor1: 15, valor2: 25, valor3: 35 },
-        apuesta2: { numero:2, valor1: 30, valor2: 40 },
-        apuesta3: { numero:5, valor1: 10, valor2: 20 },
+        apuesta1: { numero:4, valor1: 15, valor2: 25},
+        apuesta2: { numero:2, valor1: 30, valor2: 40},
+        apuesta3: { numero:5, valor1: 10, valor2: 20, valor3: 35  },
         apuesta4: { numero:2, valor1: 33, valor2: 32 },
         apuesta5: { numero:2, valor1: 33, valor2: 32 },
     },
@@ -41,7 +44,7 @@ const getApuestasKeys = (persona) => {
 <template>
     <div class="col-12 m-0 p-0">
         <!-- Iterar sobre cada persona -->
-        <div v-for="persona in apuestas" :key="persona.id_apuesta" class="persona">
+        <div v-for="persona in apuestas" :key="persona.id_apuesta" class="mb-3 persona border border-2 border-dark shadow-lg">
             <header class="col-12 row m-0 p-0">
                 <div class="col-6 d-flex justify-content-start align-items-center">
                     <p>{{ persona.nombre }}</p>
@@ -53,18 +56,20 @@ const getApuestasKeys = (persona) => {
             <!-- Contenedor de apuestas -->
             <main class="col-12 row m-0 p-0">
                 <div class="col-9 apuestas d-flex flex-column justify-content-center align-items-start">
-                    <!-- Iterar sobre las apuestas de la persona -->
-                    <div v-for="key in getApuestasKeys(persona)" :key="key" class="d-flex justify-content-center align-items-center">
-                        <!-- Iterar sobre los valores de la apuesta -->
-                        <div v-for="(value, valKey) in persona[key]" :key="valKey" class="m-1">
-                            <!-- Primer valor (numero) como CUADRADO -->
-                            <p v-if="valKey === 'numero'" class="m-0 mr-2 p-0 d-flex justify-content-center align-items-center rounded container-number">
-                                {{ value }}
-                            </p>
-                            <!-- Resto de valores (valor1, valor2, etc.) como CÍRCULOS -->
-                            <p v-else class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
-                                {{ value }}
-                            </p>
+                    <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-start">
+                        <!-- Iterar sobre las apuestas de la persona -->
+                        <div v-for="key in getApuestasKeys(persona)" :key="key" class="m-0 p-0 d-flex justify-content-start align-items-center">
+                            <!-- Iterar sobre los valores de la apuesta -->
+                            <div v-for="(value, valKey) in persona[key]" :key="valKey" class="m-1 p-0">
+                                <!-- Primer valor (numero) como CUADRADO -->
+                                <p v-if="valKey === 'numero'" class="m-0 mr-3 p-0 d-flex justify-content-center align-items-center rounded container-number">
+                                    {{ value }}
+                                </p>
+                                <!-- Resto de valores (valor1, valor2, etc.) como CÍRCULOS -->
+                                <p v-else class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                                    {{ value }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -97,11 +102,11 @@ const getApuestasKeys = (persona) => {
 p{
     margin: 0px;
     padding: 0px;
-    font-size: 0.6rem; 
+    font-size: 0.9rem; 
 }
 .container-number {
-    width: 25px; 
-    height: 25px;
+    width: 35px; 
+    height: 35px;
     background-color: #f1f1f1;
 }
 .persona {
