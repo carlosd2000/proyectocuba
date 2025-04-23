@@ -18,7 +18,7 @@
           <lista/>
         </div>
         <div v-else-if="activeTab === 'Bote'">
-          <lista/>
+          
         </div>
         <div v-else-if="activeTab === 'Resumen'">
           <lista/>

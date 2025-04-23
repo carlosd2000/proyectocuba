@@ -11,34 +11,34 @@
         </div>
         <div class="col-12 row p-0 m-0">
             <button class="col-3 justify-content-center buttons-heith">
-                <img src="" alt="">
+                <i class="bi bi-clock-history"></i>
                 <p>Horario</p>
             </button>
             <button class="col-3 justify-content-center buttons-heith">
-                <img src="" alt="">
+                <i class="bi bi-cash-coin"></i>
                 <p>Pagos</p>
             </button>
             <button class="col-3 justify-content-center buttons-heith">
-                <img src="" alt="">
+                <i class="bi bi-exclamation-triangle"></i>
                 <p>Limitados</p>
             </button>
             <button class="col-3 justify-content-center buttons-heith">
-                <img src="" alt="">
+                <i class="bi bi-exclamation-triangle"></i>
                 <p>Limites</p>
             </button>
             <button class="col-3 justify-content-center buttons-heith">
-                <img src="" alt="">
+                <i class="bi bi-8-circle-fill"></i>
                 <p>Historico</p>
             </button>
             <button class="col-3 justify-content-center buttons-heith">
-                <img src="" alt="">
+                <i class="bi bi-receipt-cutoff"></i>
                 <p>Deuda</p>
             </button>
         </div>
         <div class="col-12 row p-0 m-0 mt-2 mb-2 d-flex justify-content-center">
             <button class="col-12 row p-2 d-flex justify-content-center bg-warning btn-colab">
                 <p>Colaboradores</p>
-                <img src="" alt="">
+                <i class="bi bi-people-fill"></i>
             </button>
         </div>
     </div>

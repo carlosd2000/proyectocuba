@@ -44,7 +44,7 @@ const getApuestasKeys = (persona) => {
 <template>
     <div class="col-12 m-0 p-0">
         <!-- Iterar sobre cada persona -->
-        <div v-for="persona in apuestas" :key="persona.id_apuesta" class="mb-3 persona border border-2 border-dark shadow-lg">
+        <div v-for="persona in apuestas" :key="persona.id_apuesta" class="mb-3 persona">
             <header class="col-12 row m-0 p-0">
                 <div class="col-6 d-flex justify-content-start align-items-center">
                     <p>{{ persona.nombre }}</p>
@@ -112,7 +112,8 @@ p{
 .persona {
     background: white;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: #000000 solid 2px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
     padding: 20px;
     flex: 1 1 300px;
     min-width: 250px;
