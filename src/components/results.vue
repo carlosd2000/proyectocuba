@@ -20,8 +20,9 @@
 p{
     padding: 0px;
     margin: 1px;
+    font-size: 0.8rem;
 }
 span {
-    font-size: 1.2rem;
+    font-size: 0.7rem;
 }
 </style>    

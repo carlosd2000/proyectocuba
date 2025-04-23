@@ -8,6 +8,9 @@ const apuestas = ref([
         nombre: "Juan",
         apuesta1: { numero:99, valor1: 2222, valor2: 331 },
         apuesta2: { numero:2, valor1: 33, valor2: 32 },
+        apuesta3: { numero:2, valor1: 33, valor2: 32 , valor3: 44},
+        apuesta4: { numero:2, valor1: 33, valor2: 32 },
+        apuesta5: { numero:2, valor1: 33, valor2: 32 },
     },
     {
         id_apuesta: 103,
@@ -15,6 +18,17 @@ const apuestas = ref([
         apuesta1: { numero:4, valor1: 15, valor2: 25, valor3: 35 },
         apuesta2: { numero:2, valor1: 30, valor2: 40 },
         apuesta3: { numero:5, valor1: 10, valor2: 20 },
+        apuesta4: { numero:2, valor1: 33, valor2: 32 },
+        apuesta5: { numero:2, valor1: 33, valor2: 32 },
+    },
+    {
+        id_apuesta: 103,
+        nombre: "Tinoco",
+        apuesta1: { numero:4, valor1: 15, valor2: 25},
+        apuesta2: { numero:2, valor1: 30, valor2: 40 },
+        apuesta3: { numero:4, valor1: 15, valor2: 25, valor3: 35 },
+        apuesta4: { numero:2, valor1: 33, valor2: 32 },
+        apuesta5: { numero:2, valor1: 33, valor2: 32 },
     },
 ]);
 
@@ -29,27 +43,47 @@ const getApuestasKeys = (persona) => {
         <!-- Iterar sobre cada persona -->
         <div v-for="persona in apuestas" :key="persona.id_apuesta" class="persona">
             <header class="col-12 row m-0 p-0">
-                <div class="col-6 d-flex justify-content-start">
+                <div class="col-6 d-flex justify-content-start align-items-center">
                     <p>{{ persona.nombre }}</p>
                 </div>
-                <div class="col-6 d-flex justify-content-end">
+                <div class="col-6 d-flex justify-content-end align-items-center">
                     <i class="bi bi-unlock"></i>
                 </div>
             </header>
             <!-- Contenedor de apuestas -->
-            <main class="apuestas d-flex flex-column justify-content-center align-items-start">
-                <!-- Iterar sobre las apuestas de la persona -->
-                <div v-for="key in getApuestasKeys(persona)" :key="key" class="d-flex justify-content-center align-items-center">
-                    <!-- Iterar sobre los valores de la apuesta -->
-                    <div v-for="(value, valKey) in persona[key]" :key="valKey" class="m-1">
-                        <!-- Primer valor (numero) como CUADRADO -->
-                        <p v-if="valKey === 'numero'" class="m-0 mr-3 p-0 d-flex justify-content-center align-items-center rounded container-number">
-                            {{ value }}
-                        </p>
-                        <!-- Resto de valores (valor1, valor2, etc.) como CÍRCULOS -->
-                        <p v-else class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
-                            {{ value }}
-                        </p>
+            <main class="col-12 row m-0 p-0">
+                <div class="col-9 apuestas d-flex flex-column justify-content-center align-items-start">
+                    <!-- Iterar sobre las apuestas de la persona -->
+                    <div v-for="key in getApuestasKeys(persona)" :key="key" class="d-flex justify-content-center align-items-center">
+                        <!-- Iterar sobre los valores de la apuesta -->
+                        <div v-for="(value, valKey) in persona[key]" :key="valKey" class="m-1">
+                            <!-- Primer valor (numero) como CUADRADO -->
+                            <p v-if="valKey === 'numero'" class="m-0 mr-2 p-0 d-flex justify-content-center align-items-center rounded container-number">
+                                {{ value }}
+                            </p>
+                            <!-- Resto de valores (valor1, valor2, etc.) como CÍRCULOS -->
+                            <p v-else class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                                {{ value }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3 m-0 p-0 d-flex flex-column justify-content-center align-items-start">
+                    <div class="col-6 m-0 p-0 d-flex justify-content-around align-items-center">
+                        <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
+                            <i class="bi bi-coin m-1"></i>
+                        </div>
+                        <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
+                            <p class="m-1">9999</p>
+                        </div>
+                    </div>
+                    <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
+                        <div>
+                            <i class="bi bi-award-fill"></i>
+                        </div>
+                        <div>
+                            <p class="m-1">9999</p>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -59,6 +93,8 @@ const getApuestasKeys = (persona) => {
 
 <style scoped>
 p{
+    margin: 0px;
+    padding: 0px;
     font-size: 0.6rem; 
 }
 .container-number {

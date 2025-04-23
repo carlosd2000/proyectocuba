@@ -18,10 +18,10 @@
           <lista/>
         </div>
         <div v-else-if="activeTab === 'Bote'">
-          <p>Este es el contenido del Bote 🚮</p>
+          <lista/>
         </div>
         <div v-else-if="activeTab === 'Resumen'">
-          <p>Aquí va el Resumen 📄</p>
+          <lista/>
         </div>
       </div>
     </div>

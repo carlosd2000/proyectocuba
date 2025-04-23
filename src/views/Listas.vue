@@ -7,10 +7,18 @@ import Pestañas from '../components/Pestañas.vue';
 
 <template>
   <div class="col-12 m-0 p-0">
-    <Header />
-    <Calendario/>
-    <Results/>
-    <Pestañas/>
+    <div>
+      <Header />
+    </div>
+    <div>
+      <Calendario/>
+    </div>
+    <div class="m-3">
+      <Results/>
+    </div>
+    <div>
+      <Pestañas/>
+    </div>
   </div>
 
 
