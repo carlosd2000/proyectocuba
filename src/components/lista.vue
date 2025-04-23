@@ -68,21 +68,23 @@ const getApuestasKeys = (persona) => {
                         </div>
                     </div>
                 </div>
-                <div class="col-3 m-0 p-0 d-flex flex-column justify-content-center align-items-start">
-                    <div class="col-6 m-0 p-0 d-flex justify-content-around align-items-center">
-                        <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                            <i class="bi bi-coin m-1"></i>
+                <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
+                    <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
+                        <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
+                            <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
+                                <i class="bi bi-coin m-1"></i>
+                            </div>
+                            <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
+                                <p class="m-1">9</p>
+                            </div>
                         </div>
-                        <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                            <p class="m-1">9999</p>
-                        </div>
-                    </div>
-                    <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                        <div>
-                            <i class="bi bi-award-fill"></i>
-                        </div>
-                        <div>
-                            <p class="m-1">9999</p>
+                        <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
+                            <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
+                                <i class="bi bi-award-fill"></i>
+                            </div>
+                            <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
+                                <p class="m-1">9999</p>
+                            </div>
                         </div>
                     </div>
                 </div>
