@@ -1,0 +1,101 @@
+<script setup>
+// Datos reactivos (simulando props o estado)
+import { ref } from 'vue';
+
+const apuestas = ref([
+    {
+        id_apuesta: 102,
+        nombre: "Juan",
+        apuesta1: { numero:99, valor1: 2222, valor2: 331 },
+        apuesta2: { numero:2, valor1: 33, valor2: 32 },
+    },
+    {
+        id_apuesta: 103,
+        nombre: "Carlos",
+        apuesta1: { numero:4, valor1: 15, valor2: 25, valor3: 35 },
+        apuesta2: { numero:2, valor1: 30, valor2: 40 },
+        apuesta3: { numero:5, valor1: 10, valor2: 20 },
+    },
+]);
+
+// Función para filtrar las claves que son apuestas (apuesta1, apuesta2, etc.)
+const getApuestasKeys = (persona) => {
+    return Object.keys(persona).filter(key => key.startsWith('apuesta'));
+};
+</script>
+
+<template>
+    <div class="col-12 m-0 p-0">
+        <!-- Iterar sobre cada persona -->
+        <div v-for="persona in apuestas" :key="persona.id_apuesta" class="persona">
+            <header class="col-12 row m-0 p-0">
+                <div class="col-6 d-flex justify-content-start">
+                    <p>{{ persona.nombre }}</p>
+                </div>
+                <div class="col-6 d-flex justify-content-end">
+                    <i class="bi bi-unlock"></i>
+                </div>
+            </header>
+            <!-- Contenedor de apuestas -->
+            <main class="apuestas d-flex flex-column justify-content-center align-items-start">
+                <!-- Iterar sobre las apuestas de la persona -->
+                <div v-for="key in getApuestasKeys(persona)" :key="key" class="d-flex justify-content-center align-items-center">
+                    <!-- Iterar sobre los valores de la apuesta -->
+                    <div v-for="(value, valKey) in persona[key]" :key="valKey" class="m-1">
+                        <!-- Primer valor (numero) como CUADRADO -->
+                        <p v-if="valKey === 'numero'" class="m-0 mr-3 p-0 d-flex justify-content-center align-items-center rounded container-number">
+                            {{ value }}
+                        </p>
+                        <!-- Resto de valores (valor1, valor2, etc.) como CÍRCULOS -->
+                        <p v-else class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                            {{ value }}
+                        </p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</template>
+
+<style scoped>
+p{
+    font-size: 0.6rem; 
+}
+.container-number {
+    width: 25px; 
+    height: 25px;
+    background-color: #f1f1f1;
+}
+.persona {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    flex: 1 1 300px;
+    min-width: 250px;
+}
+
+.persona h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.apuestas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.apuesta {
+    background: #e9f7fe;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.apuesta p {
+    margin: 5px 0;
+}
+</style>

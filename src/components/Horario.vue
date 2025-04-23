@@ -13,7 +13,9 @@
   
           <!-- Precio -->
           <div class="ms-4 fw-bold text-dark">
-            {{ precio }}
+            <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listas')">
+              {{ precio }}
+            </button>
           </div>
   
         </div>
@@ -30,7 +32,7 @@
   
   // Precio cambia según el turno
   const precio = computed(() => {
-    return turnoSeleccionado.value === 'Día' ? '$10,000.00' : '$12,000.00'
+    return turnoSeleccionado.value === 'Día' ? '$10,000.00' : '$10,000.00'
   })
   
   // Ícono cambia según el turno seleccionado

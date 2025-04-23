@@ -15,7 +15,7 @@
       <!-- Contenido de las pestañas -->
       <div class="tabs-content mt-3">
         <div v-if="activeTab === 'Lista'">
-          <p>Esta es la información de la Lista 📋</p>
+          <lista/>
         </div>
         <div v-else-if="activeTab === 'Bote'">
           <p>Este es el contenido del Bote 🚮</p>
@@ -28,6 +28,7 @@
   </template>
   
   <script setup>
+  import lista from './lista.vue'
   import { ref } from 'vue'
   
   const tabs = ['Lista', 'Bote', 'Resumen']

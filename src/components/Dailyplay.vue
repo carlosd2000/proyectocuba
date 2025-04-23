@@ -1,4 +1,8 @@
 <script setup>
+import { ref, computed } from 'vue'
+// Opciones disponibles
+const opciones = ['Día', 'Noche']
+const turnoSeleccionado = ref('Día')
 
 </script>
 
@@ -12,10 +16,9 @@
         </div>
         <div class="col-12 p-0 mt-2 d-flex flex-nowrap align-items-center justify-content-between">
             <div class="col-5 m-0 p-0 d-flex flex-nowrap align-items-center">
-                <p class="">Dia</p>
-                <button class="btn btn-light m-0 p-1 ml-1 bg-transparent">
-                    <i class="bi bi-chevron-down"></i>
-                </button>
+                <select v-model="turnoSeleccionado" class="form-select form-select-sm border-0 p-0 bg-transparent text-dark fw-semibold" style="width: auto;">
+                    <option v-for="opcion in opciones" :key="opcion" :value="opcion">{{ opcion }}</option>
+                </select>
             </div>
             <div class="col-7 m-0 p-0 d-flex justify-content-end">
                 <p class="pe-2 text-truncate">$20,000,000.00</p>
