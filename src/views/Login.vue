@@ -1,5 +1,5 @@
 <template>
-    <div class="container vh-100 d-flex justify-content-center align-items-center">
+    <div class="container d-flex justify-content-center align-items-center container-login">
         <div class="container col-12 col-sm-8 py-3 my-3 box-shadow">
             <header class="col-12 m-1 p-1 d-flex justify-content-center align-items-center">
                 <h2 class="text-center m-0 p-0">Iniciar Sesión</h2>
@@ -34,5 +34,9 @@
     border-radius: 6px;
     background-color: #ffc107; /* Color original */
     color: #000000; /* Texto negro */
+}
+.container-login{
+    height: 100vh;
+    width: 100%;
 }
 </style>

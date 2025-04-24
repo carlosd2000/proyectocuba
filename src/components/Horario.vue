@@ -1,8 +1,7 @@
 <template>
     <div class="container">
       <div class="d-flex justify-content-end">
-        <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-white shadow-sm" style="min-width: 220px;">
-          
+        <div class="d-flex align-items-center justify-content-between border-0 p-1 bg-white" style="min-width: 200px;">
           <!-- Selector de Turno con ícono -->
           <div class="d-flex align-items-center gap-2">
             <i :class="iconoTurno"></i>

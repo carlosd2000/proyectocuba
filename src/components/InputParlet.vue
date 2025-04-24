@@ -1,10 +1,10 @@
 <template>
   <div class="container py-3" style="max-width: 320px;">
-    <div class="mb-2">
-      <input type="text" class="form-control" placeholder="Nombre (opcional)" />
+    <div class="col-8 ml-4 p-0 mb-0 border-bottom border-dark">
+      <input type="text" class="form-control border-0" placeholder="Nombre (opcional)" />
     </div>
 
-    <div v-for="fila in 5" :key="'fija-' + fila" class="d-flex justify-content-between align-items-center mb-2">
+    <div v-for="fila in 5" :key="'fija-' + fila" class="mt-2 mb-3 d-flex justify-content-between align-items-center">
       <div class="celda"></div>
       <input type="number" class="form-input cuadrado celda" min="0" step="1" @keypress="soloEnteros($event)" />
       <div class="celda"></div>
@@ -12,12 +12,12 @@
       <div class="position-relative celda">
         <template v-if="fila === 3">
           <input type="number" placeholder="$" class="form-input circular mx-auto d-block"
-                 min="0" step="1" @keypress="soloEnteros($event)" v-model="filasFijas[2].circuloSolo" />
+            min="0" step="1" @keypress="soloEnteros($event)" v-model="filasFijas[2].circuloSolo" />
         </template>
       </div>
     </div>
 
-    <div v-for="(fila, index) in filasExtra" :key="'extra-' + index" class="d-flex justify-content-between align-items-center mb-2">
+    <div v-for="(fila, index) in filasExtra" :key="'extra-' + index" class="mt-2 mb-3 d-flex justify-content-between align-items-center">
       <div class="celda"></div>
       <input type="number" class="form-input cuadrado celda" min="0" step="1" @keypress="soloEnteros($event)" />
       <div class="celda"></div>
@@ -25,7 +25,7 @@
       <div class="celda"></div>
     </div>
 
-    <div class="d-flex justify-content-start mt-2">
+    <div class="d-flex justify-content-start">
       <button class="btn btn-dark rounded-circle p-0 d-flex justify-content-center align-items-center"
               style="width: 36px; height: 36px;" @click="agregarFila">
         <i class="bi bi-plus-lg text-white"></i>
@@ -52,8 +52,8 @@ onUnmounted(() => {
 
 <style scoped>
 .form-input {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: 1px solid #ccc;
   background-color: #f9f9f9;
   outline: none;
@@ -78,7 +78,7 @@ onUnmounted(() => {
 }
 
 .celda {
-  width: 36px;
+  width: 40px;
 }
 /* Para navegadores WebKit (Chrome, Safari) */
 input[type="number"]::-webkit-inner-spin-button,

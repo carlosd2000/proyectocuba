@@ -1,8 +1,8 @@
 <template>
-  <div class="container" style="max-width: 320px; margin-top: 12px;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <div class="celda"></div>
+  <div class="container" style="max-width: 280px; margin-top: 0px;">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-top border-dark">
       <div class="celda text-center fw-bold">Totales</div>
+      <div class="celda"></div>
       <div class="celda text-center">${{ totales.col3 }}</div>
       <div class="celda text-center">${{ totales.col4 }}</div>
       <div class="celda text-center">${{ totales.col5 }}</div>
