@@ -13,7 +13,7 @@ import Pestañas from '../components/Pestañas.vue';
     <div>
       <Calendario/>
     </div>
-    <div class="m-3">
+    <div>
       <Results/>
     </div>
     <div>

@@ -44,7 +44,7 @@ const getApuestasKeys = (persona) => {
 <template>
     <div class="col-12 m-0 p-0">
         <!-- Iterar sobre cada persona -->
-        <div v-for="persona in apuestas" :key="persona.id_apuesta" class="mb-3 persona">
+        <div v-for="persona in apuestas" :key="persona.id_apuesta" class="m-0 mb-3 py-4 persona">
             <header class="col-12 row m-0 p-0">
                 <div class="col-6 d-flex justify-content-start align-items-center">
                     <p>{{ persona.nombre }}</p>
@@ -56,19 +56,21 @@ const getApuestasKeys = (persona) => {
             <!-- Contenedor de apuestas -->
             <main class="col-12 row m-0 p-0">
                 <div class="col-9 apuestas d-flex flex-column justify-content-center align-items-start">
-                    <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-start">
+                    <div class="col-12 m-0 p-0">
                         <!-- Iterar sobre las apuestas de la persona -->
-                        <div v-for="key in getApuestasKeys(persona)" :key="key" class="m-0 p-0 d-flex justify-content-start align-items-center">
+                        <div v-for="key in getApuestasKeys(persona)" :key="key" class="col-12 m-0 p-0 d-flex justify-content-start align-items-center">
                             <!-- Iterar sobre los valores de la apuesta -->
-                            <div v-for="(value, valKey) in persona[key]" :key="valKey" class="m-1 p-0">
-                                <!-- Primer valor (numero) como CUADRADO -->
-                                <p v-if="valKey === 'numero'" class="m-0 mr-3 p-0 d-flex justify-content-center align-items-center rounded container-number">
-                                    {{ value }}
-                                </p>
-                                <!-- Resto de valores (valor1, valor2, etc.) como CÍRCULOS -->
-                                <p v-else class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
-                                    {{ value }}
-                                </p>
+                            <div class="col-12 m-0 p-0 d-flex justify-content-start align-items-center">
+                                <div v-for="(value, valKey) in persona[key]" :key="valKey" class="col-2 m-1 mr-2 p-0">
+                                    <!-- Primer valor (numero) como CUADRADO -->
+                                    <p v-if="valKey === 'numero'" class="col-12 m-0 mr-3 p-0 d-flex justify-content-center align-items-center rounded container-number">
+                                        {{ value }}
+                                    </p>
+                                    <!-- Resto de valores (valor1, valor2, etc.) como CÍRCULOS -->
+                                    <p v-else class="col-12 m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                                        {{ value }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -114,7 +116,7 @@ p{
     border-radius: 10px;
     border: #000000 solid 2px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
-    padding: 20px;
+    padding: 10px;
     flex: 1 1 300px;
     min-width: 250px;
 }
@@ -130,6 +132,7 @@ p{
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 10px;
+    padding: 5px;
 }
 
 .apuesta {
