@@ -26,7 +26,7 @@
   import { ref, computed } from 'vue'
   
   // Opciones disponibles
-  const opciones = ['Día', 'Noche']
+  const opciones = ['Día', 'Tarde', 'Noche']
   const turnoSeleccionado = ref('Día')
   
   // Precio cambia según el turno
@@ -36,7 +36,13 @@
   
   // Ícono cambia según el turno seleccionado
   const iconoTurno = computed(() => {
-    return turnoSeleccionado.value === 'Día' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-fill text-primary'
+    if (turnoSeleccionado.value === 'Día') {
+      return 'bi bi-sun-fill text-warning'
+    } else if (turnoSeleccionado.value === 'Tarde') {
+      return 'bi bi-cloud-sun-fill text-secondary'
+    } else {
+      return 'bi bi-moon-fill text-primary'
+    }
   })
   </script>
   
@@ -48,4 +54,3 @@
     font-size: 1.2rem;
   }
   </style>
-  
