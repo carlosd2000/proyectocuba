@@ -8,7 +8,7 @@ const router = createRouter({
       component: () => import('../views/Listeros.vue'),
     },
     {
-      path: '/login',
+      path: '/',
       name: 'Login',
       component: () => import('../views/Login.vue'),
     },
@@ -28,7 +28,7 @@ const router = createRouter({
       component: () => import('../views/Listas.vue'),
     },
     {
-      path: '/',
+      path: '/register',
       name: 'Registros',     
       component: () => import('../views/Registros.vue'),
     },

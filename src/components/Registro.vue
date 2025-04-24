@@ -1,5 +1,5 @@
 <template>
-    <div class="container vh-100 d-flex justify-content-center align-items-center">
+    <div class="container vh-100 d-flex justify-content-center align-items-center container-register">
       <div class="container col-12 col-sm-8 py-3 my-3 box-shadow">
         <header class="col-12 m-1 p-1 d-flex justify-content-center align-items-center">
           <h2 class="text-center m-0 p-0">Registro</h2>
@@ -33,7 +33,7 @@
   
               <!-- Nueva fila con link -->
               <div class="text-end mt-2">
-                <a href="/login" class="text-primary">Iniciar sesión</a>
+                <a href="/" class="text-primary">Iniciar sesión</a>
               </div>
             </form>
           </div>
@@ -54,6 +54,10 @@
     border-radius: 6px;
     background-color: #ffc107;
     color: #000000;
+  }
+  .container-register{
+    height: 100vh;
+    width: 100%;
   }
   </style>
   

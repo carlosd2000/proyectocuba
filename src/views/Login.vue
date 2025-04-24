@@ -15,7 +15,11 @@
                             <label for="exampleInputPassword1" class="form-label">Password</label>
                             <input type="password" class="form-control" id="exampleInputPassword1">
                         </div>
-                        <button type="submit" class="col-12 btn btn-enter">Submit</button>
+                        <button type="button" class="col-12 btn btn-enter" @click="$router.push('/listeros')" >Iniciar Sesión</button>
+                        <!-- Nueva fila con link -->
+                        <div class="text-end mt-2">
+                            <a href="/register" class="text-primary">Registrarse</a>
+                        </div>
                     </form>
                 </div>
             </main>
