@@ -4,9 +4,10 @@ import ButtonBack from '../components/ButtonBack.vue'
 
 <template>
   <div class="col-12 row p-0 m-0 d-flex justify-content-center align-items-center header-border">
-    <ButtonBack/>
-    <div class="col-3 m-0 p-0 d-flex justify-content-start align-items-center">
-      <p class="m-0 p-1">hh:mm:ss</p>
+    
+    <div class="col-5 m-0 p-0 d-flex justify-content-center align-items-center">
+      <ButtonBack class="col-3 ml-2 d-flex justify-content-center"/>
+      <p class="col-8 m-0 p-1">hh:mm:ss</p>
     </div>
     <div class="col-7 row p-1 m-0 d-flex justify-content-end align-items-center">
       <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/')">
@@ -23,5 +24,10 @@ import ButtonBack from '../components/ButtonBack.vue'
 <style scoped>
 .header-border {
   border-bottom: 3px solid #000;
+}
+p {
+  font-weight: 450;
+  color: #000000;
+  font-size: 1.1rem;
 }
 </style>
