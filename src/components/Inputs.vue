@@ -1,7 +1,7 @@
 <template>
   <div class="container py-3" style="max-width: 320px;">
-    <div class="mb-2">
-      <input type="text" class="form-control" placeholder="Nombre (opcional)">
+    <div class="col-8 ml-4 p-0 mb-2 border-bottom border-dark">
+      <input type="text" class="form-control border-0 border-bottom border-dark" placeholder="Nombre (opcional)">
     </div>
 
     <div v-for="fila in 5" :key="'fija-' + fila" class="d-flex justify-content-between align-items-center mb-2">
@@ -9,12 +9,12 @@
       <input type="number" class="form-input cuadrado celda" min="0" step="1" @keypress="soloEnteros($event)" />
       <div v-for="col in 2" :key="'fija-circulo-' + fila + '-' + col" class="celda">
         <input type="number" placeholder="$" class="form-input circular" min="0" step="1"
-               @keypress="soloEnteros($event)" v-model="filasFijas[fila - 1]['circulo' + col]" />
+          @keypress="soloEnteros($event)" v-model="filasFijas[fila - 1]['circulo' + col]" />
       </div>
       <div class="celda">
         <template v-if="fila === 3">
           <input type="number" placeholder="$" class="form-input circular mx-auto d-block" min="0" step="1"
-                 @keypress="soloEnteros($event)" v-model="filasFijas[2].circuloSolo" />
+            @keypress="soloEnteros($event)" v-model="filasFijas[2].circuloSolo" />
         </template>
       </div>
     </div>
