@@ -61,6 +61,14 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
+.btn-enter{
+    border: #000000 solid 2px;
+    box-shadow: #000000 2px 2px 2px;
+    border-radius: 6px;
+    background-color: #ffc107; /* Color original */
+    color: #000000; /* Texto negro */
+}
+
 .cuadrado {
   border-radius: 4px;
 }

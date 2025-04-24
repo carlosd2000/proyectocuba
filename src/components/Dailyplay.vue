@@ -25,32 +25,32 @@ const turnoSeleccionado = ref('Día')
             </div>
         </div>
         <div class="col-12 row p-0 m-0 d-flex justify-content-around align-items-center">
-            <div class="col-3 buttons-heith">
-                <button class="w-100 p-0 px-1 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/anadirjugada')">
+            <div class="col-3 p-1 buttons-heith">
+                <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/anadirjugada')">
                     <i class="bi bi-plus-lg m-0 p-0"></i>
                     <span class="text-center">Añadir<br>Jugada</span>
                 </button>
             </div>
-            <div class="col-3 buttons-heith">
-                <button class="w-100 p-0 px-1 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/parlet')">
+            <div class="col-3 p-1 buttons-heith">
+                <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/parlet')">
                     <i class="bi bi-plus-lg"></i>
                     <span class="text-center">Añadir<br>Parlet</span>
                 </button>
             </div>
-            <div class="col-3 buttons-heith">
-                <button class="w-100 p-0 px-1 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center">
+            <div class="col-3 p-1 buttons-heith">
+                <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center">
                     <i class="bi bi-plus-lg"></i>
                     <span class="text-center">Añadir<br>Candado</span>
                 </button>
             </div>
-            <div class="col-3 buttons-heith">
-                <button class="w-100 p-0 px-1 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center">
+            <div class="col-3 p-1 buttons-heith">
+                <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center">
                     <i class="bi bi-plus-lg"></i>
                     <span class="text-center">Añadir<br>Centena</span>
                 </button>
             </div>
         </div>
-        <div class="col-12 p-0 m-0 mt-1 mb-2 d-flex justify-content-center">
+        <div class="col-12 p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
             <button class="col-12 row p-1 bg-warning btn-list" @click="$router.push('/listas')">
                 <p class="m-1">Lista</p>
                 <i class="bi bi-card-list m-1"></i>
