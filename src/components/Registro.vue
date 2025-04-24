@@ -33,7 +33,7 @@
   
               <!-- Nueva fila con link -->
               <div class="text-end mt-2">
-                <a href="#" class="text-primary">Iniciar sesión</a>
+                <a href="/login" class="text-primary">Iniciar sesión</a>
               </div>
             </form>
           </div>
