@@ -13,7 +13,7 @@ import Tools from '../components/Tools.vue'
       <div class="col-11 m-3 d-flex justify-content-center box-shadow">
         <dailyplay />
       </div>
-      <div class="col-11 m-3 d-flex justify-content-center box-shadow">
+      <div class="col-11 m-0 d-flex justify-content-center box-shadow">
         <tools />
       </div>
     </main>
