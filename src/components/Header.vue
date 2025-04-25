@@ -4,7 +4,7 @@
       <div class="col-5 m-0 p-0 d-flex justify-content-start align-items-center">
         <ButtonBack class="col-3 ml-2 d-flex justify-content-center" v-if="!back"/>
         <p class="col-8 m-0 p-1 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
-        <p class="ms-2">{{ horaActual }}</p>
+        <p class="ms-2">{{ horaActual }} ({{ turnoActual }})</p>
       </div>
       <div class="col-7 row p-1 m-0 d-flex justify-content-end align-items-center">
         <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listeros')">
@@ -27,6 +27,8 @@ import { db } from '../firebase/config'
 import { doc, onSnapshot } from 'firebase/firestore'
 
 const route = useRoute()
+const turnos = ['dia', 'tarde', 'noche']
+const turnoActual = ref('')
 const horaTarget = ref(null)
 const cuentaRegresiva = ref('')
 const horaActual = ref('--:--:--')
@@ -35,70 +37,106 @@ const horaActual = ref('--:--:--')
 const bell = computed(() => route.path === '/listeros')
 const back = computed(() => route.path === '/listeros')
 
-// Obtener la hora objetivo desde Firebase
-onMounted(() => {
-  const docRef = doc(db, 'hora', 'tarde')
-  
-  const unsubscribe = onSnapshot(docRef, (doc) => {
-    try {
-      if (doc.exists()) {
-        const data = doc.data()
-        horaTarget.value = {
-          hh: parseInt(data.hh) || 0,
-          mm: parseInt(data.mm) || 0,
-          ss: parseInt(data.ss) || 0
-        }
-        //console.log('Hora objetivo actualizada:', horaTarget.value)
-      } else {
-        //console.log('No se encontraron datos para el turno tarde')
-        horaTarget.value = null
-        cuentaRegresiva.value = 'hh:mm:ss'
-      }
-    } catch (error) {
-      //console.error('Error al procesar los datos:', error)
-      horaTarget.value = null
-      cuentaRegresiva.value = 'Error'
-    }
-  })
-
-  onUnmounted(unsubscribe)
-})
-
-// Función para calcular la hora actual en Cuba considerando el offset correcto
+// Obtener la hora actual en Cuba (UTC-5 o UTC-4)
 const getHoraCuba = () => {
   const ahora = new Date()
-  // Ajustar a la zona horaria de Cuba (UTC-4 o UTC-5)
-  const offset = ahora.getTimezoneOffset() / 60
-  const offsetCuba = ahora.getHours() === 0 ? -5 : -4 // Simplificación (podemos usar una librería de timezone para precisión)
-  const diff = offset + offsetCuba
-  ahora.setHours(ahora.getHours() + diff)
-  return ahora
-}
-
-const actualizarRelojes = () => {
-  const ahoraCuba = getHoraCuba()
-  
-  // Actualizar hora actual mostrada
-  horaActual.value = ahoraCuba.toLocaleTimeString('es-ES', {
+  const opciones = {
+    timeZone: 'America/Havana',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: false
-  })
+  }
+  
+  // Formatear y parsear para obtener hora local cubana
+  const horaStr = new Intl.DateTimeFormat('es-ES', opciones).format(ahora)
+  const [hh, mm, ss] = horaStr.split(':').map(Number)
+  
+  // Crear nueva fecha con hora cubana (en zona local)
+  const horaCuba = new Date()
+  horaCuba.setHours(hh, mm, ss)
+  
+  return {
+    hora: hh,
+    minuto: mm,
+    segundo: ss,
+    fecha: horaCuba,
+    esHorarioVerano: () => {
+      // Simplificación: Cuba usa horario de verano aprox. de marzo a noviembre
+      const mes = horaCuba.getMonth()
+      return mes >= 2 && mes <= 10
+    }
+  }
+}
+
+// Determinar el turno actual basado en la hora
+const determinarTurnoActual = (horaCuba) => {
+  const hora = horaCuba.hora
+  
+  if (hora >= 5 && hora < 12) return 'dia'     // Mañana: 5:00 - 11:59
+  if (hora >= 12 && hora < 18) return 'tarde'  // Tarde: 12:00 - 17:59
+  return 'noche'                              // Noche: 18:00 - 4:59
+}
+
+// Cargar datos de Firebase para el turno actual
+const cargarHoraTurno = async (turno) => {
+  try {
+    const docRef = doc(db, 'hora', turno)
+    const docSnap = await new Promise((resolve) => {
+      const unsubscribe = onSnapshot(docRef, (doc) => {
+        resolve(doc)
+      })
+    })
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      horaTarget.value = {
+        hh: parseInt(data.hh) || 0,
+        mm: parseInt(data.mm) || 0,
+        ss: parseInt(data.ss) || 0
+      }
+      turnoActual.value = turno
+      console.log(`Hora objetivo actualizada para ${turno}:`, horaTarget.value)
+    } else {
+      console.log(`No se encontraron datos para el turno ${turno}`)
+      horaTarget.value = null
+      cuentaRegresiva.value = 'hh:mm:ss'
+    }
+  } catch (error) {
+    console.error('Error al procesar los datos:', error)
+    horaTarget.value = null
+    cuentaRegresiva.value = 'Error'
+  }
+}
+
+const actualizarRelojes = () => {
+  const cubaTime = getHoraCuba()
+  const nuevoTurno = determinarTurnoActual(cubaTime)
+  
+  // Actualizar hora actual mostrada
+  horaActual.value = [
+    cubaTime.hora.toString().padStart(2, '0'),
+    cubaTime.minuto.toString().padStart(2, '0'),
+    cubaTime.segundo.toString().padStart(2, '0')
+  ].join(':')
+  
+  // Cambiar de turno si es necesario
+  if (turnoActual.value !== nuevoTurno) {
+    cargarHoraTurno(nuevoTurno)
+  }
   
   // Calcular cuenta regresiva si tenemos hora objetivo
   if (horaTarget.value) {
-    const target = new Date(ahoraCuba)
+    const ahora = cubaTime.fecha.getTime()
+    const target = new Date(cubaTime.fecha)
     target.setHours(horaTarget.value.hh, horaTarget.value.mm, horaTarget.value.ss, 0)
     
     // Si la hora objetivo ya pasó hoy, calculamos para mañana
-    if (target < ahoraCuba) {
+    if (target.getTime() < ahora) {
       target.setDate(target.getDate() + 1)
     }
     
-    const diff = target - ahoraCuba
-    
-    // Calcular horas, minutos y segundos restantes
+    const diff = target.getTime() - ahora
     const horas = Math.floor(diff / (1000 * 60 * 60))
     const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
     const segundos = Math.floor((diff % (1000 * 60)) / 1000)
@@ -117,6 +155,10 @@ let intervaloReloj
 let intervaloCuentaRegresiva
 
 onMounted(() => {
+  // Inicializar con el turno actual
+  const turnoInicial = determinarTurnoActual(getHoraCuba())
+  cargarHoraTurno(turnoInicial)
+  
   actualizarRelojes()
   intervaloReloj = setInterval(actualizarRelojes, 1000)
   intervaloCuentaRegresiva = setInterval(actualizarRelojes, 100)
