@@ -28,8 +28,18 @@ const router = createRouter({
       component: () => import('../views/Listas.vue'),
     },
     {
-      path: '/register',
-      name: 'Registros',     
+      path: '/admin',
+      name: 'Admi n',     
+      component: () => import('../views/Registros.vue'),
+    },
+    {
+      path: '/bancos',
+      name: 'Bancos',     
+      component: () => import('../views/Registros.vue'),
+    },
+    {
+      path: '/colectores',
+      name: 'Colectores',     
       component: () => import('../views/Registros.vue'),
     },
     {
@@ -38,6 +48,6 @@ const router = createRouter({
       component: () => import('../views/Horario.vue'),
     },
   ],
-})
+})  
 
 export default router
