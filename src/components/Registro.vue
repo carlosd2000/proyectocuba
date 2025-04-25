@@ -126,10 +126,6 @@ const validatePassword = () => {
     mensajePassword.value = 'Contraseña válida'
     isValidPassword.value = true
   }
-<<<<<<< HEAD
-  </style>
-  
-=======
 }
 
 const registrarUsuario = async () => {
@@ -192,4 +188,3 @@ const registrarUsuario = async () => {
   width: 100%;
 }
 </style>
->>>>>>> 73f0a81055ca07f9ff4f28ba6cef301fc489f1b5
