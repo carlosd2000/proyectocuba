@@ -5,6 +5,8 @@ import Hora from '../components/hora.vue';
 import { db } from '../firebase/config.js';
 import { doc, setDoc } from 'firebase/firestore';
 
+import mostrarhora from '../components/mostrarhora.vue';
+
 const turno = ref('Día');
 const horas = ref('');
 const minutos = ref('');
@@ -82,6 +84,7 @@ const guardarHora = async () => {
                         </button>
                     </div>
                 </main>
+                <mostrarhora/>
             </div>
         </div>
     </div>
