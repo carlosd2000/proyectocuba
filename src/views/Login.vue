@@ -30,6 +30,7 @@
 .box-shadow {
     border-radius: 6px;
     border: 2px solid #000000;
+    background-color: #f4f4f4;
     box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.853);
 }
 .btn-enter{
