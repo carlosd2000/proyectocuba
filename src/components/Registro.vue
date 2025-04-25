@@ -47,7 +47,7 @@
                 <option value="" disabled selected>Seleccionar</option>
                 <option v-if="userProfile?.tipo === 'admin'" value="bancos">Banco</option>
                 <option v-if="userProfile?.tipo === 'bancos'" value="colectores">Colector</option>
-                <option v-if="userProfile?.tipo === 'bancos'" value="listeros">Listero</option>
+                <option v-if="['bancos', 'colectores'].includes(userProfile?.tipo)" value="listeros">Listero</option>
               </select>
             </div>
 
@@ -91,8 +91,9 @@ onMounted(() => {
 
 const showSelect = computed(() => {
   const tipo = userProfile.value?.tipo
-  return tipo === 'admin' || tipo === 'bancos'
+  return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectores'
 })
+
 
 const validateNombre = () => {
   const regex = /^[a-zA-Z0-9]{3,15}$/

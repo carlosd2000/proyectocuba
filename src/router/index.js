@@ -29,10 +29,20 @@ const router = createRouter({
     },
     {
       path: '/admin',
-      name: 'Registros',     
+      name: 'Admi n',     
+      component: () => import('../views/Registros.vue'),
+    },
+    {
+      path: '/bancos',
+      name: 'Bancos',     
+      component: () => import('../views/Registros.vue'),
+    },
+    {
+      path: '/colectores',
+      name: 'Colectores',     
       component: () => import('../views/Registros.vue'),
     },
   ],
-})
+})  
 
 export default router
