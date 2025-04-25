@@ -61,6 +61,12 @@ watch(desplegado2, (newValue) => {
                         <span>Deuda</span>
                     </button>
                 </div>
+                <div class="col-3 p-1 buttons-heith">
+                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/')">
+                        <i class="bi bi-arrow-left m-0 p-0"></i>
+                        <span>Cerrar</span>
+                    </button>
+                </div>
             </div>
             <div class="col-12 row p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
                 <button class="col-12 row p-2 d-flex justify-content-center btn-colab">
