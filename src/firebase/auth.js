@@ -24,7 +24,7 @@ export const AuthService = {
   async isUsernameTaken(username) {
     try {
       const nombre = this.capitalizeUsername(username)
-      const tipos = ['listeros', 'colectores', 'bancos']
+      const tipos = ['listeros', 'colectores', 'bancos', 'admin']
 
       for (const tipo of tipos) {
         const ref = collection(db, tipo)
@@ -45,7 +45,7 @@ export const AuthService = {
   // Verificar si el correo ya está en uso en cualquiera de las colecciones
   async isEmailTaken(email) {
     try {
-      const tipos = ['listeros', 'colectores', 'bancos']
+      const tipos = ['listeros', 'colectores', 'bancos', 'admin']
 
       for (const tipo of tipos) {
         const ref = collection(db, tipo)
@@ -135,7 +135,7 @@ export const AuthService = {
   async createUserProfile(userId, userData) {
     try {
       if (!userData.tipo) {
-        throw new Error("Debe seleccionarse un tipo de cuenta (bancos, colectores o listeros)")
+        throw new Error("Debe seleccionarse un tipo de cuenta (admin, bancos, colectores o listeros)")
       }
 
       const collectionName = userData.tipo
@@ -155,7 +155,7 @@ export const AuthService = {
   // Obtener perfil de usuario desde cualquier colección
   async getUserProfile(userId) {
     try {
-      const tipos = ['listeros', 'colectores', 'bancos']
+      const tipos = ['listeros', 'colectores', 'bancos', 'admin'] // ✅ ahora incluye admin
 
       for (const tipo of tipos) {
         const docRef = doc(db, tipo, userId)

@@ -80,10 +80,13 @@
       const tipo = result.profile?.tipo
       localStorage.setItem('userProfile', JSON.stringify(result.profile))
   
+      console.log("Tipo de cuenta detectada:", tipo)
+  
       // Redirigir según tipo de usuario
       if (tipo === 'listeros') router.push('/listeros')
       else if (tipo === 'colectores') router.push('/colectores')
       else if (tipo === 'bancos') router.push('/bancos')
+      else if (tipo === 'admin') router.push('/admin')
       else router.push('/') // fallback
     } else {
       error.value = result.error
