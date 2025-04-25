@@ -20,7 +20,6 @@
 
 <script setup>
 import ButtonBack from '../components/ButtonBack.vue'
-
 import { useRoute} from 'vue-router'
 import { computed } from 'vue'
 

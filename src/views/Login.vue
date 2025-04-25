@@ -28,10 +28,7 @@
 </template>
 <style scoped>
 .box-shadow {
-    border-radius: 6px;
-    border: 2px solid #000000;
     background-color: #f4f4f4;
-    box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.853);
 }
 .btn-enter{
     border: #000000 solid 2px;
@@ -39,9 +36,5 @@
     border-radius: 6px;
     background-color: #ffc107; /* Color original */
     color: #000000; /* Texto negro */
-}
-.container-login{
-    height: 100vh;
-    width: 100%;
 }
 </style>
