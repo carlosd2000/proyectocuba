@@ -68,7 +68,6 @@ export const AuthService = {
     try {
       const capitalizedName = this.capitalizeUsername(userData.nombre)
 
-      // Verificar duplicado por nombre
       const isNameTaken = await this.isUsernameTaken(userData.nombre)
       if (isNameTaken) {
         return {
@@ -78,7 +77,6 @@ export const AuthService = {
         }
       }
 
-      // Verificar duplicado por correo
       const isEmailTaken = await this.isEmailTaken(email)
       if (isEmailTaken) {
         return {
@@ -183,6 +181,7 @@ export const AuthService = {
       'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
       'auth/user-not-found': 'Usuario no encontrado',
       'auth/wrong-password': 'Contraseña incorrecta',
+      'auth/invalid-credential': 'Contraseña inválida o el correo no está bien escrito',
       'name-already-in-use': 'Este nombre de usuario ya está en uso',
       'email-already-used-custom': 'Este correo ya está vinculado a otra cuenta'
     }
