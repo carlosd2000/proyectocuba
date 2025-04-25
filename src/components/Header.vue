@@ -3,8 +3,8 @@
     <div class="col-12 row p-0 m-0 d-flex justify-content-center align-items-center header-border">
       <div class="col-5 m-0 p-0 d-flex justify-content-start align-items-center">
         <ButtonBack class="col-3 ml-2 d-flex justify-content-center" v-if="!back"/>
-        <p class="col-8 m-0 p-1 ml-2">{{ horaTotal || 'hh:mm:ss' }}</p>
-        <p class="">{{ horaActual }}</p>
+        <p class="col-8 m-0 p-1 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
+        <p class="ms-2">{{ horaActual }}</p>
       </div>
       <div class="col-7 row p-1 m-0 d-flex justify-content-end align-items-center">
         <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listeros')">
@@ -23,73 +23,113 @@
 import ButtonBack from '../components/ButtonBack.vue'
 import { useRoute } from 'vue-router'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-
 import { db } from '../firebase/config'
-import { doc, onSnapshot } from 'firebase/firestore' // Cambiamos getDoc por onSnapshot
+import { doc, onSnapshot } from 'firebase/firestore'
 
 const route = useRoute()
-const horaTotal = ref('')
+const horaTarget = ref(null)
+const cuentaRegresiva = ref('')
+const horaActual = ref('--:--:--')
 
 // Define reactividad para determinar si estamos en la página principal
 const bell = computed(() => route.path === '/listeros')
 const back = computed(() => route.path === '/listeros')
 
-// Obtener la hora al cargar el componente y suscribirse a cambios
+// Obtener la hora objetivo desde Firebase
 onMounted(() => {
   const docRef = doc(db, 'hora', 'tarde')
   
-  // Suscripción a cambios en tiempo real
   const unsubscribe = onSnapshot(docRef, (doc) => {
     try {
       if (doc.exists()) {
         const data = doc.data()
-        // Formatear como hh:mm:ss
-        horaTotal.value = `${data.hh || '00'}:${data.mm || '00'}:${data.ss || '00'}`
-        console.log('Datos actualizados:', horaTotal.value)
+        horaTarget.value = {
+          hh: parseInt(data.hh) || 0,
+          mm: parseInt(data.mm) || 0,
+          ss: parseInt(data.ss) || 0
+        }
+        //console.log('Hora objetivo actualizada:', horaTarget.value)
       } else {
-        console.log('No se encontraron datos para el turno tarde')
-        horaTotal.value = 'hh:mm:ss'
+        //console.log('No se encontraron datos para el turno tarde')
+        horaTarget.value = null
+        cuentaRegresiva.value = 'hh:mm:ss'
       }
     } catch (error) {
-      console.error('Error al procesar los datos:', error)
-      horaTotal.value = 'Error'
+      //console.error('Error al procesar los datos:', error)
+      horaTarget.value = null
+      cuentaRegresiva.value = 'Error'
     }
   })
 
-  // Limpiar la suscripción cuando el componente se desmonte
   onUnmounted(unsubscribe)
 })
 
+// Función para calcular la hora actual en Cuba considerando el offset correcto
+const getHoraCuba = () => {
+  const ahora = new Date()
+  // Ajustar a la zona horaria de Cuba (UTC-4 o UTC-5)
+  const offset = ahora.getTimezoneOffset() / 60
+  const offsetCuba = ahora.getHours() === 0 ? -5 : -4 // Simplificación (podemos usar una librería de timezone para precisión)
+  const diff = offset + offsetCuba
+  ahora.setHours(ahora.getHours() + diff)
+  return ahora
+}
 
-// Obtener la hora actual
-const horaActual = ref('--:--:--');
-  // Zona horaria de Cuba (puede ser 'America/Havana' o 'Cuba')
-const zonaHorariaCuba = 'America/Havana';
-const actualizarHora = () => {
-    const ahora = new Date();
-    horaActual.value = ahora.toLocaleTimeString('es-ES', {
-        timeZone: zonaHorariaCuba,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-};
-let intervalo;
+const actualizarRelojes = () => {
+  const ahoraCuba = getHoraCuba()
+  
+  // Actualizar hora actual mostrada
+  horaActual.value = ahoraCuba.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+  
+  // Calcular cuenta regresiva si tenemos hora objetivo
+  if (horaTarget.value) {
+    const target = new Date(ahoraCuba)
+    target.setHours(horaTarget.value.hh, horaTarget.value.mm, horaTarget.value.ss, 0)
+    
+    // Si la hora objetivo ya pasó hoy, calculamos para mañana
+    if (target < ahoraCuba) {
+      target.setDate(target.getDate() + 1)
+    }
+    
+    const diff = target - ahoraCuba
+    
+    // Calcular horas, minutos y segundos restantes
+    const horas = Math.floor(diff / (1000 * 60 * 60))
+    const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const segundos = Math.floor((diff % (1000 * 60)) / 1000)
+    
+    // Formatear con 2 dígitos
+    cuentaRegresiva.value = [
+      horas.toString().padStart(2, '0'),
+      minutos.toString().padStart(2, '0'),
+      segundos.toString().padStart(2, '0')
+    ].join(':')
+  }
+}
+
+// Configurar intervalos
+let intervaloReloj
+let intervaloCuentaRegresiva
+
 onMounted(() => {
-    // Actualizar inmediatamente al montar el componente
-    actualizarHora();
-    // Actualizar cada segundo
-    intervalo = setInterval(actualizarHora, 1000);
-});
-onUnmounted(() => {
-    // Limpiar el intervalo cuando el componente se desmonte
-    clearInterval(intervalo);
-});
+  actualizarRelojes()
+  intervaloReloj = setInterval(actualizarRelojes, 1000)
+  intervaloCuentaRegresiva = setInterval(actualizarRelojes, 100)
+})
 
+onUnmounted(() => {
+  clearInterval(intervaloReloj)
+  clearInterval(intervaloCuentaRegresiva)
+})
 </script>
 
 <style scoped>
+/* Tus estilos existentes */
 .header-border {
   border-bottom: 3px solid #000;
 }
@@ -97,5 +137,8 @@ p {
   font-weight: 450;
   color: #000000;
   font-size: 1.1rem;
+}
+.ms-2 {
+  margin-left: 0.5rem;
 }
 </style>
