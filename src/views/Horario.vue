@@ -12,11 +12,27 @@ const horas = ref('');
 const minutos = ref('');
 const segundos = ref('');
 
+// CONTROLA SI EL TOAST ESTÁ VISIBLE
+const mostrarToastSave = ref(false);
+const mostrarToastError = ref(false);
+const mostrarToastComplete = ref(false);
+
+// FUNCIÓN PARA MOSTRAR EL TOAST
+const lanzarToast = () => {
+    // DESPUÉS DE 3 SEGUNDOS, OCULTA EL TOAST
+    setTimeout(() => {
+        mostrarToastSave.value = false;
+        mostrarToastError.value = false;
+        mostrarToastComplete.value = false;
+    }, 3000);
+};
+
 const guardarHora = async () => {
     try {
         // Validaciones básicas
         if (!horas.value || !minutos.value || !segundos.value) {
-        alert('Por favor complete todos los campos');
+            mostrarToastComplete.value = true;
+            lanzarToast();
         return;
         }
 
@@ -35,7 +51,8 @@ const guardarHora = async () => {
         await setDoc(docRef, horaData, { merge: false }); // merge: false para sobrescribir completamente
 
         console.log('Hora guardada correctamente para el turno:', turno.value);
-        alert('Hora guardada exitosamente!');
+        mostrarToastSave.value = true;
+        lanzarToast();
         
         // Limpiar los campos
         horas.value = '';
@@ -44,17 +61,18 @@ const guardarHora = async () => {
         
     } catch (error) {
         console.error('Error al guardar la hora:', error);
-        alert('Ocurrió un error al guardar la hora');
+        mostrarToastError.value = true;
+        lanzarToast();
     }
 };
 </script>
 
 <template>
-    <div>
+    <div class="container-login position-relative">
         <div>
             <Header/>
         </div>
-        <div class="col-12 m-0 p-2 container-login">
+        <div class="col-12 m-0 p-2">
             <div class="col-12 m-0 mt-2 p-3 d-flex flex-column align-items-center justify-content-center border-3 box-shadow">
                 <header class="d-flex flex-column align-items-center justify-content-center">
                     <h1 class="text-center">Horario</h1>
@@ -87,7 +105,44 @@ const guardarHora = async () => {
                 <mostrarhora/>
             </div>
         </div>
+        <div v-if="mostrarToastSave" class="toast-container">
+            <div class="toast show w-100 rounded-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="p-2 d-flex justify-content-center">
+                    <i class="mx-2 bi bi-check-circle-fill text-success"></i>
+                    ¡Hora guardada exitosamente!
+                </div>
+            </div>
+        </div>
+        <div v-if="mostrarToastError" class="toast-container">
+            <div class="toast show w-100 rounded-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="p-2 d-flex justify-content-center">
+                    <i class="mx-2 bi bi-exclamation-circle text-danger"></i>
+                    ¡Error al guardar!
+                </div>
+            </div>
+        </div>
+        <div v-if="mostrarToastComplete" class="toast-container">
+            <div class="toast show w-100 rounded-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="p-2 d-flex justify-content-center">
+                    <i class="mx-2 bi bi-cursor-fill text-warning"></i>
+                    ¡Complete los campos!
+                </div>
+            </div>
+        </div>
     </div>
 </template>
+
 <style scoped>
+.toast-container {
+    position: fixed; /* Fijo en la pantalla */
+    bottom: 0; /* Siempre en la parte inferior */
+    left: 0;
+    width: 100%; /* Ocupa todo el ancho */
+    z-index: 1055; /* Encima de todo */
+    border: 1px solid #000000c6;
+    box-shadow: 1px -2px 1px #00000064;
+    border-radius: 8px;
+    background-color: rgb(235, 235, 235);
+}
+
 </style>
