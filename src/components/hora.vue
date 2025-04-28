@@ -7,7 +7,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-const opciones = ['Día', 'Tarde', 'Noche'];
+const opciones = ['Dia', 'Tarde', 'Noche'];
 const turnoSeleccionado = ref(props.modelValue || 'Día');
 
 watch(turnoSeleccionado, (newValue) => {

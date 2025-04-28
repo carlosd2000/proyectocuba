@@ -2,7 +2,7 @@
   <div class="d-flex flex-column justify-content-center align-items-center">
     <div class="col-12 row p-0 m-0 d-flex justify-content-center align-items-center header-border">
       <div class="col-5 m-0 p-0 d-flex justify-content-start align-items-center">
-        <ButtonBack class="col-3 ml-2 d-flex justify-content-center" v-if="!back"/>
+        <ButtonBack class="col-3 ml-2 d-flex justify-content-center" v-if="!back" />
         <p class="col-8 m-0 p-1 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
         <p class="ms-2">{{ horaActual }} ({{ turnoActual }})</p>
       </div>
@@ -10,7 +10,7 @@
         <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listeros')">
           <p class="m-0 p-1">$20,000,000.00</p>
         </button>
-        
+
         <div class="col-2 p-2 m-0 mr-2 d-flex justify-content-end align-items-center" v-if="bell">
           <i class="bi bi-bell"></i>
         </div>
@@ -26,152 +26,119 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { db } from '../firebase/config'
 import { doc, onSnapshot } from 'firebase/firestore'
 
+// Variables
 const route = useRoute()
 const turnos = ['dia', 'tarde', 'noche']
 const turnoActual = ref('')
-const horaTarget = ref(null)
-const cuentaRegresiva = ref('')
+const cuentaRegresiva = ref('hh:mm:ss')
 const horaActual = ref('--:--:--')
+const horasTurno = ref({})
 
-// Define reactividad para determinar si estamos en la página principal
+// Bell y back
 const bell = computed(() => route.path === '/listeros')
 const back = computed(() => route.path === '/listeros')
 
-// Obtener la hora actual en Cuba (UTC-5 o UTC-4)
-const getHoraCuba = () => {
+// 🕒 Obtener fecha y hora reales en Cuba
+const getFechaHoraCuba = () => {
   const ahora = new Date()
-  const opciones = {
-    timeZone: 'America/Havana',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }
-  
-  // Formatear y parsear para obtener hora local cubana
-  const horaStr = new Intl.DateTimeFormat('es-ES', opciones).format(ahora)
-  const [hh, mm, ss] = horaStr.split(':').map(Number)
-  
-  // Crear nueva fecha con hora cubana (en zona local)
-  const horaCuba = new Date()
-  horaCuba.setHours(hh, mm, ss)
-  
-  return {
-    hora: hh,
-    minuto: mm,
-    segundo: ss,
-    fecha: horaCuba,
-    esHorarioVerano: () => {
-      // Simplificación: Cuba usa horario de verano aprox. de marzo a noviembre
-      const mes = horaCuba.getMonth()
-      return mes >= 2 && mes <= 10
-    }
-  }
+  const opciones = { timeZone: 'America/Havana', hour12: false }
+  const formato = new Intl.DateTimeFormat('en-GB', {
+    ...opciones,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).formatToParts(ahora)
+
+  const partes = Object.fromEntries(formato.map(({ type, value }) => [type, value]))
+
+  // Crear una fecha basada en la hora de Cuba
+  return new Date(`${partes.year}-${partes.month}-${partes.day}T${partes.hour}:${partes.minute}:${partes.second}`)
 }
 
-// Determinar el turno actual basado en la hora
-const determinarTurnoActual = (horaCuba) => {
-  const hora = horaCuba.hora
-  
-  if (hora >= 5 && hora < 12) return 'dia'     // Mañana: 5:00 - 11:59
-  if (hora >= 12 && hora < 18) return 'tarde'  // Tarde: 12:00 - 17:59
-  return 'noche'                              // Noche: 18:00 - 4:59
-}
-
-// Cargar datos de Firebase para el turno actual
-const cargarHoraTurno = async (turno) => {
-  try {
+// 📥 Suscribir cambios en Firestore
+const suscribirHorasTurnos = () => {
+  for (const turno of turnos) {
     const docRef = doc(db, 'hora', turno)
-    const docSnap = await new Promise((resolve) => {
-      const unsubscribe = onSnapshot(docRef, (doc) => {
-        resolve(doc)
-      })
-    })
-    
-    if (docSnap.exists()) {
-      const data = docSnap.data()
-      horaTarget.value = {
-        hh: parseInt(data.hh) || 0,
-        mm: parseInt(data.mm) || 0,
-        ss: parseInt(data.ss) || 0
+    onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data()
+        horasTurno.value[turno] = {
+          hh: parseInt(data.hh) || 0,
+          mm: parseInt(data.mm) || 0,
+          ss: parseInt(data.ss) || 0
+        }
       }
-      turnoActual.value = turno
-      console.log(`Hora objetivo actualizada para ${turno}:`, horaTarget.value)
-    } else {
-      console.log(`No se encontraron datos para el turno ${turno}`)
-      horaTarget.value = null
-      cuentaRegresiva.value = 'hh:mm:ss'
-    }
-  } catch (error) {
-    console.error('Error al procesar los datos:', error)
-    horaTarget.value = null
-    cuentaRegresiva.value = 'Error'
+    }, (error) => {
+      console.error(`Error escuchando cambios de ${turno}:`, error)
+    })
   }
 }
 
-const actualizarRelojes = () => {
-  const cubaTime = getHoraCuba()
-  const nuevoTurno = determinarTurnoActual(cubaTime)
-  
-  // Actualizar hora actual mostrada
-  horaActual.value = [
-    cubaTime.hora.toString().padStart(2, '0'),
-    cubaTime.minuto.toString().padStart(2, '0'),
-    cubaTime.segundo.toString().padStart(2, '0')
-  ].join(':')
-  
-  // Cambiar de turno si es necesario
-  if (turnoActual.value !== nuevoTurno) {
-    cargarHoraTurno(nuevoTurno)
-  }
-  
-  // Calcular cuenta regresiva si tenemos hora objetivo
-  if (horaTarget.value) {
-    const ahora = cubaTime.fecha.getTime()
-    const target = new Date(cubaTime.fecha)
-    target.setHours(horaTarget.value.hh, horaTarget.value.mm, horaTarget.value.ss, 0)
-    
-    // Si la hora objetivo ya pasó hoy, calculamos para mañana
-    if (target.getTime() < ahora) {
+// 🔍 Encontrar el próximo turno
+const encontrarProximoTurno = (ahora) => {
+  let menorDiferencia = Infinity
+  let turnoSeleccionado = null
+  let targetDateSeleccionado = null
+
+  for (const [turno, hora] of Object.entries(horasTurno.value)) {
+    const target = new Date(ahora)
+    target.setHours(hora.hh, hora.mm, hora.ss, 0)
+
+    let diff = target - ahora
+
+    if (diff < 0) {
       target.setDate(target.getDate() + 1)
+      diff = target - ahora
     }
-    
-    const diff = target.getTime() - ahora
+
+    if (diff < menorDiferencia) {
+      menorDiferencia = diff
+      turnoSeleccionado = turno
+      targetDateSeleccionado = target
+    }
+  }
+
+  return {
+    turno: turnoSeleccionado,
+    targetDate: targetDateSeleccionado
+  }
+}
+
+// 🕰️ Actualizar reloj y cuenta regresiva
+let intervalo
+onMounted(() => {
+  suscribirHorasTurnos()
+
+  intervalo = setInterval(() => {
+    const ahora = getFechaHoraCuba()
+
+    horaActual.value = ahora.toLocaleTimeString('es-ES', { hour12: false })
+
+    if (Object.keys(horasTurno.value).length === 0) return
+
+    const { turno, targetDate } = encontrarProximoTurno(ahora)
+
+    turnoActual.value = turno
+
+    const diff = targetDate.getTime() - ahora.getTime()
+
     const horas = Math.floor(diff / (1000 * 60 * 60))
     const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
     const segundos = Math.floor((diff % (1000 * 60)) / 1000)
-    
-    // Formatear con 2 dígitos
+
     cuentaRegresiva.value = [
       horas.toString().padStart(2, '0'),
       minutos.toString().padStart(2, '0'),
       segundos.toString().padStart(2, '0')
     ].join(':')
-  }
-}
-
-// Configurar intervalos
-let intervaloReloj
-let intervaloCuentaRegresiva
-
-onMounted(() => {
-  // Inicializar con el turno actual
-  const turnoInicial = determinarTurnoActual(getHoraCuba())
-  cargarHoraTurno(turnoInicial)
-  
-  actualizarRelojes()
-  intervaloReloj = setInterval(actualizarRelojes, 1000)
-  intervaloCuentaRegresiva = setInterval(actualizarRelojes, 100)
+  }, 1000)
 })
 
 onUnmounted(() => {
-  clearInterval(intervaloReloj)
-  clearInterval(intervaloCuentaRegresiva)
+  clearInterval(intervalo)
 })
 </script>
 
 <style scoped>
-/* Tus estilos existentes */
 .header-border {
   border-bottom: 3px solid #000;
 }

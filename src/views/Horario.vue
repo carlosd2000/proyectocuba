@@ -7,7 +7,7 @@ import { doc, setDoc } from 'firebase/firestore';
 
 import mostrarhora from '../components/mostrarhora.vue';
 
-const turno = ref('Día');
+const turno = ref('Dia');
 const horas = ref('');
 const minutos = ref('');
 const segundos = ref('');

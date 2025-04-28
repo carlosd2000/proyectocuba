@@ -17,24 +17,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'], // Archivos estáticos
       devOptions: { enabled: true },
-      manifest: {
-        name: 'Mi App Vue PWA',
-        short_name: 'VuePWA',
-        description: 'Una PWA con Vue y Vite',
-        theme_color: '#ffffff',
-        icons: [
-          {
-            "src": "bank.svg",
-            "sizes": "192x192",
-            "type": "image/png"
-          },
-          {
-              "src": "vite.svg",
-              "sizes": "512x512",
-              "type": "image/svg+xml"
-          }
-        ],
-      },
+
     }),
   ],
   resolve: {
