@@ -2,7 +2,7 @@
   <div class="container vh-100 d-flex justify-content-center align-items-center container-register">
     <div class="container col-12 col-sm-8 py-3 my-3 box-shadow">
       <header class="col-12 m-1 p-1 d-flex justify-content-center align-items-center">
-        <h2 class="text-center m-0 p-0">Registro</h2>
+        <h2 class="text-center m-0 p-0">Crear Cuenta</h2>
       </header>
       <main class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
         <div class="col-12 m-3 d-flex justify-content-center">
@@ -51,12 +51,16 @@
               </select>
             </div>
 
-            <button type="submit" class="col-12 btn btn-enter" :disabled="!showSelect">
-              Registrarse
+            <button
+              type="submit"
+              class="col-12 btn btn-enter"
+              :disabled="!showSelect || isLoading"
+            >
+              {{ isLoading ? 'Cargando...' : 'Crear' }}
             </button>
 
             <div class="text-end mt-2">
-              <a href="/" class="text-primary">Iniciar sesión</a>
+              <button @click="cerrarSesion" type="button" class="btn btn-link text-danger p-0">Cerrar sesión</button>
             </div>
           </form>
         </div>
@@ -70,6 +74,8 @@ import { ref, computed, onMounted } from 'vue'
 import { AuthService } from '@/firebase/auth'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
+import { auth } from '@/firebase/config'
+import { signOut } from 'firebase/auth'
 
 const nombre = ref('')
 const email = ref('')
@@ -80,6 +86,7 @@ const isValidNombre = ref(false)
 const mensajePassword = ref('')
 const isValidPassword = ref(false)
 const userProfile = ref(null)
+const isLoading = ref(false)
 const router = useRouter()
 
 onMounted(() => {
@@ -93,7 +100,6 @@ const showSelect = computed(() => {
   const tipo = userProfile.value?.tipo
   return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectores'
 })
-
 
 const validateNombre = () => {
   const regex = /^[a-zA-Z0-9]{3,15}$/
@@ -149,22 +155,53 @@ const registrarUsuario = async () => {
     return
   }
 
-  const userData = {
-    nombre: nombre.value,
-    tipo: tipoCuenta.value
+  try {
+    isLoading.value = true
+
+    const userData = {
+      nombre: nombre.value,
+      tipo: tipoCuenta.value
+    }
+
+    const result = await AuthService.register({
+      email: email.value,
+      password: password.value,
+      userData
+    })
+
+    if (result.success) {
+      Swal.fire("Creación exitosa", "Usuario creado correctamente", "success")
+      limpiarCampos()
+    } else {
+      Swal.fire("Error", result.error, "error")
+    }
+  } catch (error) {
+    console.error("Error en registro:", error)
+    Swal.fire("Error", "No se pudo crear el usuario", "error")
+  } finally {
+    isLoading.value = false
   }
+}
 
-  const result = await AuthService.register({
-    email: email.value,
-    password: password.value,
-    userData
-  })
+const limpiarCampos = () => {
+  nombre.value = ''
+  email.value = ''
+  password.value = ''
+  tipoCuenta.value = ''
+  mensajeNombre.value = ''
+  mensajePassword.value = ''
+  isValidNombre.value = false
+  isValidPassword.value = false
+}
 
-  if (result.success) {
-    Swal.fire("Registro exitoso", "Usuario creado correctamente", "success")
+const cerrarSesion = async () => {
+  try {
+    await signOut(auth)
+    localStorage.removeItem('userProfile')
     router.push('/')
-  } else {
-    Swal.fire("Error", result.error, "error")
+  } catch (error) {
+    console.error("Error al cerrar sesión", error)
+    Swal.fire("Error", "No se pudo cerrar sesión", "error")
   }
 }
 </script>
