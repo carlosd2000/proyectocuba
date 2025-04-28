@@ -9,7 +9,7 @@
     </div>
 
     <div class="text-start">
-      <button class="btn btn-warning w-100 fw-bold d-flex justify-content-center align-items-center gap-2 btn-enter">
+      <button class="btn btn-warning w-100 fw-bold d-flex justify-content-center align-items-center gap-2 btn-page">
         <span>Enviar</span>
         <span>${{ totales.col3 + totales.col4 + totales.col5 }}</span>
       </button>

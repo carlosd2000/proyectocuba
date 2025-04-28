@@ -78,7 +78,7 @@ const guardarHora = async () => {
                         </div>
                     </div>
                     <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center mt-3">
-                        <button @click="guardarHora" class="p-1">
+                        <button @click="guardarHora" class="p-1 btn-page">
                             <i class="bi bi-clock-history m-2 p-0"></i>
                             <span class="m-2">Guardar</span>
                         </button>
@@ -89,3 +89,5 @@ const guardarHora = async () => {
         </div>
     </div>
 </template>
+<style scoped>
+</style>

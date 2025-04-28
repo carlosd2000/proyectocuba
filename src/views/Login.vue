@@ -43,7 +43,7 @@
   
               <!-- Link a registro -->
               <div class="text-end mt-2">
-                <RouterLink to="/register" class="text-primary">Registrarse</RouterLink>
+                <RouterLink to="/listeros" class="text-primary" >Ir a Listeros</RouterLink>
               </div>
             </form>
           </div>
@@ -86,7 +86,7 @@
       if (tipo === 'listeros') router.push('/listeros')
       else if (tipo === 'colectores') router.push('/colectores')
       else if (tipo === 'bancos') router.push('/bancos')
-      else if (tipo === 'admin') router.push('/admin')
+      else if (tipo === 'admin') router.push('/adminview')
       else router.push('/') // fallback
     } else {
       error.value = result.error

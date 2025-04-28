@@ -53,7 +53,7 @@
 
             <button
               type="submit"
-              class="col-12 btn btn-enter"
+              class="col-12 btn btn-page"
               :disabled="!showSelect || isLoading"
             >
               {{ isLoading ? 'Cargando...' : 'Crear' }}
@@ -213,13 +213,7 @@ const cerrarSesion = async () => {
   background-color: #f4f4f4;
   box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.853);
 }
-.btn-enter {
-  border: #000000 solid 2px;
-  box-shadow: #000000 2px 2px 2px;
-  border-radius: 6px;
-  background-color: #ffc107;
-  color: #000000;
-}
+
 .container-register {
   height: 100vh;
   width: 100%;
