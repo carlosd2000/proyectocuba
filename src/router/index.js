@@ -14,7 +14,7 @@ const router = createRouter({
       component: () => import('../views/Login.vue'),
     },
     {
-      path: '/listeros',
+      path: '/listeros/:id',
       name: 'listeros',
       component: () => import('../views/Listeros.vue'),
     },
@@ -52,6 +52,11 @@ const router = createRouter({
       path: '/horario',
       name: 'horario',
       component: () => import('../views/Horario.vue'),
+    },
+    {      
+      path: '/patherlist/:id',      
+      name: 'Patherlist',
+      component: () => import('../views/Patherlist.vue'),          
     },
     // Ruta opcional para registro directo con tipo + id
     // Puedes comentar esta línea si aún no la usas
