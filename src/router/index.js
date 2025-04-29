@@ -14,7 +14,7 @@ const router = createRouter({
       component: () => import('../views/Login.vue'),
     },
     {
-      path: '/listeros',
+      path: '/listeros/:id',
       name: 'listeros',
       component: () => import('../views/Listeros.vue'),
     },
