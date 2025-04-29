@@ -11,10 +11,8 @@ import Pagar from '../components/Pagar.vue';
       <Horario/>
       
   </div>
- 
- 
   <Inputs/>
-  <Pagar    />
+  <Pagar/>
 
 </template>
 
