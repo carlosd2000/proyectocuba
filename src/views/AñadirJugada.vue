@@ -7,9 +7,8 @@ import Pagar from '../components/Pagar.vue';
 
 <template>
   <div class="col-12 m-0 p-0">
-      <Header />
-      <Horario/>
-      
+    <Header/>
+    <Horario/>
   </div>
   <Inputs/>
   <Pagar/>
