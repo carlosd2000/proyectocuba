@@ -93,8 +93,12 @@ const handleSubmit = async () => {
 
       // Redirigir a la ruta dinámica tipo/uid
       if (tipo && userId) {
-        router.push(`/${tipo}/${userId}`)
-      } else {
+        if (tipo === 'admin') {
+          router.push(`/adminview/${userId}`)
+        } else {
+          router.push(`/${tipo}/${userId}`)
+          }
+        } else {
         Swal.fire('Error', 'No se encontró tipo o usuario válido', 'error')
       }
     } else {
