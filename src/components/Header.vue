@@ -4,7 +4,7 @@
       <div class="col-5 m-0 p-0 d-flex justify-content-start align-items-center">
         <ButtonBack class="col-3 ml-2 d-flex justify-content-center" v-if="!back" />
         <p class="col-8 m-0 p-1 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
-      <!----><p class="ms-2">{{ horaActual }} ({{ turnoActual }})</p>
+      <!--<p class="ms-2">{{ horaActual }} ({{ turnoActual }})</p>-->
       </div>
       <div class="col-7 row p-1 m-0 d-flex justify-content-end align-items-center">
         <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listeros')">
