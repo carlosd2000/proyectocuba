@@ -24,7 +24,7 @@
       <input type="number" class="form-input cuadrado celda" min="0" step="1" @keypress="soloEnteros($event)" />
       <div v-for="i in 2" :key="'extra-circulo-' + index + '-' + i" class="celda">
         <input type="number" placeholder="$" class="form-input circular" min="0" step="1"
-               @keypress="soloEnteros($event)" v-model="fila['circulo' + i]" />
+          @keypress="soloEnteros($event)" v-model="fila['circulo' + i]" />
       </div>
       <div class="celda"></div>
     </div>

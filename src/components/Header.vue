@@ -6,7 +6,7 @@
         <p class="col-8 m-0 p-1 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
       </div>
       <div class="col-7 row p-1 m-0 d-flex justify-content-end align-items-center">
-        <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listeros')">
+        <button class="btn btn-light border-0 p-0 bg-transparent" @click="irwallet">
           <p class="m-0 p-1">$20,000,000.00</p>
         </button>
 
@@ -40,11 +40,14 @@ const back = computed(() => route.path.startsWith('/listeros'))
 const bell = computed(() => route.path.startsWith('/listeros'))
 
 // Función para volver al home (dinámico por ID)
-const volverInicio = () => {
+
+const irwallet = () => {
   const userProfile = JSON.parse(localStorage.getItem('userProfile'))
+
   if (userProfile && userProfile.uid && userProfile.tipo) {
     router.push(`/${userProfile.tipo}/${userProfile.uid}`)
   } else {
+    // Si no hay sesión guardada, envíalo al login
     router.push('/')
   }
 }

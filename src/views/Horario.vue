@@ -122,13 +122,13 @@ const guardarHora = async () => {
                     </div>
                     <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center">
                         <div class="col-4">
-                        <input v-model="horas" type="text" class="form-control" :placeholder="dbHoras || 'hh'" maxlength="2"/>
+                            <input v-model="horas" type="text" class="form-control" :placeholder="dbHoras || 'hh'" maxlength="2"/>
                         </div>
                         <div class="col-4">
-                        <input v-model="minutos" type="text" class="form-control" :placeholder="dbMinutos || 'mm'" maxlength="2"/>
+                            <input v-model="minutos" type="text" class="form-control" :placeholder="dbMinutos || 'mm'" maxlength="2"/>
                         </div>
                         <div class="col-4">
-                        <input v-model="segundos" type="text" class="form-control" :placeholder="dbSegundos || 'ss'" maxlength="2"/>
+                            <input v-model="segundos" type="text" class="form-control" :placeholder="dbSegundos || 'ss'" maxlength="2"/>
                         </div>
                     </div>
                     <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center mt-3">

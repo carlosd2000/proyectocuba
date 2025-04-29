@@ -1,6 +1,9 @@
 <template>
   <div class="container-login d-flex flex-column align-items-center justify-content-center">
     <div class="col-10 m-0 mt-2 p-3 d-flex flex-column align-items-center justify-content-center box-shadow">
+      <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/')">
+        <i class="bi bi-arrow-left" style="font-size: 1.4rem;"></i>
+      </button>
       <h3>Vista de {{ vistaNombre }}</h3>
       <main class="p-0 pb-1">
         <div class="col-12 row m-0 p-3">

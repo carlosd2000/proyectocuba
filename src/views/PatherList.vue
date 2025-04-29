@@ -1,10 +1,13 @@
 <template>
     <div class="container-login mt-3 d-flex flex-column align-items-center justify-content-center">
         <div class="col-10 col-sm-8 py-3 my-3 box-shadow">
+            <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/')">
+              <i class="bi bi-arrow-left" style="font-size: 1.4rem;"></i>
+            </button>
             <h2>Lista de Bancos</h2>
             <div v-if="loading">Cargando...</div>
             <div v-else>
-                <ul class="list-group" style="max-height: 400px; overflow-y: auto;">
+                <ul class="list-group" style="max-height: 300px; overflow-y: auto;">
                 <li class="list-group-item" v-for="banco in bancos" :key="banco.id">
                     {{ banco.nombre }}
                 </li>
