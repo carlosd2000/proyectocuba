@@ -14,7 +14,7 @@ const router = createRouter({
       component: () => import('../views/Login.vue'),
     },
     {
-      path: '/listeros/:id',
+      path: '/listeros',
       name: 'listeros',
       component: () => import('../views/Listeros.vue'),
     },
@@ -34,22 +34,22 @@ const router = createRouter({
       component: () => import('../views/Registros.vue'),
     },
     {
-      path: '/anadirjugada/:id',
+      path: '/anadirjugada',
       name: 'anadirjugada',
       component: () => import('../views/AñadirJugada.vue'),
     },
     {
-      path: '/parlet/:id',
+      path: '/parlet',
       name: 'parlet',
       component: () => import('../views/Parlet.vue'),
     },
     {
-      path: '/listas/:id',
+      path: '/listas',
       name: 'listas',
       component: () => import('../views/Listas.vue'),
     },
     {
-      path: '/horario/:id',
+      path: '/horario',
       name: 'horario',
       component: () => import('../views/Horario.vue'),
     },
