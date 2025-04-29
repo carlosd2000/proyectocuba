@@ -1,9 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import Header from '../components/Header.vue';
 import Hora from '../components/hora.vue';
 import { db } from '../firebase/config.js';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc para leer datos
 
 import mostrarhora from '../components/mostrarhora.vue';
 
@@ -12,10 +12,41 @@ const horas = ref('');
 const minutos = ref('');
 const segundos = ref('');
 
+// Valores de la base de datos para los placeholders
+const dbHoras = ref('');
+const dbMinutos = ref('');
+const dbSegundos = ref('');
+
 // CONTROLA SI EL TOAST ESTÁ VISIBLE
 const mostrarToastSave = ref(false);
 const mostrarToastError = ref(false);
 const mostrarToastComplete = ref(false);
+
+// FUNCIÓN PARA CARGAR LOS DATOS DE FIRESTORE
+const cargarDatos = async () => {
+    try {
+        const docRef = doc(db, 'hora', turno.value.toLowerCase());
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            dbHoras.value = data.hh || '';
+            dbMinutos.value = data.mm || '';
+            dbSegundos.value = data.ss || '';
+        } else {
+            // Si no existe el documento, limpiamos los placeholders
+            dbHoras.value = '';
+            dbMinutos.value = '';
+            dbSegundos.value = '';
+        }
+    } catch (error) {
+        console.error('Error al cargar datos:', error);
+    }
+};
+
+// Cargar datos cuando cambie el turno
+onMounted(cargarDatos); // Cargar al inicio
+watch(turno, cargarDatos); // Cargar cuando cambie el turno
 
 // FUNCIÓN PARA MOSTRAR EL TOAST
 const lanzarToast = () => {
@@ -54,6 +85,11 @@ const guardarHora = async () => {
         mostrarToastSave.value = true;
         lanzarToast();
         
+        // Actualizar los placeholders con los nuevos valores
+        dbHoras.value = horas.value;
+        dbMinutos.value = minutos.value;
+        dbSegundos.value = segundos.value;
+
         // Limpiar los campos
         horas.value = '';
         minutos.value = '';
@@ -86,13 +122,13 @@ const guardarHora = async () => {
                     </div>
                     <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center">
                         <div class="col-4">
-                        <input v-model="horas" type="text" class="form-control" placeholder="hh" maxlength="2"/>
+                        <input v-model="horas" type="text" class="form-control" :placeholder="dbHoras || 'hh'" maxlength="2"/>
                         </div>
                         <div class="col-4">
-                        <input v-model="minutos" type="text" class="form-control" placeholder="mm" maxlength="2"/>
+                        <input v-model="minutos" type="text" class="form-control" :placeholder="dbMinutos || 'mm'" maxlength="2"/>
                         </div>
                         <div class="col-4">
-                        <input v-model="segundos" type="text" class="form-control" placeholder="ss" maxlength="2"/>
+                        <input v-model="segundos" type="text" class="form-control" :placeholder="dbSegundos || 'ss'" maxlength="2"/>
                         </div>
                     </div>
                     <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center mt-3">
@@ -107,7 +143,7 @@ const guardarHora = async () => {
         </div>
         <div v-if="mostrarToastSave" class="toast-container">
             <div class="toast show w-100 rounded-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="p-2 d-flex justify-content-center">
+                <div class="p-3 d-flex justify-content-center">
                     <i class="mx-2 bi bi-check-circle-fill text-success"></i>
                     ¡Hora guardada exitosamente!
                 </div>
@@ -115,7 +151,7 @@ const guardarHora = async () => {
         </div>
         <div v-if="mostrarToastError" class="toast-container">
             <div class="toast show w-100 rounded-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="p-2 d-flex justify-content-center">
+                <div class="p-3 d-flex justify-content-center">
                     <i class="mx-2 bi bi-exclamation-circle text-danger"></i>
                     ¡Error al guardar!
                 </div>
@@ -123,7 +159,7 @@ const guardarHora = async () => {
         </div>
         <div v-if="mostrarToastComplete" class="toast-container">
             <div class="toast show w-100 rounded-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="p-2 d-flex justify-content-center">
+                <div class="p-3 d-flex justify-content-center">
                     <i class="mx-2 bi bi-cursor-fill text-warning"></i>
                     ¡Complete los campos!
                 </div>
