@@ -23,7 +23,7 @@
 
             <div class="mb-3">
               <label for="email" class="form-label">Correo electrónico</label>
-              <input v-model="email" type="email" class="form-control" id="email" placeholder="correo@ejemplo.com">
+              <input v-model="email" type="email" class="form-control" id="email" placeholder="correo@ejemplo.com" />
             </div>
 
             <div class="mb-3">
@@ -40,11 +40,10 @@
               <p class="text-success mt-1" v-if="isValidPassword">{{ mensajePassword }}</p>
             </div>
 
-            <!-- Select dinámico según el tipo de cuenta -->
             <div class="mb-3" v-if="showSelect">
               <label for="opciones" class="form-label">Tipo de cuenta</label>
               <select v-model="tipoCuenta" class="form-select" id="opciones">
-                <option value="" disabled selected>Seleccionar</option>
+                <option disabled value="">Seleccionar</option>
                 <option v-if="userProfile?.tipo === 'admin'" value="bancos">Banco</option>
                 <option v-if="userProfile?.tipo === 'bancos'" value="colectores">Colector</option>
                 <option v-if="['bancos', 'colectores'].includes(userProfile?.tipo)" value="listeros">Listero</option>
@@ -56,7 +55,10 @@
               class="col-12 btn btn-page"
               :disabled="!showSelect || isLoading"
             >
-              {{ isLoading ? 'Cargando...' : 'Crear' }}
+              <span v-if="isLoading">
+                <i class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></i> Cargando...
+              </span>
+              <span v-else>Crear</span>
             </button>
 
             <div class="text-end mt-2">
@@ -71,11 +73,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { AuthService } from '@/firebase/auth'
-import Swal from 'sweetalert2'
-import { useRouter } from 'vue-router'
 import { auth } from '@/firebase/config'
 import { signOut } from 'firebase/auth'
+import Swal from 'sweetalert2'
 
 const nombre = ref('')
 const email = ref('')
@@ -87,12 +89,26 @@ const mensajePassword = ref('')
 const isValidPassword = ref(false)
 const userProfile = ref(null)
 const isLoading = ref(false)
+
+const creadorId = ref('')
+const tipoCreador = ref('')
+
 const router = useRouter()
+const route = useRoute()
 
 onMounted(() => {
   const saved = localStorage.getItem('userProfile')
   if (saved) {
     userProfile.value = JSON.parse(saved)
+  }
+
+  // Detectar creadorId y tipoCreador desde la URL
+  creadorId.value = route.params.id || ''
+
+  if (route.path.includes('/bancos')) {
+    tipoCreador.value = 'banco'
+  } else if (route.path.includes('/colectores')) {
+    tipoCreador.value = 'colector'
   }
 })
 
@@ -145,13 +161,8 @@ const registrarUsuario = async () => {
     return
   }
 
-  if (!isValidNombre.value) {
-    Swal.fire("Error", "Por favor ingresa un nombre válido", "error")
-    return
-  }
-
-  if (!isValidPassword.value) {
-    Swal.fire("Error", "La contraseña debe tener al menos 6 caracteres", "error")
+  if (!isValidNombre.value || !isValidPassword.value) {
+    Swal.fire("Error", "Por favor completa los campos correctamente", "error")
     return
   }
 
@@ -160,7 +171,9 @@ const registrarUsuario = async () => {
 
     const userData = {
       nombre: nombre.value,
-      tipo: tipoCuenta.value
+      tipo: tipoCuenta.value,
+      creadorId: creadorId.value,
+      tipoCreador: tipoCreador.value
     }
 
     const result = await AuthService.register({

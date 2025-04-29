@@ -1,63 +1,66 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/adminview',
-      name: 'AdminView',
-      component: () => import('../views/AdminView.vue'),
-    },
-    {
-      path: '/listeros',
-      name: 'Listeros',
-      component: () => import('../views/Listeros.vue'),
+    {      
+      path: '/adminview/:id',      
+      name: 'AdminView',      
+      component: () => import('../views/AdminView.vue'),    
     },
     {
       path: '/',
-      name: 'Login',
+      name: 'login',
       component: () => import('../views/Login.vue'),
     },
     {
+      path: '/listeros/:id',
+      name: 'listeros',
+      component: () => import('../views/Listeros.vue'),
+    },
+    {
+      path: '/admin/:id',
+      name: 'admin',
+      component: () => import('../views/Registros.vue'),
+    },
+    {
+      path: '/bancos/:id',
+      name: 'bancos',
+      component: () => import('../views/Registros.vue'),
+    },
+    {
+      path: '/colectores/:id',
+      name: 'colectores',
+      component: () => import('../views/Registros.vue'),
+    },
+    {
       path: '/anadirjugada',
-      name: 'anadirjugada',       
+      name: 'anadirjugada',
       component: () => import('../views/AñadirJugada.vue'),
     },
     {
       path: '/parlet',
-      name: 'Parlet',     
+      name: 'parlet',
       component: () => import('../views/Parlet.vue'),
     },
     {
       path: '/listas',
-      name: 'Listas',     
+      name: 'listas',
       component: () => import('../views/Listas.vue'),
     },
     {
-      path: '/admin',
-      name: 'Admi n',     
-      component: () => import('../views/Registros.vue'),
-    },
-    {
-      path: '/bancos',
-      name: 'Bancos',     
-      component: () => import('../views/Registros.vue'),
-    },
-    {
-      path: '/colectores',
-      name: 'Colectores',     
-      component: () => import('../views/Registros.vue'),
-    },
-    {
       path: '/horario',
-      name: 'Horario',
+      name: 'horario',
       component: () => import('../views/Horario.vue'),
     },
-    {
-      path: '/patherlist',
-      name: 'PatherList',
-      component: () => import('../views/PatherList.vue'),
-    },
+    // Ruta opcional para registro directo con tipo + id
+    // Puedes comentar esta línea si aún no la usas
+    // {
+    //   path: '/register/:tipo/:id',
+    //   name: 'register',
+    //   component: () => import('../views/Registros.vue'),
+    // },
   ],
-})  
+})
 
 export default router
