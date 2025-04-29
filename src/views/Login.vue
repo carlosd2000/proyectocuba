@@ -45,11 +45,11 @@
               <span v-else>Iniciar Sesión</span>
             </button>
 
-            <!-- Link a registro (a listeros por ahora) -->
+            <!-- Link a registro (a listeros por ahora) 
             <div class="text-end mt-2">
               <RouterLink to="/listeros" class="text-primary">Ir a Listeros</RouterLink>
             </div>
-
+            -->
           </form>
         </div>
       </main>
