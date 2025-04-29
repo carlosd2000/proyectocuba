@@ -4,10 +4,9 @@
       <div class="col-5 m-0 p-0 d-flex justify-content-start align-items-center">
         <ButtonBack class="col-3 ml-2 d-flex justify-content-center" v-if="!back" />
         <p class="col-8 m-0 p-1 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
-      <!--<p class="ms-2">{{ horaActual }} ({{ turnoActual }})</p>-->
       </div>
       <div class="col-7 row p-1 m-0 d-flex justify-content-end align-items-center">
-        <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listeros')">
+        <button class="btn btn-light border-0 p-0 bg-transparent" @click="volverInicio">
           <p class="m-0 p-1">$20,000,000.00</p>
         </button>
 
@@ -21,22 +20,34 @@
 
 <script setup>
 import ButtonBack from '../components/ButtonBack.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { db } from '../firebase/config'
 import { doc, onSnapshot } from 'firebase/firestore'
 
 // Variables
 const route = useRoute()
+const router = useRouter()
+
 const turnos = ['dia', 'tarde', 'noche']
 const turnoActual = ref('')
 const cuentaRegresiva = ref('--:--:--')
 const horaActual = ref('--:--:--')
 const horasTurno = ref({})
 
-// Bell y back
-const bell = computed(() => route.path === '/listeros')
-const back = computed(() => route.path === '/listeros')
+// Bell y Back (corregido con startsWith)
+const back = computed(() => route.path.startsWith('/listeros'))
+const bell = computed(() => route.path.startsWith('/listeros'))
+
+// Función para volver al home (dinámico por ID)
+const volverInicio = () => {
+  const userProfile = JSON.parse(localStorage.getItem('userProfile'))
+  if (userProfile && userProfile.uid && userProfile.tipo) {
+    router.push(`/${userProfile.tipo}/${userProfile.uid}`)
+  } else {
+    router.push('/')
+  }
+}
 
 // Obtener fecha y hora reales en Cuba
 const getFechaHoraCuba = () => {
@@ -65,7 +76,6 @@ const cargarDesdeCache = () => {
 
 // Función para calcular el tiempo restante al turno más cercano
 const calcularTiempoRestante = (ahora) => {
-  // Hora actual siempre visible
   horaActual.value = ahora.toLocaleTimeString('es-ES', { hour12: false })
 
   if (Object.keys(horasTurno.value).length === 0) return
@@ -74,21 +84,16 @@ const calcularTiempoRestante = (ahora) => {
   let turnoCercano = ''
   let tiempoRestante = '--:--:--'
 
-  // Calcular para cada turno
   for (const [turno, hora] of Object.entries(horasTurno.value)) {
-    // Crear fecha objetivo para hoy
     const targetHoy = new Date(ahora)
     targetHoy.setHours(hora.hh, hora.mm, hora.ss, 0)
     
-    // Crear fecha objetivo para mañana (por si ya pasó hoy)
     const targetManana = new Date(targetHoy)
     targetManana.setDate(targetHoy.getDate() + 1)
     
-    // Calcular diferencias
     const diffHoy = targetHoy - ahora
     const diffManana = targetManana - ahora
     
-    // Determinar cuál es la diferencia positiva más pequeña
     if (diffHoy > 0 && diffHoy < menorDiferencia) {
       menorDiferencia = diffHoy
       turnoCercano = turno
@@ -99,7 +104,6 @@ const calcularTiempoRestante = (ahora) => {
     }
   }
 
-  // Si encontramos un turno cercano
   if (menorDiferencia !== Infinity) {
     const horas = Math.floor(menorDiferencia / (1000 * 60 * 60))
     const minutos = Math.floor((menorDiferencia % (1000 * 60 * 60)) / (1000 * 60))
@@ -111,8 +115,7 @@ const calcularTiempoRestante = (ahora) => {
       segundos.toString().padStart(2, '0')
     ].join(':')
     turnoActual.value = turnoCercano
-    
-    // Guardar en caché
+
     localStorage.setItem('cachedTurnosData', JSON.stringify({
       horasTurnoCache: horasTurno.value,
       turnoCache: turnoCercano,
