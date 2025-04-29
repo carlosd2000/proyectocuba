@@ -12,7 +12,11 @@
           </button>
           <button
             class="col-12 btn my-1 p-0 btn-page"
+<<<<<<< HEAD
             @click="$router.push(`/patherlist/${userId}`)"
+=======
+            @click="$router.push('/patherlist')"
+>>>>>>> 7b5612c7f43c0c20effb872b313bc7dfabe5cb6e
           >
             Ver Bancos
           </button>
@@ -27,14 +31,21 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
+<<<<<<< HEAD
 const userProfile = ref(null)
 const userId = ref(null) // Nuevo ref para el ID de usuario
+=======
+const userId = route.params.id
+
+const userProfile = ref(null)
+>>>>>>> 7b5612c7f43c0c20effb872b313bc7dfabe5cb6e
 
 onMounted(() => {
   const saved = localStorage.getItem('userProfile')
   if (saved) {
     userProfile.value = JSON.parse(saved)
   }
+<<<<<<< HEAD
   
   // Obtener el ID de usuario de la ruta
   userId.value = route.params.userId
@@ -43,6 +54,8 @@ onMounted(() => {
   if (!userId.value && userProfile.value?.uid) {
     userId.value = userProfile.value.uid
   }
+=======
+>>>>>>> 7b5612c7f43c0c20effb872b313bc7dfabe5cb6e
 })
 
 // Computed para nombre de la vista
@@ -66,9 +79,15 @@ const textoRegistrar = computed(() => {
 // Computed para ruta de registro
 const rutaRegistrar = computed(() => {
   const tipo = userProfile.value?.tipo
+<<<<<<< HEAD
   if (tipo === 'admin') return `/admin/${userId.value}`
   if (tipo === 'bancos') return `/bancos/${userId.value}`
   if (tipo === 'colectores') return `/colectores/${userId.value}`
+=======
+  if (tipo === 'admin') return `/admin/${userId}`
+  if (tipo === 'bancos') return `/bancos/${userId}`
+  if (tipo === 'colectores') return `/colectores/${userId}`
+>>>>>>> 7b5612c7f43c0c20effb872b313bc7dfabe5cb6e
   return '/'
 })
 </script>
@@ -80,4 +99,8 @@ const rutaRegistrar = computed(() => {
   background-color: #f4f4f4;
   box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.853);
 }
+<<<<<<< HEAD
 </style>
+=======
+</style>
+>>>>>>> 7b5612c7f43c0c20effb872b313bc7dfabe5cb6e

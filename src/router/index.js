@@ -4,7 +4,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {      
-      path: '/admin/:id',      
+      path: '/adminview/:id',      
       name: 'AdminView',      
       component: () => import('../views/AdminView.vue'),    
     },
@@ -19,7 +19,7 @@ const router = createRouter({
       component: () => import('../views/Listeros.vue'),
     },
     {
-      path: '/adminregister/:id',
+      path: '/admin/:id',
       name: 'admin',
       component: () => import('../views/Registros.vue'),
     },
