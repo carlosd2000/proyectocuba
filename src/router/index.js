@@ -4,7 +4,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {      
-      path: '/adminview/:id',      
+      path: '/admin/:id',      
       name: 'AdminView',      
       component: () => import('../views/AdminView.vue'),    
     },
@@ -19,7 +19,7 @@ const router = createRouter({
       component: () => import('../views/Listeros.vue'),
     },
     {
-      path: '/admin/:id',
+      path: '/adminregister/:id',
       name: 'admin',
       component: () => import('../views/Registros.vue'),
     },
@@ -34,22 +34,22 @@ const router = createRouter({
       component: () => import('../views/Registros.vue'),
     },
     {
-      path: '/anadirjugada',
+      path: '/anadirjugada/:id',
       name: 'anadirjugada',
       component: () => import('../views/AñadirJugada.vue'),
     },
     {
-      path: '/parlet',
+      path: '/parlet/:id',
       name: 'parlet',
       component: () => import('../views/Parlet.vue'),
     },
     {
-      path: '/listas',
+      path: '/listas/:id',
       name: 'listas',
       component: () => import('../views/Listas.vue'),
     },
     {
-      path: '/horario',
+      path: '/horario/:id',
       name: 'horario',
       component: () => import('../views/Horario.vue'),
     },
