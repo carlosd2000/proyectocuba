@@ -2,15 +2,15 @@
   <div class="container py-3" style="max-width: 320px;">
     <!-- Campo de nombre -->
     <div class="col-8 ml-4 p-0 mb-2 border-bottom border-dark">
-      <input type="text" class="form-control border-0 border-bottom border-dark" placeholder="Nombre (opcional)"/>
+      <input type="text" class="form-control border-0 border-bottom border-dark" placeholder="Nombre (opcional)" />
     </div>
 
-    <!-- Contenedor principal: columnas con scroll y columna fija -->
+    <!-- Contenedor scroll con columna fija -->
     <div class="container m-0 p-0 d-flex">
       <!-- Botón para agregar filas -->
-      <div class="col-2 m-0 p-0 d-flex justify-content-end align-items-end mt-2">
+      <div class="col-2 m-0 p-0 d-flex justify-content-end align-items-end">
         <button
-          class="btn btn-dark rounded-circle m-1 mb-2 p-0 d-flex justify-content-center align-items-center"
+          class="btn btn-dark rounded-circle mx-1 my-2 p-0 d-flex justify-content-center align-items-center"
           style="width: 30px; height: 30px;"
           @click="agregarFila"
         >
@@ -18,12 +18,12 @@
         </button>
       </div>
 
-      <div class="col-8 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
-        <!-- Scroll vertical para columnas 1-4 -->
+      <div class="col-8 m-0 p-0 d-flex flex-column align-items-center justify-content-center candado-altura">
+        <!-- Scroll vertical para filas -->
         <div class="col-12 p-0 scroll-vertical border-0">
           <!-- Filas fijas -->
           <div
-            v-for="fila in 5"
+            v-for="fila in 2"
             :key="'fija-' + fila"
             class="d-flex justify-content-center align-items-center my-1"
           >
@@ -34,21 +34,8 @@
               step="1"
               @keypress="soloEnteros($event)"
             />
-            <div
-              v-for="col in 2"
-              :key="'fija-circulo-' + fila + '-' + col"
-              class="celda"
-            >
-              <input
-                type="number"
-                placeholder="$"
-                class="form-input circular"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="filasFijas[fila - 1]['circulo' + col]"
-              />
-            </div>
+            <div class="celda"></div>
+            <div class="celda"></div>
           </div>
 
           <!-- Filas extra -->
@@ -64,27 +51,16 @@
               step="1"
               @keypress="soloEnteros($event)"
             />
-            <div
-              v-for="i in 2"
-              :key="'extra-circulo-' + index + '-' + i"
-              class="celda"
-            >
-              <input
-                type="number"
-                placeholder="$"
-                class="form-input circular"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="fila['circulo' + i]"
-              />
-            </div>
+            <div class="celda"></div>
+            <div class="celda"></div>
           </div>
         </div>
       </div>
-      <!-- Columna 5 fija (input circular solo en fila 3) -->
-      <div class="col-2 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
-        <div class="">
+
+      <!-- Columna fija solo para fila 3 -->
+      <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
+        <div class="espacio-filas"></div>
+        <div class="input-fila-3">
           <input
             type="number"
             placeholder="$"
@@ -102,12 +78,7 @@
 
 <script setup>
 import { onUnmounted } from 'vue'
-import {
-  filasFijas,
-  filasExtra,
-  agregarFila,
-  limpiarCampos
-} from '../scripts/operaciones.js'
+import { filasFijas, filasExtra, agregarFila, limpiarCampos } from '../scripts/operaciones.js'
 
 const soloEnteros = (e) => {
   const charCode = e.which ? e.which : e.keyCode
@@ -139,14 +110,16 @@ onUnmounted(() => {
 
 .circular {
   border-radius: 50%;
-  
 }
 
 .celda {
   width: 45px;
-  margin: 0 6px;
+  height: 45px;
+  padding: 0px;
+  margin: 1 6px;
 }
 
+/* Scroll vertical */
 .scroll-vertical {
   max-height: 290px;
   overflow-y: auto;
@@ -155,8 +128,11 @@ onUnmounted(() => {
   flex: 1;
 }
 
+.candado-altura {
+  height: 290px;
+}
 
-/* Eliminar flechas en inputs number */
+/* Quitar flechas de los input number */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;

@@ -44,6 +44,11 @@ const router = createRouter({
       component: () => import('../views/Parlet.vue'),
     },
     {
+      path: '/candado',
+      name: 'candado',
+      component: () => import('../views/Candado.vue'),
+    },
+    {
       path: '/listas',
       name: 'listas',
       component: () => import('../views/Listas.vue'),

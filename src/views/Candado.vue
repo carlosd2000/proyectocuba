@@ -1,6 +1,6 @@
 <script setup>
 import Header from '../components/Header.vue';
-import Inputparlet from '../components/InputParlet.vue';
+import Inputcandado from '../components/InputCandado.vue';
 import Horario from '../components/Horario.vue';
 import Pagar from '../components/Pagar.vue';
 </script>
@@ -10,7 +10,7 @@ import Pagar from '../components/Pagar.vue';
         <Header />
         <Horario/>
     </div>
-    <Inputparlet/>
+    <Inputcandado/>
     <Pagar/>
 </template>
 

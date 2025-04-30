@@ -1,53 +1,64 @@
 <template>
   <div class="container py-3" style="max-width: 320px;">
     <!-- Campo de nombre -->
-    <div class="col-8 ml-4 p-0 mb-0 border-bottom border-dark">
-      <input type="text" class="form-control border-0" placeholder="Nombre (opcional)" />
+    <div class="col-8 ml-4 p-0 mb-2 border-bottom border-dark">
+      <input type="text" class="form-control border-0 border-bottom border-dark" placeholder="Nombre (opcional)" />
     </div>
 
     <!-- Contenedor scroll con columna fija -->
-    <div class="d-flex">
-      <!-- Scroll vertical para filas -->
-      <div class="scroll-vertical">
-        <!-- Filas fijas -->
-        <div
-          v-for="fila in 5"
-          :key="'fija-' + fila"
-          class="mt-2 mb-3 d-flex justify-content-between align-items-center"
+    <div class="container m-0 p-0 d-flex">
+      <!-- Botón para agregar filas -->
+      <div class="col-2 m-0 p-0 d-flex justify-content-end align-items-end">
+        <button
+          class="btn btn-dark rounded-circle mx-1 my-2 p-0 d-flex justify-content-center align-items-center"
+          style="width: 30px; height: 30px;"
+          @click="agregarFila"
         >
-          <div class="celda"></div>
-          <input
-            type="number"
-            class="form-input cuadrado celda"
-            min="0"
-            step="1"
-            @keypress="soloEnteros($event)"
-          />
-          <div class="celda"></div>
-          <div class="celda"></div>
-        </div>
+          <i class="bi bi-plus-lg text-white"></i>
+        </button>
+      </div>
 
-        <!-- Filas extra -->
-        <div
-          v-for="(fila, index) in filasExtra"
-          :key="'extra-' + index"
-          class="mt-2 mb-3 d-flex justify-content-between align-items-center"
-        >
-          <div class="celda"></div>
-          <input
-            type="number"
-            class="form-input cuadrado celda"
-            min="0"
-            step="1"
-            @keypress="soloEnteros($event)"
-          />
-          <div class="celda"></div>
-          <div class="celda"></div>
+      <div class="col-8 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
+        <!-- Scroll vertical para filas -->
+        <div class="col-12 p-0 scroll-vertical border-0">
+          <!-- Filas fijas -->
+          <div
+            v-for="fila in 5"
+            :key="'fija-' + fila"
+            class="d-flex justify-content-center align-items-center my-1"
+          >
+            <input
+              type="number"
+              class="form-input cuadrado celda"
+              min="0"
+              step="1"
+              @keypress="soloEnteros($event)"
+            />
+            <div class="celda"></div>
+            <div class="celda"></div>
+          </div>
+
+          <!-- Filas extra -->
+          <div
+            v-for="(fila, index) in filasExtra"
+            :key="'extra-' + index"
+            class="d-flex justify-content-center align-items-center my-1"
+          >
+            <input
+              type="number"
+              class="form-input cuadrado celda"
+              min="0"
+              step="1"
+              @keypress="soloEnteros($event)"
+            />
+            <div class="celda"></div>
+            <div class="celda"></div>
+          </div>
         </div>
       </div>
 
       <!-- Columna fija solo para fila 3 -->
-      <div class="columna-quinta">
+      <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
         <div class="espacio-filas"></div>
         <div class="input-fila-3">
           <input
@@ -61,17 +72,6 @@
           />
         </div>
       </div>
-    </div>
-
-    <!-- Botón para agregar filas -->
-    <div class="d-flex justify-content-start">
-      <button
-        class="btn btn-dark rounded-circle p-0 d-flex justify-content-center align-items-center"
-        style="width: 36px; height: 36px;"
-        @click="agregarFila"
-      >
-        <i class="bi bi-plus-lg text-white"></i>
-      </button>
     </div>
   </div>
 </template>
@@ -94,25 +94,18 @@ onUnmounted(() => {
 
 <style scoped>
 .form-input {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   border: 1px solid #ccc;
   background-color: #f9f9f9;
   outline: none;
   text-align: center;
   font-size: 14px;
-}
-
-.btn-enter {
-  border: #000000 solid 2px;
-  box-shadow: #000000 2px 2px 2px;
-  border-radius: 6px;
-  background-color: #ffc107;
-  color: #000000;
+  margin: 4px;
 }
 
 .cuadrado {
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .circular {
@@ -120,34 +113,19 @@ onUnmounted(() => {
 }
 
 .celda {
-  width: 40px;
+  width: 45px;
+  height: 45px;
+  padding: 0px;
+  margin: 1 6px;
 }
 
 /* Scroll vertical */
 .scroll-vertical {
-  max-height: 300px;
+  max-height: 290px;
   overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 8px;
-  margin-bottom: 10px;
   flex: 1;
-}
-
-/* Columna 5 fija */
-.columna-quinta {
-  margin-left: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.espacio-filas {
-  height: calc(40px * 2 + 24px); /* 2 filas + márgenes aprox */
-}
-
-.input-fila-3 {
-  height: 40px;
 }
 
 /* Quitar flechas de los input number */
