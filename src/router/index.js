@@ -39,9 +39,9 @@ const router = createRouter({
       component: () => import('../views/AñadirJugada.vue'),
     },
     {
-      path: '/candado',
-      name: 'candado',
-      component: () => import('../views/Candado.vue'),
+      path: '/parlet',
+      name: 'parlet',
+      component: () => import('../views/Parlet.vue'),
     },
     {
       path: '/candado',
