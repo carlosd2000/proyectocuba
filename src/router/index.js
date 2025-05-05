@@ -34,22 +34,22 @@ const router = createRouter({
       component: () => import('../views/Registros.vue'),
     },
     {
-      path: '/anadirjugada',
+      path: '/anadirjugada/:id',
       name: 'anadirjugada',
       component: () => import('../views/AñadirJugada.vue'),
     },
     {
-      path: '/parlet',
+      path: '/parlet/:id',
       name: 'parlet',
       component: () => import('../views/Parlet.vue'),
     },
     {
-      path: '/candado',
+      path: '/candado/:id',
       name: 'candado',
       component: () => import('../views/Candado.vue'),
     },
     {
-      path: '/listas',
+      path: '/listas/:id',
       name: 'listas',
       component: () => import('../views/Listas.vue'),
     },

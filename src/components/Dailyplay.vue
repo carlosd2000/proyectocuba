@@ -1,9 +1,15 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router'; 
+
 // Opciones disponibles
-const opciones = ['Día', 'Tarde' , 'Noche']
+const opciones = ['Día', 'Tarde', 'Noche']
 const turnoSeleccionado = ref('Día')
 const desplegado1 = ref(true)
+
+// Obtenemos route y router
+const route = useRoute()
+const router = useRouter()
 
 onMounted(() => {
     const savedDesplegado1 = localStorage.getItem('desplegado1');
@@ -15,6 +21,7 @@ onMounted(() => {
 watch(desplegado1, (newValue) => {
     localStorage.setItem('desplegado1', JSON.stringify(newValue));
 });
+
 </script>
 
 <template>
@@ -38,23 +45,22 @@ watch(desplegado1, (newValue) => {
             </div>
             <div class="col-12 row p-0 m-0 d-flex justify-content-around align-items-center">
                 <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/anadirjugada')">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}`)">
                         <i class="bi bi-plus-lg m-0 p-0"></i>
                         <span class="text-center">Añadir<br>Jugada</span>
                     </button>
                 </div>
                 <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/parlet')">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/parlet/${$route.params.id}`)">
                         <i class="bi bi-plus-lg"></i>
                         <span class="text-center">Añadir<br>Parlet</span>
                     </button>
                 </div>
                 <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/candado')">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/candado/${$route.params.id}`)">
                         <i class="bi bi-plus-lg"></i>
                         <span class="text-center">Añadir<br>Candado</span>
                     </button>
-                
                 </div>
                 <div class="col-3 p-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center">
@@ -64,7 +70,7 @@ watch(desplegado1, (newValue) => {
                 </div>
             </div>
             <div class="col-12 p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
-                <button class="col-12 row p-1 btn-list" @click="$router.push('/listas')">
+                <button class="col-12 row p-1 btn-list" @click="$router.push(`/listas/${$route.params.id}`)">
                     <p class="m-1">Lista</p>
                     <i class="bi bi-card-list m-1"></i>
                 </button>

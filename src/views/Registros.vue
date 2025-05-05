@@ -1,7 +1,5 @@
 <script setup>
 import Registro from '../components/Registro.vue';
-
-
 </script>
 
 <template>
@@ -10,9 +8,6 @@ import Registro from '../components/Registro.vue';
       <Registro/>
     </div>
   </div>
-
-
-
 </template>
 
 <style scoped>
