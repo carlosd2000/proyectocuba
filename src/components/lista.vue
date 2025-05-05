@@ -1,30 +1,22 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import Swal from 'sweetalert2'
-import { onSnapshot, collection } from 'firebase/firestore'
-import { db } from '../firebase/config'
+import {
+  apuestas,
+  obtenerApuestas,
+  eliminarApuesta,
+  editarApuesta
+} from '../scripts/CRUDlistas.js'
 
-const apuestas = ref([])
+let unsubscribe = null
 
-// Cargar apuestas desde Firebase al montar el componente
 onMounted(() => {
-  const unsubscribe = onSnapshot(collection(db, 'apuestas'), (querySnapshot) => {
-    apuestas.value = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      candadoAbierto: true
-    }))
-  })
-
-  // Si quieres limpiar cuando el componente se desmonta (buena práctica)
-  // import { onUnmounted } from 'vue'
-  onUnmounted(() => unsubscribe())
+  unsubscribe = obtenerApuestas()
 })
 
-
-const getApuestasKeys = (persona) => {
-  return Object.keys(persona).filter((key) => key.startsWith('apuesta'))
-}
+onUnmounted(() => {
+  if (unsubscribe) unsubscribe()
+})
 
 const toggleCandado = async (persona) => {
   if (persona.candadoAbierto) {
@@ -50,54 +42,51 @@ const cuadroClick = (persona) => {
     confirmButtonText: 'Editar',
     denyButtonText: 'Eliminar',
     cancelButtonText: 'Cancelar'
-  }).then((result) => {
+  }).then(async (result) => {
     if (result.isConfirmed) {
       console.log('Editar a:', persona.nombre)
+      // Ejemplo de uso:
+      // await editarApuesta(persona.id, { nombre: 'Nuevo nombre' })
     } else if (result.isDenied) {
-      console.log('Eliminar a:', persona.nombre)
+      const confirmDelete = await Swal.fire({
+        title: '¿Confirmas eliminar?',
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar'
+      })
+      if (confirmDelete.isConfirmed) {
+        await eliminarApuesta(persona.id)
+      }
     }
   })
 }
 
 const extraerHora = (textoFecha) => {
   if (!textoFecha) return ''
-
-  // Si es un Timestamp de Firebase, convertirlo a una fecha JS
   const fecha = textoFecha.toDate ? textoFecha.toDate() : textoFecha
-
-  // Convertir a string legible con hora en formato de 12 horas
   const opciones = {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
   }
-
-  const horaFormateada = fecha.toLocaleTimeString('es-CO', opciones) // o 'es-ES'
-  return horaFormateada
+  return fecha.toLocaleTimeString('es-CO', opciones)
 }
 
 const obtenerIconoEstado = (persona) => {
-  if (persona.estado === 'Cargado') {
-    return 'bi bi-cloud-check text-success'
-  } else if (persona.estado === 'Pendiente') {
-    return 'bi bi-cloud-slash text-danger'
-  } else if (persona.estado === 'EnTiempo') {
-    return 'bi bi-stopwatch text-success'
-  } else if (persona.estado === 'FueraDeTiempo') {
-    return 'bi bi-stopwatch text-danger'
-  } else {
-    return 'bi bi-exclamation-lg text-primary'
-  }
+  if (persona.estado === 'Cargado') return 'bi bi-cloud-check text-success'
+  if (persona.estado === 'Pendiente') return 'bi bi-cloud-slash text-danger'
+  if (persona.estado === 'EnTiempo') return 'bi bi-stopwatch text-success'
+  if (persona.estado === 'FueraDeTiempo') return 'bi bi-stopwatch text-danger'
+  return 'bi bi-exclamation-lg text-primary'
 }
-
 </script>
-
 
 <template>
   <div class="col-12 m-0 p-0">
     <div
       v-for="persona in apuestas"
-      :key="persona.id_apuesta"
+      :key="persona.id"
       class="m-0 mb-2 p-1 py-4 persona"
       @click="cuadroClick(persona)"
       style="cursor: pointer;"
@@ -123,21 +112,13 @@ const obtenerIconoEstado = (persona) => {
           <div class="col-12 m-0 p-0">
             <div v-for="(mapa, index) in persona.datos" :key="index" class="my-3">
               <div class="m-0 p-0 d-flex align-items-center flex-wrap">
-                <!-- Mostrar primero el cuadrado (si existe) -->
                 <div v-if="'cuadrado' in mapa" class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
                   <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded container-number">
                     {{ mapa['cuadrado'] }}
                   </p>
                 </div>
-
-                <!-- Luego los círculos (solo si existen) -->
-                <div
-                  v-if="'circulo1' in mapa"
-                  class="col-3 m-0 p-0 d-flex justify-content-center align-items-center"
-                >
-                  <p
-                    class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number"
-                  >
+                <div v-if="'circulo1' in mapa" class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
+                  <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
                     {{ mapa['circulo1'] }}
                   </p>
                 </div>
@@ -156,7 +137,6 @@ const obtenerIconoEstado = (persona) => {
           <div class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
             {{ persona.circuloSolo }}
           </div>
-
         </div>
         <div class="col-4 m-0 p-0 d-flex justify-content-center align-items-center">
           <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
@@ -174,7 +154,7 @@ const obtenerIconoEstado = (persona) => {
                   <i class="bi bi-award-fill"></i>
                 </div>
                 <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                  <p class="m-1">{{ persona.totalGlobal  }}</p>
+                  <p class="m-1">{{ persona.totalGlobal }}</p>
                 </div>
               </div>
             </div>
@@ -203,7 +183,7 @@ p {
 .persona {
   background: white;
   border-radius: 10px;
-  border: #000000 solid 2px;
+  border: #000 solid 2px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
   padding: 10px;
   flex: 1 1 300px;
