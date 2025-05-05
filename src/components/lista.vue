@@ -87,20 +87,20 @@ const obtenerIconoEstado = (persona) => {
     <div
       v-for="persona in apuestas"
       :key="persona.id"
-      class="m-0 mb-2 p-1 py-4 persona"
+      class="m-0 mb-2 p-1 pt-3 pb-2 persona"
       @click="cuadroClick(persona)"
       style="cursor: pointer;"
     >
       <header class="col-12 row m-0 p-0">
-        <div class="col-6 d-flex justify-content-start align-items-center">
+        <div class="col-8 d-flex justify-content-start align-items-center">
           <p>{{ persona.nombre }}</p>
         </div>
         <div
-          class="col-6 d-flex justify-content-end align-items-center"
+          class="col-4 d-flex justify-content-end align-items-center"
           @click.stop
         >
           <i
-            :class="['bi', persona.candadoAbierto ? 'bi-unlock' : 'bi-lock']"
+            :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
             class="fs-4"
             style="cursor: pointer;"
             @click="toggleCandado(persona)"
@@ -110,10 +110,10 @@ const obtenerIconoEstado = (persona) => {
       <main class="col-12 row m-0 p-0">
         <div class="col-6 m-0 p-0 apuestas d-flex flex-column justify-content-center align-items-start">
           <div class="col-12 m-0 p-0">
-            <div v-for="(mapa, index) in persona.datos" :key="index" class="my-3">
+            <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2">
               <div class="m-0 p-0 d-flex align-items-center flex-wrap">
                 <div v-if="'cuadrado' in mapa" class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded container-number">
+                  <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded container-number-cuadrado">
                     {{ mapa['cuadrado'] }}
                   </p>
                 </div>
@@ -158,13 +158,17 @@ const obtenerIconoEstado = (persona) => {
                 </div>
               </div>
             </div>
-            <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
-              <p class="hora-text">{{ extraerHora(persona.creadoEn) }}</p>
-              <i :class="obtenerIconoEstado(persona)"></i>
-            </div>
           </div>
         </div>
       </main>
+      <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
+        <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
+          <div class="mx-2 d-flex justify-content-center align-items-center">
+            <p class="hora-text">{{ extraerHora(persona.creadoEn) }}</p>
+            <i :class="obtenerIconoEstado(persona)"></i>
+          </div>
+        </div>
+      </footer>
     </div>
   </div>
 </template>
@@ -174,6 +178,12 @@ p {
   margin: 0px;
   padding: 0px;
   font-size: 0.9rem;
+}
+.container-number-cuadrado {
+  width: 42px;
+  height: 30px;
+  font-size: 1.1rem;
+  background-color: #f1f1f1;
 }
 .container-number {
   width: 30px;
