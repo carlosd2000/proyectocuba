@@ -1,30 +1,31 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Swal from 'sweetalert2'
+import { onSnapshot, collection } from 'firebase/firestore'
+import { db } from '../firebase/config'
 
-const apuestas = ref([
-  {
-    id_apuesta: 102,
-    nombre: "Juan",
-    candadoAbierto: true,
-    apuesta1: { numero: 99, valor1: 2222, valor2: 331 },
-    apuesta2: { numero: 2, valor1: 33, valor2: 32 },
-    apuesta3: { numero: 2, valor1: 33, valor2: 32, valor3: 44 },
-  },
-  {
-    id_apuesta: 103,
-    nombre: "Carlos",
-    candadoAbierto: true,
-    apuesta1: { numero: 4, valor1: 15, valor2: 25 },
-    apuesta2: { numero: 2, valor1: 30, valor2: 40 },
-  },
-])
+const apuestas = ref([])
+
+// Cargar apuestas desde Firebase al montar el componente
+onMounted(() => {
+  const unsubscribe = onSnapshot(collection(db, 'apuestas'), (querySnapshot) => {
+    apuestas.value = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      candadoAbierto: true
+    }))
+  })
+
+  // Si quieres limpiar cuando el componente se desmonta (buena práctica)
+  // import { onUnmounted } from 'vue'
+  onUnmounted(() => unsubscribe())
+})
+
 
 const getApuestasKeys = (persona) => {
   return Object.keys(persona).filter((key) => key.startsWith('apuesta'))
 }
 
-// Cambiar estado del candado con confirmación si se va a cerrar
 const toggleCandado = async (persona) => {
   if (persona.candadoAbierto) {
     const result = await Swal.fire({
@@ -39,7 +40,6 @@ const toggleCandado = async (persona) => {
   persona.candadoAbierto = !persona.candadoAbierto
 }
 
-// Mostrar SweetAlert al hacer clic en el cuadro (menos el candado)
 const cuadroClick = (persona) => {
   if (!persona.candadoAbierto) return
   Swal.fire({
@@ -58,14 +58,47 @@ const cuadroClick = (persona) => {
     }
   })
 }
+
+const extraerHora = (textoFecha) => {
+  if (!textoFecha) return ''
+
+  // Si es un Timestamp de Firebase, convertirlo a una fecha JS
+  const fecha = textoFecha.toDate ? textoFecha.toDate() : textoFecha
+
+  // Convertir a string legible con hora en formato de 12 horas
+  const opciones = {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }
+
+  const horaFormateada = fecha.toLocaleTimeString('es-CO', opciones) // o 'es-ES'
+  return horaFormateada
+}
+
+const obtenerIconoEstado = (persona) => {
+  if (persona.estado === 'Cargado') {
+    return 'bi bi-cloud-check text-success'
+  } else if (persona.estado === 'Pendiente') {
+    return 'bi bi-cloud-slash text-danger'
+  } else if (persona.estado === 'EnTiempo') {
+    return 'bi bi-stopwatch text-success'
+  } else if (persona.estado === 'FueraDeTiempo') {
+    return 'bi bi-stopwatch text-danger'
+  } else {
+    return 'bi bi-exclamation-lg text-primary'
+  }
+}
+
 </script>
+
 
 <template>
   <div class="col-12 m-0 p-0">
     <div
       v-for="persona in apuestas"
       :key="persona.id_apuesta"
-      class="m-0 mb-3 py-4 persona"
+      class="m-0 mb-2 p-1 py-4 persona"
       @click="cuadroClick(persona)"
       style="cursor: pointer;"
     >
@@ -85,39 +118,47 @@ const cuadroClick = (persona) => {
           ></i>
         </div>
       </header>
-
       <main class="col-12 row m-0 p-0">
-        <div class="col-9 apuestas d-flex flex-column justify-content-center align-items-start">
+        <div class="col-6 m-0 p-0 apuestas d-flex flex-column justify-content-center align-items-start">
           <div class="col-12 m-0 p-0">
-            <div
-              v-for="key in getApuestasKeys(persona)"
-              :key="key"
-              class="col-12 m-0 p-0 d-flex justify-content-start align-items-center"
-            >
-              <div class="col-12 m-0 p-0 d-flex justify-content-start align-items-center">
+            <div v-for="(mapa, index) in persona.datos" :key="index" class="my-3">
+              <div class="m-0 p-0 d-flex align-items-center flex-wrap">
+                <!-- Mostrar primero el cuadrado (si existe) -->
+                <div v-if="'cuadrado' in mapa" class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
+                  <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded container-number">
+                    {{ mapa['cuadrado'] }}
+                  </p>
+                </div>
+
+                <!-- Luego los círculos (solo si existen) -->
                 <div
-                  v-for="(value, valKey) in persona[key]"
-                  :key="valKey"
-                  class="col-2 m-1 mr-2 p-0"
+                  v-if="'circulo1' in mapa"
+                  class="col-3 m-0 p-0 d-flex justify-content-center align-items-center"
                 >
                   <p
-                    v-if="valKey === 'numero'"
-                    class="col-12 m-0 mr-3 p-0 d-flex justify-content-center align-items-center rounded container-number"
+                    class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number"
                   >
-                    {{ value }}
+                    {{ mapa['circulo1'] }}
                   </p>
-                  <p
-                    v-else
-                    class="col-12 m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number"
-                  >
-                    {{ value }}
-                  </p>
+                </div>
+                <div v-if="'circulo2' in mapa" class="col-3 m-0 p-0">
+                  <div class="col-12 m-0 p-0 d-flex justify-content-center align-items-center">
+                    <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                      {{ mapa['circulo2'] }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
+        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
+          <div class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+            {{ persona.circuloSolo }}
+          </div>
+
+        </div>
+        <div class="col-4 m-0 p-0 d-flex justify-content-center align-items-center">
           <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
             <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
               <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
@@ -127,13 +168,19 @@ const cuadroClick = (persona) => {
                 <p class="m-1">9</p>
               </div>
             </div>
-            <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
-              <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                <i class="bi bi-award-fill"></i>
+            <div class="col-12 m-0 p-0 flex d-flex flex-column justify-content-center align-items-center">
+              <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
+                <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
+                  <i class="bi bi-award-fill"></i>
+                </div>
+                <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
+                  <p class="m-1">{{ persona.totalGlobal  }}</p>
+                </div>
               </div>
-              <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                <p class="m-1">9999</p>
-              </div>
+            </div>
+            <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
+              <p class="hora-text">{{ extraerHora(persona.creadoEn) }}</p>
+              <i :class="obtenerIconoEstado(persona)"></i>
             </div>
           </div>
         </div>
@@ -149,8 +196,8 @@ p {
   font-size: 0.9rem;
 }
 .container-number {
-  width: 35px;
-  height: 35px;
+  width: 30px;
+  height: 30px;
   background-color: #f1f1f1;
 }
 .persona {
@@ -165,7 +212,8 @@ p {
 .apuestas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 10px;
-  padding: 5px;
+}
+.hora-text {
+  font-size: 0.7rem;
 }
 </style>
