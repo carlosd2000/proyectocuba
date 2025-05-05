@@ -92,7 +92,8 @@ import {
   limpiarCampos,
   nombreUsuario
 } from '../scripts/operaciones.js'
-import { setNombre } from '../scripts/añadir.js'
+import { setNombre, setTipoOrigen } from '../scripts/añadir.js'
+setTipoOrigen('candado')
 
 // Sincroniza el nombre para guardar
 watch(nombreUsuario, (nuevo) => {

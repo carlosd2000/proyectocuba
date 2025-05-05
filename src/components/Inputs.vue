@@ -117,7 +117,8 @@ import {
   limpiarCampos,
   nombreUsuario
 } from '../scripts/operaciones.js'
-import { setNombre } from '../scripts/añadir.js'
+import { setNombre, setTipoOrigen } from '../scripts/añadir.js'
+setTipoOrigen('tiros')
 
 // Sincroniza nombre con añadir.js
 watch(nombreUsuario, (nuevo) => {

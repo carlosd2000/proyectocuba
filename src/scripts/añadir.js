@@ -1,16 +1,24 @@
 // src/scripts/añadir.js
 
-import { db } from '../firebase/config'
+import { db, auth } from '../firebase/config'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { filasFijas, filasExtra, calcularTotales } from './operaciones'
-import { auth } from '../firebase/config'
 
+// Variables compartidas
 let nombreTemporal = 'SinNombre'
+let tipoOrigen = 'tiros' // Valor por defecto
 
+// Actualiza el nombre del jugador
 export function setNombre(nombre) {
   nombreTemporal = nombre?.trim() || 'SinNombre'
 }
 
+// Define desde qué componente se originó la jugada
+export function setTipoOrigen(tipo) {
+  tipoOrigen = tipo || 'tiros'
+}
+
+// Guarda los datos válidos en Firebase
 export async function guardarDatos() {
   try {
     const datosAGuardar = []
@@ -19,11 +27,11 @@ export async function guardarDatos() {
     const { col3, col4, col5 } = calcularTotales(filasFijas, filasExtra)
     const totalGlobal = col3 + col4 + col5
 
-    // Obtener circuloSolo desde fila 3
+    // Obtener circuloSolo desde la fila 3
     const circuloSolo = filasFijas.value[2]?.circuloSolo
     const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo)
 
-    // Procesar filas fijas (excluyendo circuloSolo)
+    // Procesar filas fijas
     filasFijas.value.forEach((fila, index) => {
       if (index === 2) {
         const { circuloSolo, ...resto } = fila
@@ -64,12 +72,14 @@ export async function guardarDatos() {
       return { success: false, message: 'No se ingresaron datos válidos.' }
     }
 
+    // Documento final
     const docAGuardar = {
       nombre: nombreTemporal,
       totalGlobal,
       datos: datosAGuardar,
       creadoEn: serverTimestamp(),
-      id_listero: auth.currentUser?.uid || 'sin-autenticacion' // ✅ Nuevo campo agregado
+      id_listero: auth.currentUser?.uid || 'sin-autenticacion',
+      tipo: tipoOrigen
     }
 
     if (circuloSoloValido) {
