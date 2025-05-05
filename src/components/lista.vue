@@ -1,6 +1,12 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import Swal from 'sweetalert2'
+import { ref } from 'vue'
+
+const mostrarModal = ref(false)
+const mostrarConfirmacionEliminar = ref(false)
+const personaSeleccionada = ref(null)
+
 import {
   apuestas,
   obtenerApuestas,
@@ -9,6 +15,32 @@ import {
 } from '../scripts/CRUDlistas.js'
 
 let unsubscribe = null
+
+const cuadroClick = (persona) => {
+  if (!persona.candadoAbierto) return
+  personaSeleccionada.value = persona
+  mostrarModal.value = true
+}
+
+const cerrarModal = () => {
+  mostrarModal.value = false
+}
+
+const editarPersona = async () => {
+  console.log('Editar a:', personaSeleccionada.value.nombre)
+  // await editarApuesta(personaSeleccionada.value.id, { nombre: 'Nuevo nombre' })
+  cerrarModal()
+}
+
+const eliminarPersona = async () => {
+  await eliminarApuesta(personaSeleccionada.value.id)
+  mostrarConfirmacionEliminar.value = false
+  mostrarModal.value = false
+}
+
+const confirmarEliminar = () => {
+  mostrarConfirmacionEliminar.value = true
+}
 
 onMounted(() => {
   unsubscribe = obtenerApuestas()
@@ -32,35 +64,6 @@ const toggleCandado = async (persona) => {
   persona.candadoAbierto = !persona.candadoAbierto
 }
 
-const cuadroClick = (persona) => {
-  if (!persona.candadoAbierto) return
-  Swal.fire({
-    title: '¿Qué deseas hacer?',
-    icon: 'question',
-    showDenyButton: true,
-    showCancelButton: true,
-    confirmButtonText: 'Editar',
-    denyButtonText: 'Eliminar',
-    cancelButtonText: 'Cancelar'
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      console.log('Editar a:', persona.nombre)
-      // Ejemplo de uso:
-      // await editarApuesta(persona.id, { nombre: 'Nuevo nombre' })
-    } else if (result.isDenied) {
-      const confirmDelete = await Swal.fire({
-        title: '¿Confirmas eliminar?',
-        icon: 'error',
-        showCancelButton: true,
-        confirmButtonText: 'Eliminar',
-        cancelButtonText: 'Cancelar'
-      })
-      if (confirmDelete.isConfirmed) {
-        await eliminarApuesta(persona.id)
-      }
-    }
-  })
-}
 
 const extraerHora = (textoFecha) => {
   if (!textoFecha) return ''
@@ -171,6 +174,29 @@ const obtenerIconoEstado = (persona) => {
       </footer>
     </div>
   </div>
+  <!-- Modal personalizado -->
+  <div v-if="mostrarModal" class="custom-modal-backdrop" @click="cerrarModal">
+    <div class="custom-modal" @click.stop>
+      <h3>¿Qué deseas hacer?</h3>
+      <div class="button-group">
+        <button @click="editarPersona" class="btn editar">Editar</button>
+        <button @click="confirmarEliminar" class="btn eliminar">Eliminar</button>
+        <button @click="cerrarModal" class="btn cancelar">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación de eliminación -->
+  <div v-if="mostrarConfirmacionEliminar" class="custom-modal-backdrop" @click="mostrarConfirmacionEliminar = false">
+    <div class="custom-modal" @click.stop>
+      <h3>¿Estás seguro de eliminar a {{ personaSeleccionada?.nombre }}?</h3>
+      <div class="button-group">
+        <button @click="eliminarPersona" class="btn eliminar">Sí, eliminar</button>
+        <button @click="mostrarConfirmacionEliminar = false" class="btn cancelar">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <style scoped>
@@ -206,4 +232,67 @@ p {
 .hora-text {
   font-size: 0.7rem;
 }
+
+
+.custom-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(30, 30, 47, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.custom-modal {
+  background-color: #1e1e2f;
+  color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1.5rem;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn.editar {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn.eliminar {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn.cancelar {
+  background-color: #9E9E9E;
+  color: white;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+
+
+
 </style>
