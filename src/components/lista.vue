@@ -92,11 +92,11 @@ const obtenerIconoEstado = (persona) => {
       style="cursor: pointer;"
     >
       <header class="col-12 row m-0 p-0">
-        <div class="col-8 d-flex justify-content-start align-items-center">
+        <div class="col-10 d-flex justify-content-start align-items-center">
           <p>{{ persona.nombre }}</p>
         </div>
         <div
-          class="col-4 d-flex justify-content-end align-items-center"
+          class="col-2 d-flex justify-content-end align-items-center"
           @click.stop
         >
           <i
