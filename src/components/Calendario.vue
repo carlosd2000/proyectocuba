@@ -37,7 +37,7 @@
   <script setup>
   import { ref, computed } from 'vue'
   
-  const fecha = ref(new Date(2025, 8, 11))
+  const fecha = ref(new Date())
   const numeros = ref('123 - 45 - 45')
   
   const fechaFormateada = computed(() => {
