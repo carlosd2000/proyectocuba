@@ -3,30 +3,33 @@
 import { ref } from 'vue'
 
 // Datos compartidos
+export const nombreUsuario = ref('')
+
 export const filasFijas = ref([
-  { circulo1: '', circulo2: '' },
-  { circulo1: '', circulo2: '' },
-  { circulo1: '', circulo2: '', circuloSolo: '' },
-  { circulo1: '', circulo2: '' },
-  { circulo1: '', circulo2: '' },
+  { cuadrado: '', circulo1: '', circulo2: '' },
+  { cuadrado: '', circulo1: '', circulo2: '' },
+  { cuadrado: '', circulo1: '', circulo2: '', circuloSolo: '' },
+  { cuadrado: '', circulo1: '', circulo2: '' },
+  { cuadrado: '', circulo1: '', circulo2: '' },
 ])
 
 export const filasExtra = ref([])
 
 export const agregarFila = () => {
-  filasExtra.value.push({ circulo1: '', circulo2: '' })
+  filasExtra.value.push({ cuadrado: '', circulo1: '', circulo2: '' })
 }
 
-// NUEVO: función para limpiar todos los inputs
+// Función para limpiar todos los campos
 export const limpiarCampos = () => {
   filasFijas.value = [
-    { circulo1: '', circulo2: '' },
-    { circulo1: '', circulo2: '' },
-    { circulo1: '', circulo2: '', circuloSolo: '' },
-    { circulo1: '', circulo2: '' },
-    { circulo1: '', circulo2: '' },
+    { cuadrado: '', circulo1: '', circulo2: '' },
+    { cuadrado: '', circulo1: '', circulo2: '' },
+    { cuadrado: '', circulo1: '', circulo2: '', circuloSolo: '' },
+    { cuadrado: '', circulo1: '', circulo2: '' },
+    { cuadrado: '', circulo1: '', circulo2: '' },
   ]
   filasExtra.value = []
+  nombreUsuario.value = '' // limpia el campo de nombre
 }
 
 // Cálculo de totales

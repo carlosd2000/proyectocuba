@@ -2,10 +2,15 @@
   <div class="container py-3" style="max-width: 320px;">
     <!-- Campo de nombre -->
     <div class="col-8 ml-4 p-0 mb-2 border-bottom border-dark">
-      <input type="text" class="form-control border-0 border-bottom border-dark" placeholder="Nombre (opcional)" />
+      <input
+        type="text"
+        class="form-control border-0 border-bottom border-dark"
+        placeholder="Nombre (opcional)"
+        v-model="nombreUsuario"
+      />
     </div>
 
-    <!-- Contenedor scroll con columna fija -->
+    <!-- Contenedor con scroll y columna fija -->
     <div class="container m-0 p-0 d-flex">
       <!-- Botón para agregar filas -->
       <div class="col-2 m-0 p-0 d-flex justify-content-end align-items-end">
@@ -33,6 +38,7 @@
               min="0"
               step="1"
               @keypress="soloEnteros($event)"
+              v-model="filasFijas[fila - 1].cuadrado"
             />
             <div class="celda"></div>
             <div class="celda"></div>
@@ -50,6 +56,7 @@
               min="0"
               step="1"
               @keypress="soloEnteros($event)"
+              v-model="fila.cuadrado"
             />
             <div class="celda"></div>
             <div class="celda"></div>
@@ -57,7 +64,7 @@
         </div>
       </div>
 
-      <!-- Columna fija solo para fila 3 -->
+      <!-- Columna fija para fila 3 -->
       <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
         <div class="espacio-filas"></div>
         <div class="input-fila-3">
@@ -77,8 +84,20 @@
 </template>
 
 <script setup>
-import { onUnmounted } from 'vue'
-import { filasFijas, filasExtra, agregarFila, limpiarCampos } from '../scripts/operaciones.js'
+import { ref, watch, onUnmounted } from 'vue'
+import {
+  filasFijas,
+  filasExtra,
+  agregarFila,
+  limpiarCampos,
+  nombreUsuario
+} from '../scripts/operaciones.js'
+import { setNombre } from '../scripts/añadir.js'
+
+// Sincroniza el nombre para guardar
+watch(nombreUsuario, (nuevo) => {
+  setNombre(nuevo)
+})
 
 const soloEnteros = (e) => {
   const charCode = e.which ? e.which : e.keyCode
@@ -119,7 +138,6 @@ onUnmounted(() => {
   margin: 1 6px;
 }
 
-/* Scroll vertical */
 .scroll-vertical {
   max-height: 290px;
   overflow-y: auto;
@@ -128,7 +146,6 @@ onUnmounted(() => {
   flex: 1;
 }
 
-/* Quitar flechas de los input number */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;

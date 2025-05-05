@@ -2,7 +2,12 @@
   <div class="container py-3" style="max-width: 320px;">
     <!-- Campo de nombre -->
     <div class="col-8 ml-4 p-0 mb-2 border-bottom border-dark">
-      <input type="text" class="form-control border-0 border-bottom border-dark" placeholder="Nombre (opcional)"/>
+      <input
+        type="text"
+        class="form-control border-0 border-bottom border-dark"
+        placeholder="Nombre (opcional)"
+        v-model="nombreUsuario"
+      />
     </div>
 
     <!-- Contenedor principal: columnas con scroll y columna fija -->
@@ -33,6 +38,7 @@
               min="0"
               step="1"
               @keypress="soloEnteros($event)"
+              v-model="filasFijas[fila - 1].cuadrado"
             />
             <div
               v-for="col in 2"
@@ -63,6 +69,7 @@
               min="0"
               step="1"
               @keypress="soloEnteros($event)"
+              v-model="fila.cuadrado"
             />
             <div
               v-for="i in 2"
@@ -82,9 +89,10 @@
           </div>
         </div>
       </div>
+
       <!-- Columna 5 fija (input circular solo en fila 3) -->
       <div class="col-2 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
-        <div class="">
+        <div>
           <input
             type="number"
             placeholder="$"
@@ -101,13 +109,20 @@
 </template>
 
 <script setup>
-import { onUnmounted } from 'vue'
+import { ref, watch, onUnmounted } from 'vue' // ✅ Corregido aquí
 import {
   filasFijas,
   filasExtra,
   agregarFila,
-  limpiarCampos
+  limpiarCampos,
+  nombreUsuario
 } from '../scripts/operaciones.js'
+import { setNombre } from '../scripts/añadir.js'
+
+// Sincroniza nombre con añadir.js
+watch(nombreUsuario, (nuevo) => {
+  setNombre(nuevo)
+})
 
 const soloEnteros = (e) => {
   const charCode = e.which ? e.which : e.keyCode
@@ -139,7 +154,6 @@ onUnmounted(() => {
 
 .circular {
   border-radius: 50%;
-  
 }
 
 .celda {
@@ -155,8 +169,6 @@ onUnmounted(() => {
   flex: 1;
 }
 
-
-/* Eliminar flechas en inputs number */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
