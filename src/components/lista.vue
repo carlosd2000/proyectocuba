@@ -148,7 +148,7 @@ const obtenerIconoEstado = (persona) => {
                 <i class="bi bi-coin m-1"></i>
               </div>
               <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                <p class="m-1">9</p>
+                <p class="m-1">{{ persona.totalGlobal }}</p>
               </div>
             </div>
             <div class="col-12 m-0 p-0 flex d-flex flex-column justify-content-center align-items-center">
@@ -157,7 +157,7 @@ const obtenerIconoEstado = (persona) => {
                   <i class="bi bi-award-fill"></i>
                 </div>
                 <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                  <p class="m-1">{{ persona.totalGlobal }}</p>
+                  <p class="m-1">-</p>
                 </div>
               </div>
             </div>
@@ -177,21 +177,25 @@ const obtenerIconoEstado = (persona) => {
   <!-- Modal personalizado -->
   <div v-if="mostrarModal" class="custom-modal-backdrop" @click="cerrarModal">
     <div class="custom-modal" @click.stop>
-      <h3>¿Qué deseas hacer?</h3>
       <div class="button-group">
-        <button @click="editarPersona" class="btn editar">Editar</button>
-        <button @click="confirmarEliminar" class="btn eliminar">Eliminar</button>
-        <button @click="cerrarModal" class="btn cancelar">Cancelar</button>
+        <button @click="editarPersona" class="btn editar btn-page">
+          <i class="bi bi-pencil-fill"></i>
+          Editar
+        </button>
+        <button @click="confirmarEliminar" class="btn eliminar">
+          <i class="bi bi-trash3"></i>
+          Eliminar
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Modal de confirmación de eliminación -->
   <div v-if="mostrarConfirmacionEliminar" class="custom-modal-backdrop" @click="mostrarConfirmacionEliminar = false">
-    <div class="custom-modal" @click.stop>
+    <div class="custom-modal-aceptar" @click.stop>
       <h3>¿Estás seguro de eliminar a {{ personaSeleccionada?.nombre }}?</h3>
       <div class="button-group">
-        <button @click="eliminarPersona" class="btn eliminar">Sí, eliminar</button>
+        <button @click="eliminarPersona" class="btn eliminar-confirmar">Sí, eliminar</button>
         <button @click="mostrarConfirmacionEliminar = false" class="btn cancelar">Cancelar</button>
       </div>
     </div>
@@ -218,7 +222,7 @@ p {
 }
 .persona {
   background: white;
-  border-radius: 10px;
+  border-radius: 8px;
   border: #000 solid 2px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
   padding: 10px;
@@ -240,7 +244,7 @@ p {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(30, 30, 47, 0.8);
+  background-color: rgba(117, 117, 117, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -248,9 +252,18 @@ p {
 }
 
 .custom-modal {
+  background-color: transparent;
+  padding: 10px;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.custom-modal-aceptar {
   background-color: #1e1e2f;
   color: #fff;
-  padding: 2rem;
+  padding: 20px;
   border-radius: 12px;
   width: 90%;
   max-width: 400px;
@@ -265,31 +278,31 @@ p {
 }
 
 .btn {
-  padding: 10px 20px;
+  padding: 5px 15px;
   border: none;
-  border-radius: 8px;
-  font-weight: bold;
+  border-radius: 6px;
   cursor: pointer;
   transition: 0.3s;
 }
 
 .btn.editar {
-  background-color: #4CAF50;
-  color: white;
+  border: #000 solid 3px;
+  color: rgb(0, 0, 0);
 }
 
 .btn.eliminar {
-  background-color: #f44336;
-  color: white;
+  background-color: #e2e2e2;
+  color: rgb(0, 0, 0);
 }
 
-.btn.cancelar {
-  background-color: #9E9E9E;
-  color: white;
+.btn.eliminar-confirmar {
+  background-color: #ff0000;
+  color: rgb(255, 255, 255);
 }
 
 .btn:hover {
   opacity: 0.8;
+  font-weight: bold;
 }
 
 
