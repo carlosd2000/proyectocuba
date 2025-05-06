@@ -12,8 +12,8 @@
   
           <!-- Precio -->
           <div class="ms-4 fw-bold text-dark">
-            <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push('/listas')">
-              {{ precio }}
+            <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push(`/listas/${$route.params.id}`)">
+              {{ totalFormateado }}
             </button>
           </div>
   
@@ -23,28 +23,78 @@
   </template>
   
   <script setup>
-  import { ref, computed } from 'vue'
+  import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+  import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore'
+  import { useRoute, useRouter } from 'vue-router'
   
-  // Opciones disponibles
-  const opciones = ['Día', 'Tarde', 'Noche']
-  const turnoSeleccionado = ref('Día')
+  // Firebase
+  const db = getFirestore()
+  const apuestasRef = collection(db, 'apuestas')
   
-  // Precio cambia según el turno
-  const precio = computed(() => {
-    return turnoSeleccionado.value === 'Día' ? '$10,000.00' : '$10,000.00'
+  // Router
+  const route = useRoute()
+  const router = useRouter()
+  
+  // Turnos disponibles
+  const opciones = ['Dia', 'Tarde', 'Noche']
+  const turnoSeleccionado = ref('Dia')
+  
+  // Total sumado
+  const totalGlobal = ref(0)
+  
+  // Mostrar total con formato
+  const totalFormateado = computed(() => {
+    return `$${totalGlobal.value.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
   })
   
-  // Ícono cambia según el turno seleccionado
+  // Ícono según turno
   const iconoTurno = computed(() => {
-    if (turnoSeleccionado.value === 'Día') {
-      return 'bi bi-sun-fill text-warning'
-    } else if (turnoSeleccionado.value === 'Tarde') {
-      return 'bi bi-cloud-sun-fill text-secondary'
-    } else {
-      return 'bi bi-moon-fill text-primary'
+    if (turnoSeleccionado.value === 'Dia') return 'bi bi-sun-fill text-warning'
+    if (turnoSeleccionado.value === 'Tarde') return 'bi bi-cloud-sun-fill text-secondary'
+    return 'bi bi-moon-fill text-primary'
+  })
+  
+  // Listener actual de Firebase
+  let unsubscribe = null
+  
+  // Función para escuchar en tiempo real según turno
+  const escucharCambios = () => {
+    // Cancelar listener anterior si existe
+    if (unsubscribe) {
+      unsubscribe()
+    }
+  
+    const q = query(apuestasRef, where('horario', '==', turnoSeleccionado.value))
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      let suma = 0
+      snapshot.forEach(doc => {
+        const data = doc.data()
+        if (typeof data.totalGlobal === 'number') {
+          suma += data.totalGlobal
+        }
+      })
+      totalGlobal.value = suma
+    })
+  }
+  
+  // Iniciar escucha al montar
+  onMounted(() => {
+    escucharCambios()
+  })
+  
+  // Escuchar cambios de turno
+  watch(turnoSeleccionado, () => {
+    escucharCambios()
+  })
+  
+  // Cancelar listener al desmontar
+  onBeforeUnmount(() => {
+    if (unsubscribe) {
+      unsubscribe()
     }
   })
   </script>
+  
   
   <style scoped>
   select:focus {
