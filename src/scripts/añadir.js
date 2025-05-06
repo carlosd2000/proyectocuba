@@ -7,6 +7,7 @@ import { filasFijas, filasExtra, calcularTotales } from './operaciones'
 // Variables compartidas
 let nombreTemporal = 'SinNombre'
 let tipoOrigen = 'tiros' // Valor por defecto
+let horarioSeleccionado = 'Dia' // Valor por defecto
 
 // Actualiza el nombre del jugador
 export function setNombre(nombre) {
@@ -16,6 +17,11 @@ export function setNombre(nombre) {
 // Define desde qué componente se originó la jugada
 export function setTipoOrigen(tipo) {
   tipoOrigen = tipo || 'tiros'
+}
+
+// Define el horario seleccionado
+export function setHorario(horario) {
+  horarioSeleccionado = horario || 'Dia'
 }
 
 // Guarda los datos válidos en Firebase
@@ -79,7 +85,8 @@ export async function guardarDatos() {
       datos: datosAGuardar,
       creadoEn: serverTimestamp(),
       id_listero: auth.currentUser?.uid || 'sin-autenticacion',
-      tipo: tipoOrigen
+      tipo: tipoOrigen,
+      horario: horarioSeleccionado // Añadimos el horario aquí
     }
 
     if (circuloSoloValido) {

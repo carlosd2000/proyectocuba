@@ -26,6 +26,7 @@
   import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
   import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore'
   import { useRoute, useRouter } from 'vue-router'
+  import { setHorario } from '../scripts/añadir.js' // Importa la función setHorario
   
   // Firebase
   const db = getFirestore()
@@ -80,10 +81,14 @@
   // Iniciar escucha al montar
   onMounted(() => {
     escucharCambios()
+    turnoSeleccionado.value = 'Dia'
+    setHorario('Dia')
+
   })
   
   // Escuchar cambios de turno
-  watch(turnoSeleccionado, () => {
+  watch(turnoSeleccionado, (nuevoHorario) => {
+    setHorario(nuevoHorario) // Actualiza el horario en añadir.js
     escucharCambios()
   })
   
@@ -91,8 +96,7 @@
   onBeforeUnmount(() => {
     if (unsubscribe) {
       unsubscribe()
-    }
-  })
+    }})
   </script>
   
   
