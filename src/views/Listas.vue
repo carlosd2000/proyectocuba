@@ -16,10 +16,11 @@ import Pestañas from '../components/Pestañas.vue';
       </div>
       <div>
         <Results/>
+        <Pestañas/>
       </div>
     </div>
     <div class="footer-main">
-      <Pestañas/>
+      
     </div>
   </div>
 
