@@ -78,4 +78,21 @@ const router = createRouter({
   ],
 })
 
+// Guardia de navegación global
+router.beforeEach(async (to) => {
+  const publicRoutes = ['login'] // Añade otras rutas públicas si existen
+  const userProfile = JSON.parse(localStorage.getItem('userProfile'))
+  
+  // Si no está logueado y la ruta no es pública
+  if (!userProfile && !publicRoutes.includes(to.name)) {
+    return '/'
+  }
+  
+  // Si está logueado y trata de ir al login
+  if (userProfile && to.name === 'login') {
+    return `/${userProfile.tipo}/${userProfile.uid}`
+  }
+})
+
+
 export default router

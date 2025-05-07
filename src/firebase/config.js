@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";//modulos de firebase 
 import { getFirestore } from "firebase/firestore";//traer base de datos
-import { getAuth } from "firebase/auth";// autentificacion
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 //las variables de entorno conexion
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,5 +16,15 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 // le pasa los datos de la autentificacion
 const auth = getAuth(app);
+
+// Habilitar persistencia local
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log('Persistencia configurada');
+  })
+  .catch((error) => {
+    console.error('Error al configurar persistencia:', error);
+  });
+
 
 export { db, auth };

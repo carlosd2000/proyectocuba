@@ -25,7 +25,7 @@ watch(desplegado1, (newValue) => {
 </script>
 
 <template>
-    <div class="col-12 mt-2 mb-3 p-0">
+    <div class="col-12 mt-2 mb-2 p-0">
         <div class="col-12 p-0 mt-2 mb-2 d-flex flex-nowrap justify-content-between align-items-center border-bottom border-1 border-dark">
             <p class="title pt-1 pb-1 pe-2 text-truncate">Jugada diaria</p>
             <button class="btn btn-light m-0 p-0 flex-shrink-0 bg-transparent" @click="desplegado1 = !desplegado1">

@@ -6,17 +6,19 @@ import Pestañas from '../components/Pestañas.vue';
 </script>
 
 <template>
-  <div class="col-12 m-0 p-0">
-    <div>
-      <Header />
+  <div class="m-0 p-0 h-100">
+    <div class="header-main">
+      <div>
+        <Header />
+      </div>
+      <div>
+        <Calendario/>
+      </div>
+      <div>
+        <Results/>
+      </div>
     </div>
-    <div>
-      <Calendario/>
-    </div>
-    <div>
-      <Results/>
-    </div>
-    <div>
+    <div class="footer-main">
       <Pestañas/>
     </div>
   </div>
@@ -26,4 +28,16 @@ import Pestañas from '../components/Pestañas.vue';
 </template>
 
 <style scoped>
+.header-main {
+  padding: 0px;
+  margin: 0px;
+  width: 100%;
+  height: 50%;
+}
+.footer-main {
+  padding: 0px;
+  margin: 0px;
+  width: 100%;
+  height: 50%;
+}
 </style>

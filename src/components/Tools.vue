@@ -1,7 +1,21 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { AuthService } from '@/firebase/auth';
+
+const router = useRouter();
 
 const desplegado2 = ref(true)
+
+const logout = async () => {
+    try {
+        await AuthService.logout();
+        localStorage.removeItem('userProfile');
+        router.push('/');
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+    }
+};
 
 onMounted(() => {
     const savedDesplegado2 = localStorage.getItem('desplegado2');
@@ -16,7 +30,7 @@ watch(desplegado2, (newValue) => {
 </script>
 
 <template>
-    <div class="col-12 mt-2 mb-3 p-0">
+    <div class="col-12 mt-2 mb-2 p-0">
         <div class="col-12 p-0 mt-2 mb-2 d-flex flex-nowrap justify-content-between align-items-center border-bottom border-1 border-dark">
             <p class="title pt-1 pb-1 pe-2 text-truncate">Herramientas</p>
             <button class="btn btn-light m-0 p-0 flex-shrink-0 bg-transparent" @click="desplegado2 = !desplegado2">
@@ -62,7 +76,7 @@ watch(desplegado2, (newValue) => {
                     </button>
                 </div>
                 <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/')">
+                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center"  @click="logout">
                         <i class="bi bi-arrow-left m-0 p-0"></i>
                         <span>Cerrar</span>
                     </button>

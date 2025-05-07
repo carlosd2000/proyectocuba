@@ -13,7 +13,7 @@
       </div>
   
       <!-- Contenido de las pestañas -->
-      <div class="tabs-content m-0 p-2">
+      <div class="tabs-content m-0 p-2 ">
         <div v-if="activeTab === 'Lista'">
           <lista/>
         </div>
@@ -37,6 +37,7 @@
   
   <style scoped>
   .tabs-container {
+    height: 50%;
     max-width: 400px;
     padding: 2px;
     margin: auto;
@@ -69,10 +70,12 @@
   }
   
   .tabs-content {
+    height: 20%;
     padding: 15px;
     border: 1px solid #ddd;
     border-top: none;
     background: white;
+    overflow-y: auto;
   }
   </style>
   

@@ -86,16 +86,10 @@ const obtenerIconoEstado = (persona) => {
 </script>
 
 <template>
-  <div class="col-12 m-0 p-0">
-    <div
-      v-for="persona in apuestas"
-      :key="persona.id"
-      class="m-0 mb-2 p-1 pt-3 pb-2 persona"
-      @click="cuadroClick(persona)"
-      style="cursor: pointer;"
-    >
+  <div class="m-0 p-0">
+    <div v-for="persona in apuestas" :key="persona.id" class="col-12 m-0 mb-2 p-0 pt-3 pb-2 persona" @click="cuadroClick(persona)" style="cursor: pointer;">
       <header class="col-12 row m-0 p-0">
-        <div class="col-10 d-flex justify-content-start align-items-center">
+        <div class="col-10 -flex justify-content-start align-items-center">
           <p>{{ persona.nombre }}</p>
         </div>
         <div
@@ -120,24 +114,22 @@ const obtenerIconoEstado = (persona) => {
                     {{ mapa['cuadrado'] }}
                   </p>
                 </div>
-                <div v-if="'circulo1' in mapa" class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
+                  <p v-if="'circulo1' in mapa" class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
                     {{ mapa['circulo1'] }}
                   </p>
                 </div>
-                <div v-if="'circulo2' in mapa" class="col-3 m-0 p-0">
-                  <div class="col-12 m-0 p-0 d-flex justify-content-center align-items-center">
-                    <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
-                      {{ mapa['circulo2'] }}
-                    </p>
-                  </div>
+                <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
+                  <p v-if="'circulo2' in mapa" class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                    {{ mapa['circulo2'] }}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
-          <div class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+          <div v-if="persona.circuloSolo" class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
             {{ persona.circuloSolo }}
           </div>
         </div>
@@ -226,8 +218,6 @@ p {
   border: #000 solid 2px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
   padding: 10px;
-  flex: 1 1 300px;
-  min-width: 250px;
 }
 .apuestas {
   display: grid;
