@@ -63,6 +63,11 @@ const router = createRouter({
       name: 'Patherlist',
       component: () => import('../views/Patherlist.vue'),          
     },
+    {
+      path: '/centena/:id',
+      name: 'Centena',
+      component: () => import('../views/Centena.vue'),
+    },
     // Ruta opcional para registro directo con tipo + id
     // Puedes comentar esta línea si aún no la usas
     // {
