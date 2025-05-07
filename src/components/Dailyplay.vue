@@ -63,7 +63,7 @@ watch(desplegado1, (newValue) => {
                     </button>
                 </div>
                 <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/centena/${$route.params.id}`)">
                         <i class="bi bi-plus-lg"></i>
                         <span class="text-center">Añadir<br>Centena</span>
                     </button>
