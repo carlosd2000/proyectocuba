@@ -1,18 +1,6 @@
-import { auth, db } from './config'
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut
-} from 'firebase/auth'
-import {
-  doc,
-  setDoc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs
-} from 'firebase/firestore'
+import { auth, db } from './config' // <-- Esta línea ya importa auth configurado
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 
 export const AuthService = {
   // Capitaliza el nombre

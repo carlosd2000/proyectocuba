@@ -17,7 +17,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'], // Archivos estáticos
       devOptions: { enabled: true },
-
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'] // Cachear estos archivos para offline
+      }
     }),
   ],
   resolve: {

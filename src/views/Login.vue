@@ -80,7 +80,15 @@ const handleSubmit = async () => {
 
     if (!tipo || !userId) throw new Error('No se encontró tipo o usuario válido');
 
+    // Guardar información extendida para persistencia
+    const userData = {
+      ...profile,
+      userId,
+      lastLogin: Date.now()
+    };
+
     localStorage.setItem('userProfile', JSON.stringify(profile));
+    
     router.push(tipo === 'admin' ? `/adminview/${userId}` : `/${tipo}/${userId}`);
   } catch (e) {
     error.value = e.message || 'Error inesperado. Intenta nuevamente.';
