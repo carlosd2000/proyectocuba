@@ -294,8 +294,4 @@ p {
   opacity: 0.8;
   font-weight: bold;
 }
-
-
-
-
 </style>

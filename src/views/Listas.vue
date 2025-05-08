@@ -16,11 +16,10 @@ import Pestañas from '../components/Pestañas.vue';
       </div>
       <div>
         <Results/>
-        <Pestañas/>
       </div>
     </div>
     <div class="footer-main">
-      
+      <Pestañas/>
     </div>
   </div>
 
@@ -33,12 +32,17 @@ import Pestañas from '../components/Pestañas.vue';
   padding: 0px;
   margin: 0px;
   width: 100%;
-  height: 50%;
+  height: 27%;
+  min-height: 170px;
 }
 .footer-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 0px;
   margin: 0px;
   width: 100%;
-  height: 50%;
+  height: 73%;
+  max-height:70%;
 }
 </style>
