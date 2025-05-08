@@ -51,20 +51,17 @@ const mostrarToastSave = ref(false)
 const errorMessage = ref('')
 
 const validarAntesDeEnviar = () => {
-  const { esValido, hayCuadrados, hayCirculos, filasInvalidas } = validarFilas(filasFijas, filasExtra);
+  const { esValido, hayDatosValidos, filasInvalidas, tieneCirculoSolo } = validarFilas(filasFijas, filasExtra);
   
-  if (!hayCuadrados) {
-    errorMessage.value = 'Debe ingresar al menos un número en un cuadrado';
-    return false;
-  }
-  
-  if (!hayCirculos) {
-    errorMessage.value = 'Debe ingresar al menos un valor en un círculo';
+  if (!hayDatosValidos) {
+    errorMessage.value = tieneCirculoSolo 
+      ? 'Ingrese al menos un valor en el círculo especial o en pares cuadrado-círculo'
+      : 'Ingrese al menos un par cuadrado-círculo válido';
     return false;
   }
   
   if (filasInvalidas) {
-    errorMessage.value = 'Hay círculos con valores pero sus cuadrados están vacíos';
+    errorMessage.value = 'Hay cuadrados con valores pero sin círculos asociados';
     return false;
   }
   

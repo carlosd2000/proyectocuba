@@ -57,29 +57,33 @@ export function calcularTotales(fijas, extras) {
 // En operaciones.js
 export function validarFilas(fijas, extras) {
   const todasFilas = [...fijas.value, ...extras.value];
-  
-  // Verificar si hay al menos un cuadrado con valor
-  const hayCuadrados = todasFilas.some(fila => fila.cuadrado !== '' && fila.cuadrado !== null);
-  
-  // Verificar si hay al menos un círculo con valor (incluyendo circuloSolo)
-  const hayCirculos = todasFilas.some(fila => 
-    (fila.circulo1 !== '' && fila.circulo1 !== null) || 
-    (fila.circulo2 !== '' && fila.circulo2 !== null)
-  ) || (fijas.value[2]?.circuloSolo !== '' && fijas.value[2]?.circuloSolo !== null);
+  const tieneCirculoSolo = fijas.value[2]?.circuloSolo !== '' && fijas.value[2]?.circuloSolo !== null;
 
-  // Verificar consistencia entre cuadrados y círculos
+  // 1. Validar que los cuadrados tengan al menos un círculo (excepto si hay circuloSolo)
   const filasInvalidas = todasFilas.some(fila => {
+    const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
     const tieneCirculos = (fila.circulo1 !== '' && fila.circulo1 !== null) || 
                          (fila.circulo2 !== '' && fila.circulo2 !== null);
-    const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
     
-    return tieneCirculos && !tieneCuadrado;
+    // Un cuadrado es inválido si:
+    // - Tiene valor PERO no tiene círculos
+    // - Y NO estamos en el caso especial del circuloSolo
+    return tieneCuadrado && !tieneCirculos && !tieneCirculoSolo;
   });
 
+  // 2. Validar que haya al menos algún dato para enviar
+  const hayDatosValidos = todasFilas.some(fila => {
+    const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
+    const tieneCirculos = (fila.circulo1 !== '' && fila.circulo1 !== null) || 
+                         (fila.circulo2 !== '' && fila.circulo2 !== null);
+    
+    return tieneCuadrado && tieneCirculos;
+  }) || tieneCirculoSolo;
+
   return {
-    esValido: hayCuadrados && hayCirculos && !filasInvalidas,
-    hayCuadrados,
-    hayCirculos,
-    filasInvalidas
+    esValido: hayDatosValidos && !filasInvalidas,
+    hayDatosValidos,
+    filasInvalidas,
+    tieneCirculoSolo
   };
 }
