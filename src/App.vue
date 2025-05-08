@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { auth } from './firebase/config' // Asegúrate que la ruta sea correcta
 
 const router = useRouter()
 

@@ -17,14 +17,4 @@ const db = getFirestore(app);
 // le pasa los datos de la autentificacion
 const auth = getAuth(app);
 
-// Habilitar persistencia local
-setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log('Persistencia configurada');
-  })
-  .catch((error) => {
-    console.error('Error al configurar persistencia:', error);
-  });
-
-
 export { db, auth };

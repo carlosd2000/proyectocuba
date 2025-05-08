@@ -53,3 +53,35 @@ export function calcularTotales(fijas, extras) {
 
   return { col3, col4, col5 }
 }
+
+// En operaciones.js
+export function validarFilas(fijas, extras) {
+  const todasFilas = [...fijas.value, ...extras.value];
+  const tieneCirculoSolo = fijas.value[2]?.circuloSolo !== '' && fijas.value[2]?.circuloSolo !== null;
+
+  // 1. Validar que los círculos normales tengan su cuadrado
+  const circulosInvalidos = todasFilas.some(fila => {
+    const tieneCirculosNormales = (fila.circulo1 !== '' && fila.circulo1 !== null) || 
+                                (fila.circulo2 !== '' && fila.circulo2 !== null);
+    const sinCuadrado = !(fila.cuadrado !== '' && fila.cuadrado !== null);
+    return tieneCirculosNormales && sinCuadrado;
+  });
+
+  // 2. Validar que circuloSolo tenga al menos 1 cuadrado
+  const circuloSoloInvalido = tieneCirculoSolo && 
+    !todasFilas.some(fila => fila.cuadrado !== '' && fila.cuadrado !== null);
+
+  // 3. Validar que haya al menos un dato válido
+  const hayDatosValidos = todasFilas.some(fila => {
+    const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
+    const tieneCirculos = (fila.circulo1 !== '' && fila.circulo1 !== null) || 
+                         (fila.circulo2 !== '' && fila.circulo2 !== null);
+    return tieneCuadrado && (tieneCirculos || tieneCirculoSolo);
+  }) || (tieneCirculoSolo && !circuloSoloInvalido);
+
+  return {
+    esValido: hayDatosValidos && !circulosInvalidos && !circuloSoloInvalido,
+    circulosInvalidos,
+    circuloSoloInvalido
+  };
+}
