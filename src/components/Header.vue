@@ -1,16 +1,16 @@
 <template>
   <div class="head d-flex flex-column justify-content-center align-items-center">
     <div class="col-12 row p-0 m-0 d-flex justify-content-center align-items-center header-border">
-      <div class="col-4 m-0 p-0 d-flex justify-content-start align-items-center">
+      <div class="col-5 m-0 p-0 d-flex justify-content-start align-items-center">
         <ButtonBack class="col-3 ml-2 d-flex justify-content-center" v-if="!back" />
         <p class="col-8 m-0 p-0 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
       </div>
-      <div class="col-8 row p-0 m-0 d-flex justify-content-end align-items-center">
-        <button class="btn btn-light border-0 mx-1 p-0 bg-transparent" @click="irwallet">
+      <div class="col-7 row p-0 m-0 d-flex justify-content-end align-items-center">
+        <button class=" btn btn-light border-0 mx-1 p-0 bg-transparent" @click="irwallet">
           <p class="m-0 p-0">$20,000,000.00</p>
         </button>
 
-        <div class="col-2 px-1 m-0 mr-2 d-flex justify-content-end align-items-center" v-if="bell">
+        <div class="px-1 m-0 mr-2 d-flex justify-content-end align-items-center" v-if="bell">
           <i class="bi bi-bell"></i>
         </div>
       </div>
@@ -18,7 +18,7 @@
   </div>
 </template>
 
-  <script setup>
+<script setup>
   import ButtonBack from '../components/ButtonBack.vue'
   import { useRoute, useRouter } from 'vue-router'
   import { computed, ref, onMounted, onUnmounted } from 'vue'
@@ -161,7 +161,7 @@
   })
 
   onUnmounted(() => clearInterval(intervalo))
-  </script>
+</script>
 
 <style scoped>
 .header-border {
