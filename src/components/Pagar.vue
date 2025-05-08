@@ -7,7 +7,6 @@
       <div class="celda text-center">${{ totales.col4 }}</div>
       <div class="celda text-center">${{ totales.col5 }}</div>
     </div>
-
     <div class="text-start">
       <button
         class="btn btn-warning w-100 fw-bold d-flex justify-content-center align-items-center gap-2 btn-page"
@@ -17,8 +16,10 @@
         <span>${{ totales.col3 + totales.col4 + totales.col5 }}</span>
       </button>
     </div>
+    <div v-if="errorMessage" class="alert alert-danger mt-2">
+      {{ errorMessage }}
+    </div>
   </div>
-
   <div v-if="mostrarToastSave" class="toast-container">
     <div
       class="toast show w-100 rounded-0"
@@ -40,14 +41,40 @@ import {
   filasFijas,
   filasExtra,
   calcularTotales,
-  limpiarCampos
+  limpiarCampos,
+  validarFilas
 } from '../scripts/operaciones.js'
 import { guardarDatos, setNombre } from '../scripts/añadir.js'
 
 const totales = computed(() => calcularTotales(filasFijas, filasExtra))
 const mostrarToastSave = ref(false)
+const errorMessage = ref('')
+
+const validarAntesDeEnviar = () => {
+  const { esValido, hayCuadrados, hayCirculos, filasInvalidas } = validarFilas(filasFijas, filasExtra);
+  
+  if (!hayCuadrados) {
+    errorMessage.value = 'Debe ingresar al menos un número en un cuadrado';
+    return false;
+  }
+  
+  if (!hayCirculos) {
+    errorMessage.value = 'Debe ingresar al menos un valor en un círculo';
+    return false;
+  }
+  
+  if (filasInvalidas) {
+    errorMessage.value = 'Hay círculos con valores pero sus cuadrados están vacíos';
+    return false;
+  }
+  
+  errorMessage.value = '';
+  return true;
+}
 
 const lanzarToast = async () => {
+  if (!validarAntesDeEnviar()) return;
+
   const resultado = await guardarDatos()
 
   if (resultado.success) {
