@@ -37,6 +37,12 @@ export async function guardarDatos() {
     const circuloSolo = filasFijas.value[2]?.circuloSolo
     const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo)
 
+    // Solo aplicamos "/candado" si el tipoOrigen es "tiros"
+    let tipoFinal = tipoOrigen;
+    if (circuloSoloValido && tipoOrigen === "tiros") {  // ⚠️ Solo para "tiros"
+      tipoFinal = `${tipoOrigen}/candado`;  // Ej: "tiros/candado"
+    }
+
     // Procesar filas fijas
     filasFijas.value.forEach((fila, index) => {
       if (index === 2) {
@@ -85,7 +91,7 @@ export async function guardarDatos() {
       datos: datosAGuardar,
       creadoEn: serverTimestamp(),
       id_listero: auth.currentUser?.uid || 'sin-autenticacion',
-      tipo: tipoOrigen,
+      tipo: tipoFinal, // Usamos el tipo final aquí
       horario: horarioSeleccionado // Añadimos el horario aquí
     }
 

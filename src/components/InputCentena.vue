@@ -93,7 +93,7 @@
     nombreUsuario
   } from '../scripts/operaciones.js'
   import { setNombre, setTipoOrigen } from '../scripts/añadir.js'
-  setTipoOrigen('parlet')
+  setTipoOrigen('centena')
   
   // Sincronizar el nombre ingresado
   watch(nombreUsuario, (nuevo) => {
