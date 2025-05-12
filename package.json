@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "firebase": "^11.6.1",
+    "firebase": "^11.7.1",
     "firebase-admin": "^13.3.0",
     "pinia": "^3.0.2",
     "register-service-worker": "^1.7.2",
