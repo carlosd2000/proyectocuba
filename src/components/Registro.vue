@@ -42,13 +42,14 @@
 
             <div class="mb-3" v-if="showSelect">
               <label for="opciones" class="form-label">Tipo de cuenta</label>
-              <select v-model="tipoCuenta" class="form-select" id="opciones">
-                <option disabled value="">Seleccionar</option>
-                <option v-if="userProfile?.tipo === 'admin'" value="bancos">Banco</option>
-                <option v-if="userProfile?.tipo === 'bancos'" value="colectores">Colector</option>
-                <option v-if="['bancos', 'colectores'].includes(userProfile?.tipo)" value="listeros">Listero</option>
-              </select>
+                <select v-model="tipoCuenta" class="form-select" id="opciones">
+                  <option disabled value="">Seleccionar</option>
+                  <option v-if="authStore.profile?.tipo === 'admin'" value="bancos">Banco</option>
+                  <option v-if="authStore.profile?.tipo === 'bancos'" value="colectores">Colector</option>
+                  <option v-if="['bancos', 'colectores'].includes(authStore.profile?.tipo)" value="listeros">Listero</option>
+                </select>
             </div>
+
 
             <button
               type="submit"
