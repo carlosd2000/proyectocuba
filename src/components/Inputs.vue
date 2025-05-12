@@ -30,7 +30,7 @@
           <div
             v-for="fila in 5"
             :key="'fija-' + fila"
-            class="d-flex justify-content-center align-items-center my-1"
+            class="d-flex justify-content-around align-items-center my-1"
           >
             <input
               type="number"
@@ -61,7 +61,7 @@
           <div
             v-for="(fila, index) in filasExtra"
             :key="'extra-' + index"
-            class="d-flex justify-content-center align-items-center my-1"
+            class="d-flex justify-content-around align-items-center my-1"
           >
             <input
               type="number"
@@ -146,7 +146,7 @@ onUnmounted(() => {
   outline: none;
   text-align: center;
   font-size: 14px;
-  margin: 4px;
+  margin: 4px 0px;
 }
 
 .cuadrado {
@@ -159,7 +159,7 @@ onUnmounted(() => {
 
 .celda {
   width: 45px;
-  margin: 0 6px;
+  margin: 0px;
 }
 
 .scroll-vertical {
