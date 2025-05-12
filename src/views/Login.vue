@@ -1,3 +1,45 @@
+<script setup>
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+const formData = reactive({
+  email: '',  // Cambiado de 'correo' a 'email' para consistencia
+  password: '' // Cambiado de 'contrasena' a 'password'
+});
+
+const loading = ref(false);
+const error = ref(null);
+
+const handleSubmit = async () => {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    const result = await authStore.login(formData.email, formData.password);
+    
+    if (result.success) {
+      // Redirección basada en el tipo de usuario
+      const redirectPath = authStore.userType === 'admin' 
+        ? `/adminview/${authStore.userId}`
+        : `/${authStore.userType}/${authStore.userId}`;
+      
+      router.push(redirectPath);
+    } else {
+      error.value = result.error;
+    }
+  } catch (e) {
+    console.error('Error inesperado:', e);
+    error.value = 'Error inesperado. Intenta nuevamente.';
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
+
 <template>
   <div class="container d-flex justify-content-center align-items-center container-login">
     <div class="container col-12 col-sm-8 py-4 my-3 box-shadow">
@@ -18,7 +60,7 @@
               type="email"
               class="form-control"
               id="email"
-              v-model="formData.correo"
+              v-model="formData.email"
               required
             />
           </div>
@@ -30,7 +72,7 @@
               type="password"
               class="form-control"
               id="password"
-              v-model="formData.contrasena"
+              v-model="formData.password"
               required
             />
           </div>
@@ -47,49 +89,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { AuthService } from '@/firebase/auth';
-
-const router = useRouter();
-
-const formData = reactive({
-  correo: '',
-  contrasena: ''
-});
-
-const loading = ref(false);
-const error = ref(null);
-
-const handleSubmit = async () => {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const { success, profile, user, error: loginError } = await AuthService.login({
-      email: formData.correo,
-      password: formData.contrasena
-    });
-
-    if (!success) throw new Error(loginError || 'Error al iniciar sesión');
-
-    const { tipo } = profile || {};
-    const userId = user?.uid;
-
-    if (!tipo || !userId) throw new Error('No se encontró tipo o usuario válido');
-
-    localStorage.setItem('userProfile', JSON.stringify(profile));
-    
-    router.push(tipo === 'admin' ? `/adminview/${userId}` : `/${tipo}/${userId}`);
-  } catch (e) {
-    error.value = e.message || 'Error inesperado. Intenta nuevamente.';
-  } finally {
-    loading.value = false;
-  }
-};
-</script>
 
 <style scoped>
 .box-shadow {

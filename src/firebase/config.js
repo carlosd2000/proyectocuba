@@ -10,11 +10,14 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
-//se establese la conecion con app
+
 const app = initializeApp(firebaseConfig);
-//base de datos
 const db = getFirestore(app);
-// le pasa los datos de la autentificacion
 const auth = getAuth(app);
+
+// Configura persistencia
+setPersistence(auth, browserLocalPersistence)
+  .then(() => console.log("Persistencia configurada"))
+  .catch((error) => console.error("Error en persistencia:", error));
 
 export { db, auth };

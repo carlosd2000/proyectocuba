@@ -7,7 +7,32 @@ export const AuthService = {
   capitalizeUsername(username) {
     return username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
   },
-
+  // Añade este método a tu AuthService
+  async getCachedUserProfile(userId) {
+    try {
+      // Primero intenta con los tipos raíz (más rápidos)
+      const tiposRaiz = ['admin', 'bancos'];
+      
+      for (const tipo of tiposRaiz) {
+        const docRef = doc(db, tipo, userId);
+        const docSnap = await getDocFromCache(docRef).catch(() => getDoc(docRef));
+        if (docSnap.exists()) {
+          return { ...docSnap.data(), tipo };
+        }
+      }
+      
+      // Si no está en tipos raíz, busca en subcolecciones
+      const bancosRef = collection(db, 'bancos');
+      const bancosSnapshot = await getDocsFromCache(bancosRef).catch(() => getDocs(bancosRef));
+      
+      // Implementa lógica similar para subcolecciones...
+      
+      return null;
+    } catch (error) {
+      console.error('Error obteniendo perfil:', error);
+      throw error;
+    }
+  },
   // Verificar si el nombre ya existe
   async isUsernameTaken(nombre) {
     try {
@@ -183,42 +208,54 @@ export const AuthService = {
   // Obtener perfil de usuario
   async getUserProfile(userId) {
     try {
+      // Primero verifica tiposRaiz (admin/bancos) que son más rápidos
       const tiposRaiz = ['admin', 'bancos'];
-
+      
       for (const tipo of tiposRaiz) {
         const docRef = doc(db, tipo, userId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          return { ...docSnap.data(), tipo: tipo };
+          return { ...docSnap.data(), tipo };
         }
       }
 
+      // Si no está en tiposRaiz, busca en subcolecciones
       const bancosSnapshot = await getDocs(collection(db, 'bancos'));
+      const bancosPromises = [];
+      
       for (const bancoDoc of bancosSnapshot.docs) {
         const bancoId = bancoDoc.id;
-
-        const colectoresSnapshot = await getDocs(collection(db, `bancos/${bancoId}/colectores`));
-        for (const colector of colectoresSnapshot.docs) {
-          if (colector.id === userId) {
-            return { ...colector.data(), tipo: 'colectores' };
-          }
-
-          const listerosNestedSnapshot = await getDocs(collection(db, `bancos/${bancoId}/colectores/${colector.id}/listeros`));
-          for (const listero of listerosNestedSnapshot.docs) {
-            if (listero.id === userId) {
-              return { ...listero.data(), tipo: 'listeros' };
+        
+        // Busca en colectores
+        bancosPromises.push(
+          getDocs(collection(db, `bancos/${bancoId}/colectores`)).then((colectoresSnapshot) => {
+            for (const colector of colectoresSnapshot.docs) {
+              if (colector.id === userId) {
+                return { ...colector.data(), tipo: 'colectores' };
+              }
             }
-          }
-        }
-
-        const listerosSnapshot = await getDocs(collection(db, `bancos/${bancoId}/listeros`));
-        for (const listero of listerosSnapshot.docs) {
-          if (listero.id === userId) {
-            return { ...listero.data(), tipo: 'listeros' };
-          }
-        }
+            return null;
+          })
+        );
+        
+        // Busca en listeros directos
+        bancosPromises.push(
+          getDocs(collection(db, `bancos/${bancoId}/listeros`)).then((listerosSnapshot) => {
+            for (const listero of listerosSnapshot.docs) {
+              if (listero.id === userId) {
+                return { ...listero.data(), tipo: 'listeros' };
+              }
+            }
+            return null;
+          })
+        );
       }
 
+      const results = await Promise.all(bancosPromises);
+      const foundProfile = results.find(profile => profile !== null);
+      
+      if (foundProfile) return foundProfile;
+      
       return null;
     } catch (error) {
       console.error('Error obteniendo perfil:', error);

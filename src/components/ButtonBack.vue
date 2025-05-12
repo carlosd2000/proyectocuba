@@ -8,16 +8,15 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const regresar = () => {
-  const userProfile = JSON.parse(localStorage.getItem('userProfile'))
-
-  if (userProfile && userProfile.uid && userProfile.tipo) {
-    router.push(`/${userProfile.tipo}/${userProfile.uid}`)
+  if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
+    router.push(`/${authStore.userType}/${authStore.userId}`)
   } else {
-    // Si no hay sesión guardada, envíalo al login
     router.push('/')
   }
 }

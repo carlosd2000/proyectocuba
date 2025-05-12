@@ -13,6 +13,13 @@ export const obtenerApuestas = () => {
       ...doc.data(),
       candadoAbierto: true // valor visual local
     }))
+    // Ordenar por fecha (más reciente primero)
+    .sort((a, b) => {
+      const fechaA = a.creadoEn?.toDate ? a.creadoEn.toDate().getTime() : 0
+      const fechaB = b.creadoEn?.toDate ? b.creadoEn.toDate().getTime() : 0
+      return fechaB - fechaA
+    })
+
   })
   return unsubscribe // puedes usarlo con onUnmounted(() => unsubscribe())
 }

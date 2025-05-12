@@ -100,11 +100,11 @@
   </script>
   
   
-  <style scoped>
+<style scoped>
   select:focus {
     box-shadow: none;
   }
   .bi {
     font-size: 1.2rem;
   }
-  </style>
+</style>

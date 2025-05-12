@@ -37,6 +37,7 @@
                 class="form-input cuadrado celda"
                 min="0"
                 step="1"
+                placeholder="000"
                 @keypress="soloEnteros($event)"
                 v-model="filasFijas[fila - 1].cuadrado"
               />
@@ -55,6 +56,7 @@
                 class="form-input cuadrado celda"
                 min="0"
                 step="1"
+                placeholder="000"
                 @keypress="soloEnteros($event)"
                 v-model="fila.cuadrado"
               />
