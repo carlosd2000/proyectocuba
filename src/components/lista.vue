@@ -1,21 +1,59 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import Swal from 'sweetalert2'
-import { ref } from 'vue'
+import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
 
+// Variables reactivas
 const mostrarModal = ref(false)
 const mostrarConfirmacionEliminar = ref(false)
 const personaSeleccionada = ref(null)
 
-import {
-  apuestas,
-  obtenerApuestas,
-  eliminarApuesta,
-  editarApuesta
-} from '../scripts/CRUDlistas.js'
+// Función para formatear hora de 24h a 12h
+const formatearHora = (hora24) => {
+  if (!hora24) return "--:-- --";
+  
+  try {
+    // Extraemos solo horas y minutos (ignoramos segundos si existen)
+    const [horas, minutos] = hora24.split(':');
+    const horaNum = parseInt(horas, 10);
+    const hora12 = horaNum % 12 || 12;
+    const periodo = horaNum < 12 ? 'a.m.' : 'p.m.';
+    return `${hora12}:${minutos} ${periodo}`;
+  } catch (e) {
+    console.error("Error formateando hora:", hora24, e);
+    return "--:-- --";
+  }
+};
 
-let unsubscribe = null
+// Función para mostrar la hora
+const mostrarHora = (persona) => {
+  if (!persona || typeof persona !== 'object') {
+    return "--:-- --";
+  }
 
+  // Primero intenta con horaCuba12 (ya formateada)
+  if (persona.horaCuba12) {
+    return persona.horaCuba12;
+  }
+
+  // Luego con horaCuba24 (la formateamos)
+  if (persona.horaCuba24) {
+    return formatearHora(persona.horaCuba24);
+  }
+
+  // Finalmente con el timestamp de creación
+  if (persona.creadoEn?.toDate) {
+    const hora24 = persona.creadoEn.toDate().toLocaleTimeString('es-ES', {
+      timeZone: 'America/Havana',
+      hour12: false
+    });
+    return formatearHora(hora24);
+  }
+
+  return "--:-- --";
+};
+
+// Resto de funciones del componente
 const cuadroClick = (persona) => {
   if (!persona.candadoAbierto) return
   personaSeleccionada.value = persona
@@ -28,7 +66,6 @@ const cerrarModal = () => {
 
 const editarPersona = async () => {
   console.log('Editar a:', personaSeleccionada.value.nombre)
-  // await editarApuesta(personaSeleccionada.value.id, { nombre: 'Nuevo nombre' })
   cerrarModal()
 }
 
@@ -41,14 +78,6 @@ const eliminarPersona = async () => {
 const confirmarEliminar = () => {
   mostrarConfirmacionEliminar.value = true
 }
-
-onMounted(() => {
-  unsubscribe = obtenerApuestas()
-})
-
-onUnmounted(() => {
-  if (unsubscribe) unsubscribe()
-})
 
 const toggleCandado = async (persona) => {
   if (persona.candadoAbierto) {
@@ -64,18 +93,6 @@ const toggleCandado = async (persona) => {
   persona.candadoAbierto = !persona.candadoAbierto
 }
 
-
-const extraerHora = (textoFecha) => {
-  if (!textoFecha) return ''
-  const fecha = textoFecha.toDate ? textoFecha.toDate() : textoFecha
-  const opciones = {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  }
-  return fecha.toLocaleTimeString('es-CO', opciones)
-}
-
 const obtenerIconoEstado = (persona) => {
   if (persona.estado === 'Cargado') return 'bi bi-cloud-check text-success'
   if (persona.estado === 'Pendiente') return 'bi bi-cloud-slash text-danger'
@@ -83,27 +100,38 @@ const obtenerIconoEstado = (persona) => {
   if (persona.estado === 'FueraDeTiempo') return 'bi bi-stopwatch text-danger'
   return 'bi bi-exclamation-lg text-primary'
 }
+
+// Suscripción a datos
+let unsubscribe = null
+onMounted(() => {
+  unsubscribe = obtenerApuestas()
+})
+
+onUnmounted(() => {
+  if (unsubscribe) unsubscribe()
+})
 </script>
 
 <template>
   <div class="m-0 p-0">
-    <div v-for="persona in apuestas" :key="persona.id" class="col-12 m-0 mb-2 p-0 pt-3 pb-2 persona" @click="cuadroClick(persona)" style="cursor: pointer;">
+    <div v-for="persona in apuestas" 
+         :key="persona.id" 
+         class="col-12 m-0 mb-2 p-0 pt-3 pb-2 persona" 
+         @click="cuadroClick(persona)" 
+         style="cursor: pointer;">
+         
       <header class="col-12 row m-0 p-0">
         <div class="col-10 -flex justify-content-start align-items-center">
           <p>{{ persona.nombre }}</p>
         </div>
-        <div
-          class="col-2 d-flex justify-content-end align-items-center"
-          @click.stop
-        >
-          <i
-            :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
-            class="fs-4"
-            style="cursor: pointer;"
-            @click="toggleCandado(persona)"
-          ></i>
+        <div class="col-2 d-flex justify-content-end align-items-center" @click.stop>
+          <i :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
+             class="fs-4"
+             style="cursor: pointer;"
+             @click="toggleCandado(persona)"></i>
         </div>
       </header>
+      
       <main class="col-12 row m-0 p-0">
         <div class="col-6 m-0 p-0 apuestas d-flex flex-column justify-content-center align-items-start">
           <div class="col-12 m-0 p-0">
@@ -128,11 +156,13 @@ const obtenerIconoEstado = (persona) => {
             </div>
           </div>
         </div>
+        
         <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
           <div v-if="persona.circuloSolo" class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
             {{ persona.circuloSolo }}
           </div>
         </div>
+        
         <div class="col-4 m-0 p-0 d-flex justify-content-center align-items-center">
           <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
             <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
@@ -156,16 +186,18 @@ const obtenerIconoEstado = (persona) => {
           </div>
         </div>
       </main>
+      
       <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
         <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
           <div class="mx-2 d-flex justify-content-center align-items-center">
-            <p class="hora-text">{{ extraerHora(persona.creadoEn) }}</p>
+            <p class="hora-text">{{ mostrarHora(persona) }}</p>
             <i :class="obtenerIconoEstado(persona)"></i>
           </div>
         </div>
       </footer>
     </div>
   </div>
+
   <!-- Modal personalizado -->
   <div v-if="mostrarModal" class="custom-modal-backdrop" @click="cerrarModal">
     <div class="custom-modal" @click.stop>
@@ -192,7 +224,6 @@ const obtenerIconoEstado = (persona) => {
       </div>
     </div>
   </div>
-
 </template>
 
 <style scoped>
@@ -226,7 +257,6 @@ p {
 .hora-text {
   font-size: 0.7rem;
 }
-
 
 .custom-modal-backdrop {
   position: fixed;
