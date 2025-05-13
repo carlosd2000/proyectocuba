@@ -7,6 +7,16 @@
             </button>
         </div>
         <div v-if="desplegado1" class="col-12">
+            <div class="col-12 p-0 mt-2 d-flex flex-nowrap align-items-center justify-content-between">
+                <div class="col-5 m-0 p-0 d-flex flex-nowrap align-items-center">
+                    <select v-model="turnoSeleccionado" class="form-select form-select-sm text-small border-0 p-0 bg-transparent text-dark fw-semibold" style="width: auto;">
+                        <option v-for="opcion in opciones" :key="opcion" :value="opcion">{{ opcion }}</option>
+                    </select>
+                </div>
+                <div class="col-7 m-0 p-0 d-flex justify-content-end">
+                    <p class="pe-2 text-truncate">{{ totalFormateado }}</p>
+                </div>
+            </div>
             <div class="col-12 row p-0 m-0 d-flex justify-content-around align-items-center">
                 <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
@@ -33,32 +43,6 @@
                     </button>
                 </div>
             </div>            
-            <div class="col-12 row p-0 m-0 d-flex justify-content-around align-items-center">
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}`)">
-                        <i class="bi bi-plus-lg m-0 p-0"></i>
-                        <span class="text-center">Añadir<br>Jugada</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/parlet/${$route.params.id}`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Parlet</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/candado/${$route.params.id}`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Candado</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/centena/${$route.params.id}`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Centena</span>
-                    </button>
-                </div>
-            </div>
             <div class="col-12 p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
                 <button class="col-12 row p-1 btn-list" @click="$router.push(`/listas/${$route.params.id}`)">
                     <p class="m-1">Lista</p>

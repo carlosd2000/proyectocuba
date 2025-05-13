@@ -2,6 +2,11 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
+import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'; 
+
+const router = useRouter()
+const route = useRoute()
 
 // Variables reactivas
 const mostrarModal = ref(false)
@@ -65,9 +70,16 @@ const cerrarModal = () => {
 }
 
 const editarPersona = async () => {
-  console.log('Editar a:', personaSeleccionada.value.nombre)
-  cerrarModal()
-}
+  const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal';
+  router.push({
+    path: `/anadirjugada/${route.params.id}`,
+    query: {
+      tipo: tipoJugada,
+      editar: personaSeleccionada.value.id
+    }
+  });
+  cerrarModal();
+};
 
 const eliminarPersona = async () => {
   await eliminarApuesta(personaSeleccionada.value.id)

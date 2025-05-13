@@ -1,12 +1,16 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
 
-// Variables compartidas
-let nombreTemporal = 'SinNombre';
-let tipoOrigen = 'tiros';
-let horarioSeleccionado = 'Dia';
+import { ref } from 'vue'
+
+// Variables reactivas
+let nombreTemporal = ref('SinNombre')
+let tipoOrigen = ref('tiros')
+let horarioSeleccionado = ref('Dia')
+export const modoEdicion = ref(false)
+export const idEdicion = ref('')
 
 // ================= CONFIGURACIÓN =================
 export function setNombre(nombre) {
@@ -19,6 +23,11 @@ export function setTipoOrigen(tipo) {
 
 export function setHorario(horario) {
   horarioSeleccionado = horario || 'Dia';
+}
+
+export function setModoEdicion(editar, id) {
+  modoEdicion.value = editar
+  idEdicion.value = id || ''
 }
 
 // ================= MANEJO DE HORAS =================
@@ -141,16 +150,30 @@ export async function guardarDatos() {
       docAGuardar.circuloSolo = Number(circuloSolo);
     }
 
-    // 7. Guardar en Firestore
-    const docRef = await addDoc(collection(db, 'apuestas'), docAGuardar);
-
-    return { 
-      success: true, 
-      message: `Datos guardados a las ${hora24}`,
-      horaExacta: hora24,
-      docId: docRef.id
-    };
-
+    // 7. Lógica diferente para edición vs creación
+    if (modoEdicion.value && idEdicion.value) {
+      // Modo edición - actualizar documento existente
+      await updateDoc(doc(db, 'apuestas', idEdicion.value), docAGuardar);
+      
+      return { 
+        success: true, 
+        message: `Datos actualizados a las ${hora24}`,
+        horaExacta: hora24,
+        docId: idEdicion.value
+      };
+    } else {
+      // Modo creación - agregar nuevo documento
+      docAGuardar.creadoEn = serverTimestamp(); // Solo para nuevos documentos
+      
+      const docRef = await addDoc(collection(db, 'apuestas'), docAGuardar);
+      
+      return { 
+        success: true, 
+        message: `Datos guardados a las ${hora24}`,
+        horaExacta: hora24,
+        docId: docRef.id
+      };
+    }
   } catch (error) {
     console.error('Error al guardar:', error);
     const { hora24 } = obtenerHoraCuba();

@@ -37,6 +37,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router' // Importa router y route
 import {
   filasFijas,
   filasExtra,
@@ -44,7 +45,10 @@ import {
   limpiarCampos,
   validarFilas
 } from '../scripts/operaciones.js'
-import { guardarDatos, setNombre } from '../scripts/añadir.js'
+import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
+
+const router = useRouter()
+const route = useRoute()
 
 const totales = computed(() => calcularTotales(filasFijas, filasExtra))
 const mostrarToastSave = ref(false)
@@ -78,15 +82,19 @@ const lanzarToast = async () => {
   const resultado = await guardarDatos()
 
   if (resultado.success) {
-    limpiarCampos()         // limpia filas fijas y extras
-    setNombre('')           // limpia nombre global
     mostrarToastSave.value = true
-
+    
+    if (!modoEdicion.value) {
+      limpiarCampos()
+      setNombre('')
+    }
+    
     setTimeout(() => {
       mostrarToastSave.value = false
+      if (modoEdicion.value) {
+        router.push(`/listas/${route.params.id}`)
+      }
     }, 3000)
-  } else {
-    alert('Error al guardar: ' + resultado.message)
   }
 }
 </script>
