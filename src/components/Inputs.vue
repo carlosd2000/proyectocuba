@@ -117,7 +117,7 @@ import {
   limpiarCampos,
   nombreUsuario
 } from '../scripts/operaciones.js'
-import { setNombre, setTipoOrigen } from '../scripts/añadir.js'
+import { setNombre, setTipoOrigen, setModoEdicion } from '../scripts/añadir.js'
 
 const props = defineProps({
   datosEdicion: Object,
@@ -194,6 +194,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   limpiarCampos()
+  setModoEdicion(false, '')
 })
 </script>
 

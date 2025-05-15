@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import {
   filasFijas,
   filasExtra,
@@ -92,10 +92,64 @@ import {
   limpiarCampos,
   nombreUsuario
 } from '../scripts/operaciones.js'
-import { setNombre, setTipoOrigen } from '../scripts/añadir.js'
+import { setNombre, setTipoOrigen, setModoEdicion } from '../scripts/añadir.js'
+
+const props = defineProps({
+  datosEdicion: Object,
+  modoEdicion: Boolean,
+  idEdicion: String
+})
+
 setTipoOrigen('candado')
 
-// Sincroniza el nombre para guardar
+// Cargar datos de edición
+const cargarDatosEdicion = () => {
+  if (!props.datosEdicion) return
+  
+  nombreUsuario.value = props.datosEdicion.nombre || ''
+  
+  // Limpiar campos primero
+  filasFijas.value = Array(5).fill().map(() => ({
+    cuadrado: '',
+    circulo1: '',
+    circulo2: '',
+    circuloSolo: ''
+  }))
+  filasExtra.value = []
+  
+  // Cargar datos
+  if (props.datosEdicion.datos) {
+    props.datosEdicion.datos.forEach((fila, index) => {
+      const datosFila = {
+        cuadrado: fila.cuadrado?.toString() || '',
+        circulo1: fila.circulo1?.toString() || '',
+        circulo2: fila.circulo2?.toString() || '',
+        circuloSolo: fila.circuloSolo?.toString() || ''
+      }
+      
+      if (index < 5) {
+        filasFijas.value[index] = datosFila
+      } else {
+        filasExtra.value.push(datosFila)
+      }
+    })
+  }
+  
+  // Cargar círculo solo
+  if (props.datosEdicion.circuloSolo) {
+    filasFijas.value[2].circuloSolo = props.datosEdicion.circuloSolo.toString()
+  }
+}
+
+// Reactivo: actualiza si los datos de edición cambian dinámicamente
+watch(() => props.datosEdicion, (nuevosDatos) => {
+  if (props.modoEdicion && nuevosDatos) {
+    console.log('Actualización detectada en datosEdicion:', nuevosDatos)
+    cargarDatosEdicion()
+  }
+}, { deep: true, immediate: true })
+
+// Sincroniza nombre con añadir.js
 watch(nombreUsuario, (nuevo) => {
   setNombre(nuevo)
 })
@@ -107,8 +161,15 @@ const soloEnteros = (e) => {
   }
 }
 
+onMounted(() => {
+  if (props.modoEdicion && props.idEdicion) {
+    setModoEdicion(true, props.idEdicion);
+  }
+});
+
 onUnmounted(() => {
   limpiarCampos()
+  setModoEdicion(false, '')
 })
 </script>
 

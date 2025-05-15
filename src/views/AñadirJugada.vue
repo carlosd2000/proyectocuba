@@ -14,9 +14,9 @@ import { setModoEdicion } from '../scripts/añadir.js';
 const db = getFirestore();
 const route = useRoute();
 
-
 const idEditar = computed(() => route.query.editar || null);
 const datosEdicion = ref(null);
+const horarioEdicion = ref('Dia'); // Valor por defecto
 
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
@@ -32,11 +32,16 @@ onMounted(async () => {
     if (docSnap.exists()) {
       datosEdicion.value = {
         id: docSnap.id,
-        ...docSnap.data()
+        ...docSnap.data(),
+                // Asegurar estructura básica si falta
+        datos: docSnap.data().datos || [],
+        circuloSolo: docSnap.data().circuloSolo || ''
       };
+      horarioEdicion.value = docSnap.data().horario || 'Dia';
     }
   } else {
     setModoEdicion(false, null);
+    horarioEdicion.value = 'Dia'; // Resetear a valor por defecto
   }
 });
 
@@ -55,7 +60,7 @@ const componenteActual = computed(() => {
         <Header/>
     </header>
     <div class="col-12 m-0 p-0">
-        <Horario/>
+        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
     </div>
     <component 
       :is="componenteActual" 
