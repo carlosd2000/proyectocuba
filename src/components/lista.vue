@@ -1,9 +1,9 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
-import { useRouter } from 'vue-router'
-import { useRoute } from 'vue-router'; 
+import { useRouter, useRoute} from 'vue-router' 
+import { sincronizarPendientes, formatearHoraCuba } from '../scripts/añadir.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -12,52 +12,90 @@ const route = useRoute()
 const mostrarModal = ref(false)
 const mostrarConfirmacionEliminar = ref(false)
 const personaSeleccionada = ref(null)
+const isOnline = ref(navigator.onLine)
+const isSyncing = ref(false)
 
-// Función para formatear hora de 24h a 12h
-const formatearHora = (hora24) => {
-  if (!hora24) return "--:-- --";
+// Apuestas locales (offline)
+const apuestasLocales = ref([])
+
+// Función para obtener icono de estado
+const obtenerIconoEstado = (persona) => {
+  if (!persona || !persona.estado) return 'bi bi-exclamation-lg text-primary'
   
-  try {
-    // Extraemos solo horas y minutos (ignoramos segundos si existen)
-    const [horas, minutos] = hora24.split(':');
-    const horaNum = parseInt(horas, 10);
-    const hora12 = horaNum % 12 || 12;
-    const periodo = horaNum < 12 ? 'a.m.' : 'p.m.';
-    return `${hora12}:${minutos} ${periodo}`;
-  } catch (e) {
-    console.error("Error formateando hora:", hora24, e);
-    return "--:-- --";
+  switch(persona.estado) {
+    case 'Cargado': return 'bi bi-cloud-check text-success'
+    case 'Pendiente': return 'bi bi-cloud-slash text-danger'
+    case 'EnTiempo': return 'bi bi-stopwatch text-success'
+    case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
+    default: return 'bi bi-exclamation-lg text-primary'
   }
-};
+}
 
-// Función para mostrar la hora
+// Cargar apuestas locales desde localStorage
+function cargarApuestasLocales() {
+  const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
+  apuestasLocales.value = pendientes.map(a => ({
+    ...a,
+    estado: 'Pendiente',
+    id: a.uuid
+  }))
+}
+// Función para mostrar la hora (CORREGIDA)
 const mostrarHora = (persona) => {
-  if (!persona || typeof persona !== 'object') {
-    return "--:-- --";
+  if (!persona || typeof persona !== 'object') return "--:-- --"
+
+  if (persona.estado === 'Pendiente') {
+    if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24)
+    if (persona.creadoEn) {
+      const fecha = typeof persona.creadoEn === 'string' ? new Date(persona.creadoEn) : persona.creadoEn
+      return fecha.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      })
+    }
+    return "--:-- --"
   }
 
-  // Primero intenta con horaCuba12 (ya formateada)
-  if (persona.horaCuba12) {
-    return persona.horaCuba12;
-  }
-
-  // Luego con horaCuba24 (la formateamos)
-  if (persona.horaCuba24) {
-    return formatearHora(persona.horaCuba24);
-  }
-
-  // Finalmente con el timestamp de creación
+  if (persona.horaCuba12) return persona.horaCuba12
+  if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24)
   if (persona.creadoEn?.toDate) {
-    const hora24 = persona.creadoEn.toDate().toLocaleTimeString('es-ES', {
-      timeZone: 'America/Havana',
-      hour12: false
-    });
-    return formatearHora(hora24);
+    return persona.creadoEn.toDate().toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
   }
 
-  return "--:-- --";
-};
+  return "--:-- --"
+}
 
+// Combina y ordena apuestas
+const apuestasCombinadas = computed(() => {
+  const firebaseUuids = new Set(apuestas.value.map(a => a.uuid))
+  const localesFiltradas = apuestasLocales.value.filter(local => 
+    !firebaseUuids.has(local.uuid)
+  )
+  
+  return [...apuestas.value, ...localesFiltradas].sort((a, b) => {
+    if (a.estado === 'Pendiente') return -1
+    if (b.estado === 'Pendiente') return 1
+    return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
+           (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
+  })
+})
+
+// Actualizar estado de conexión
+const updateOnlineStatus = () => {
+  isOnline.value = navigator.onLine
+  if (isOnline.value && !isSyncing.value) {
+    isSyncing.value = true
+    sincronizarPendientes().finally(() => {
+      isSyncing.value = false
+      cargarApuestasLocales()
+    })
+  }
+}
 // Resto de funciones del componente
 const cuadroClick = (persona) => {
   if (!persona.candadoAbierto) return
@@ -105,32 +143,39 @@ const toggleCandado = async (persona) => {
   persona.candadoAbierto = !persona.candadoAbierto
 }
 
-const obtenerIconoEstado = (persona) => {
-  if (persona.estado === 'Cargado') return 'bi bi-cloud-check text-success'
-  if (persona.estado === 'Pendiente') return 'bi bi-cloud-slash text-danger'
-  if (persona.estado === 'EnTiempo') return 'bi bi-stopwatch text-success'
-  if (persona.estado === 'FueraDeTiempo') return 'bi bi-stopwatch text-danger'
-  return 'bi bi-exclamation-lg text-primary'
-}
-
 // Suscripción a datos
 let unsubscribe = null
 onMounted(() => {
   unsubscribe = obtenerApuestas()
+  cargarApuestasLocales()
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
+  window.addEventListener('storage', cargarApuestasLocales)
+  
+  if (navigator.onLine) {
+    isSyncing.value = true
+    sincronizarPendientes().finally(() => {
+      isSyncing.value = false
+    })
+  }
 })
 
 onUnmounted(() => {
   if (unsubscribe) unsubscribe()
+  window.removeEventListener('online', updateOnlineStatus)
+  window.removeEventListener('offline', updateOnlineStatus)
+  window.removeEventListener('storage', cargarApuestasLocales)
 })
 </script>
 
 <template>
   <div class="m-0 p-0">
-    <div v-for="persona in apuestas" 
+    <div v-for="persona in apuestasCombinadas" 
          :key="persona.id" 
          class="col-12 m-0 mb-2 p-0 pt-3 pb-2 persona" 
          @click="cuadroClick(persona)" 
-         style="cursor: pointer;">
+         style="cursor: pointer;"
+         :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
          
       <header class="col-12 row m-0 p-0">
         <div class="col-10 -flex justify-content-start align-items-center">
@@ -204,6 +249,7 @@ onUnmounted(() => {
           <div class="mx-2 d-flex justify-content-center align-items-center">
             <p class="hora-text">{{ mostrarHora(persona) }}</p>
             <i :class="obtenerIconoEstado(persona)"></i>
+            <span v-if="!isOnline && persona.estado !== 'Pendiente'" class="ms-1 badge bg-warning text-dark">Offline</span>
           </div>
         </div>
       </footer>
@@ -262,6 +308,10 @@ p {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
   padding: 10px;
 }
+.apuesta-pendiente {
+  background-color: #fff8e1;
+  border: 2px dashed #ffc107;
+}
 .apuestas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -292,17 +342,6 @@ p {
   text-align: center;
 }
 
-.custom-modal-aceptar {
-  background-color: #1e1e2f;
-  color: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
-}
-
 .button-group {
   display: flex;
   justify-content: space-around;
@@ -327,13 +366,13 @@ p {
   color: rgb(0, 0, 0);
 }
 
-.btn.eliminar-confirmar {
-  background-color: #ff0000;
-  color: rgb(255, 255, 255);
-}
-
 .btn:hover {
   opacity: 0.8;
   font-weight: bold;
+}
+
+.badge {
+  font-size: 0.6rem;
+  padding: 0.2em 0.4em;
 }
 </style>
