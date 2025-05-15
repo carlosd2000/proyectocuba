@@ -20,14 +20,14 @@ const apuestasLocales = ref([])
 
 // Función para obtener icono de estado
 const obtenerIconoEstado = (persona) => {
-  if (!persona || !persona.estado) return 'bi bi-exclamation-lg text-primary'
+  if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
   
   switch(persona.estado) {
-    case 'Cargado': return 'bi bi-cloud-check text-success'
+    default: case 'Cargado': return 'bi bi-cloud-check text-success'
     case 'Pendiente': return 'bi bi-cloud-slash text-danger'
     case 'EnTiempo': return 'bi bi-stopwatch text-success'
     case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
-    default: return 'bi bi-exclamation-lg text-primary'
+  
   }
 }
 
