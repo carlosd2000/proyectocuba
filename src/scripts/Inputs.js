@@ -1,4 +1,3 @@
-    
     import { ref, watch, onMounted, onUnmounted } from 'vue'
     import {
     filasFijas,
@@ -10,8 +9,8 @@
     import { setNombre, setTipoOrigen, setModoEdicion } from './añadir.js'
     import { soloEnteros, cargarDatosEdicion as cargarDatosEdicionCompartida } from './inputsFunction.js'
 
-    export function useInputCandado(props) {
-    setTipoOrigen('candado')
+    export function useInputs(props) {
+    setTipoOrigen('tiros')
 
     // Cargar datos de edición usando función compartida
     const cargarDatosEdicion = () => {
@@ -20,7 +19,7 @@
         nombreUsuario,
         filasFijas,
         filasExtra,
-        5
+        5 // longitud de filas fijas
         )
         // Lógica específica para círculo solo (si aplica)
         if (props.datosEdicion?.circuloSolo) {
@@ -31,7 +30,6 @@
     // Reactivo: actualiza si los datos de edición cambian dinámicamente
     watch(() => props.datosEdicion, (nuevosDatos) => {
         if (props.modoEdicion && nuevosDatos) {
-        console.log('Actualización detectada en datosEdicion:', nuevosDatos)
         cargarDatosEdicion()
         }
     }, { deep: true, immediate: true })
@@ -43,9 +41,9 @@
 
     onMounted(() => {
         if (props.modoEdicion && props.idEdicion) {
-        setModoEdicion(true, props.idEdicion);
+        setModoEdicion(true, props.idEdicion)
         }
-    });
+    })
 
     onUnmounted(() => {
         limpiarCampos()

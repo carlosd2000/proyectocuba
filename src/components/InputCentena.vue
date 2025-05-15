@@ -86,16 +86,7 @@
 </template>
   
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import {
-  filasFijas,
-  filasExtra,
-  agregarFila,
-  limpiarCampos,
-  nombreUsuario
-} from '../scripts/operaciones.js'
-import { setNombre, setTipoOrigen, setModoEdicion } from '../scripts/añadir.js'
-import { soloEnteros, cargarDatosEdicion as cargarDatosEdicionCompartida } from '../scripts/inputsFunction.js'
+import { useInputCentena } from '../scripts/InputCentena.js'
 
 const props = defineProps({
   datosEdicion: Object,
@@ -103,46 +94,14 @@ const props = defineProps({
   idEdicion: String
 })
 
-setTipoOrigen('centena')
-
-// Cargar datos de edición usando función compartida
-const cargarDatosEdicion = () => {
-  cargarDatosEdicionCompartida(
-    props,
-    nombreUsuario,
-    filasFijas,
-    filasExtra,
-    5 // longitud de filas fijas
-  )
-  // Lógica específica para círculo solo (si aplica)
-  if (props.datosEdicion?.circuloSolo) {
-    filasFijas.value[2].circuloSolo = props.datosEdicion.circuloSolo.toString()
-  }
-}
-
-// Reactivo: actualiza si los datos de edición cambian
-watch(() => props.datosEdicion, (nuevosDatos) => {
-  if (props.modoEdicion && nuevosDatos) {
-    console.log('Actualización detectada en datosEdicion:', nuevosDatos)
-    cargarDatosEdicion()
-  }
-}, { deep: true, immediate: true })
-
-// Sincroniza nombre con añadir.js
-watch(nombreUsuario, (nuevo) => {
-  setNombre(nuevo)
-})
-
-onMounted(() => {
-  if (props.modoEdicion && props.idEdicion) {
-    setModoEdicion(true, props.idEdicion)
-  }
-})
-
-onUnmounted(() => {
-  limpiarCampos()
-  setModoEdicion(false, '')
-})
+const {
+  filasFijas,
+  filasExtra,
+  agregarFila,
+  limpiarCampos,
+  nombreUsuario,
+  soloEnteros
+} = useInputCentena(props)
 </script>
   
   <style scoped>
