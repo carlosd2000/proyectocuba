@@ -308,10 +308,6 @@ p {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
   padding: 10px;
 }
-.apuesta-pendiente {
-  background-color: #fff8e1;
-  border: 2px dashed #ffc107;
-}
 .apuestas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -342,6 +338,17 @@ p {
   text-align: center;
 }
 
+.custom-modal-aceptar {
+  background-color: #1e1e2f;
+  color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
 .button-group {
   display: flex;
   justify-content: space-around;
@@ -366,13 +373,13 @@ p {
   color: rgb(0, 0, 0);
 }
 
+.btn.eliminar-confirmar {
+  background-color: #ff0000;
+  color: rgb(255, 255, 255);
+}
+
 .btn:hover {
   opacity: 0.8;
   font-weight: bold;
-}
-
-.badge {
-  font-size: 0.6rem;
-  padding: 0.2em 0.4em;
 }
 </style>
