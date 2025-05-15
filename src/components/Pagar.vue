@@ -42,7 +42,7 @@
     >
       <div class="p-3 d-flex justify-content-center">
         <i class="mx-2 bi bi-check-circle-fill text-success"></i>
-        Jugada enviada
+        Jugada actualizada
       </div>
     </div>
   </div>
