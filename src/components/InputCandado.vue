@@ -93,6 +93,7 @@ import {
   nombreUsuario
 } from '../scripts/operaciones.js'
 import { setNombre, setTipoOrigen, setModoEdicion } from '../scripts/añadir.js'
+import { soloEnteros, cargarDatosEdicion as cargarDatosEdicionCompartida } from '../scripts/inputsFunction.js'
 
 const props = defineProps({
   datosEdicion: Object,
@@ -102,41 +103,17 @@ const props = defineProps({
 
 setTipoOrigen('candado')
 
-// Cargar datos de edición
+// Cargar datos de edición usando función compartida
 const cargarDatosEdicion = () => {
-  if (!props.datosEdicion) return
-  
-  nombreUsuario.value = props.datosEdicion.nombre || ''
-  
-  // Limpiar campos primero
-  filasFijas.value = Array(5).fill().map(() => ({
-    cuadrado: '',
-    circulo1: '',
-    circulo2: '',
-    circuloSolo: ''
-  }))
-  filasExtra.value = []
-  
-  // Cargar datos
-  if (props.datosEdicion.datos) {
-    props.datosEdicion.datos.forEach((fila, index) => {
-      const datosFila = {
-        cuadrado: fila.cuadrado?.toString() || '',
-        circulo1: fila.circulo1?.toString() || '',
-        circulo2: fila.circulo2?.toString() || '',
-        circuloSolo: fila.circuloSolo?.toString() || ''
-      }
-      
-      if (index < 5) {
-        filasFijas.value[index] = datosFila
-      } else {
-        filasExtra.value.push(datosFila)
-      }
-    })
-  }
-  
-  // Cargar círculo solo
-  if (props.datosEdicion.circuloSolo) {
+  cargarDatosEdicionCompartida(
+    props,
+    nombreUsuario,
+    filasFijas,
+    filasExtra,
+    5
+  )
+  // Lógica específica para círculo solo (si aplica)
+  if (props.datosEdicion?.circuloSolo) {
     filasFijas.value[2].circuloSolo = props.datosEdicion.circuloSolo.toString()
   }
 }
@@ -153,13 +130,6 @@ watch(() => props.datosEdicion, (nuevosDatos) => {
 watch(nombreUsuario, (nuevo) => {
   setNombre(nuevo)
 })
-
-const soloEnteros = (e) => {
-  const charCode = e.which ? e.which : e.keyCode
-  if (charCode < 48 || charCode > 57) {
-    e.preventDefault()
-  }
-}
 
 onMounted(() => {
   if (props.modoEdicion && props.idEdicion) {
