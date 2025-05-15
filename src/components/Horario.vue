@@ -36,13 +36,18 @@
   const route = useRoute()
   const router = useRouter()
   
+  const props = defineProps({
+    horarioEdicion: String,
+    modoEdicion: Boolean
+  })
+
   // Turnos disponibles
   const opciones = ['Dia', 'Tarde', 'Noche']
   const turnoSeleccionado = ref('Dia')
   
   // Total sumado
   const totalGlobal = ref(0)
-  
+
   // Mostrar total con formato
   const totalFormateado = computed(() => {
     return `$${totalGlobal.value.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
@@ -80,10 +85,12 @@
   
   // Iniciar escucha al montar
   onMounted(() => {
+    // Solo establecer 'Dia' como predeterminado si no estamos en modo edición
+    if (!props.modoEdicion) {
+      turnoSeleccionado.value = 'Dia'
+      setHorario('Dia')
+    }
     escucharCambios()
-    turnoSeleccionado.value = 'Dia'
-    setHorario('Dia')
-
   })
   
   // Escuchar cambios de turno
@@ -91,6 +98,13 @@
     setHorario(nuevoHorario) // Actualiza el horario en añadir.js
     escucharCambios()
   })
+  // Escuchar cambios en horarioEdicion
+  watch(() => props.horarioEdicion, (nuevoHorario) => {
+    if (props.modoEdicion && nuevoHorario) {
+      turnoSeleccionado.value = nuevoHorario
+      setHorario(nuevoHorario)
+    }
+  }, { immediate: true })
   
   // Cancelar listener al desmontar
   onBeforeUnmount(() => {
@@ -100,11 +114,11 @@
   </script>
   
   
-  <style scoped>
+<style scoped>
   select:focus {
     box-shadow: none;
   }
   .bi {
     font-size: 1.2rem;
   }
-  </style>
+</style>

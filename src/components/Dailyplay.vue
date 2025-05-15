@@ -18,31 +18,31 @@
                 </div>
             </div>
             <div class="col-12 row p-0 m-0 d-flex justify-content-around align-items-center">
-                <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}`)">
+                <div class="col-3 p-0 py-1 buttons-heith">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
                         <i class="bi bi-plus-lg m-0 p-0"></i>
                         <span class="text-center">Añadir<br>Jugada</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/parlet/${$route.params.id}`)">
+                <div class="col-3 p-0 py-1 buttons-heith">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
                         <i class="bi bi-plus-lg"></i>
                         <span class="text-center">Añadir<br>Parlet</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/candado/${$route.params.id}`)">
+                <div class="col-3 p-0 py-1 buttons-heith">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
                         <i class="bi bi-plus-lg"></i>
                         <span class="text-center">Añadir<br>Candado</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/centena/${$route.params.id}`)">
+                <div class="col-3 p-0 py-1 buttons-heith">
+                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
                         <i class="bi bi-plus-lg"></i>
                         <span class="text-center">Añadir<br>Centena</span>
                     </button>
                 </div>
-            </div>
+            </div>            
             <div class="col-12 p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
                 <button class="col-12 row p-1 btn-list" @click="$router.push(`/listas/${$route.params.id}`)">
                     <p class="m-1">Lista</p>

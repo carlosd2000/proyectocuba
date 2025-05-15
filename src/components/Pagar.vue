@@ -33,10 +33,24 @@
       </div>
     </div>
   </div>
+  <div v-if="mostrarToastUpdate" class="toast-container">
+    <div
+      class="toast show w-100 rounded-0"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
+      <div class="p-3 d-flex justify-content-center">
+        <i class="mx-2 bi bi-check-circle-fill text-success"></i>
+        Jugada actualizada
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router' // Importa router y route
 import {
   filasFijas,
   filasExtra,
@@ -44,10 +58,14 @@ import {
   limpiarCampos,
   validarFilas
 } from '../scripts/operaciones.js'
-import { guardarDatos, setNombre } from '../scripts/añadir.js'
+import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
+
+const router = useRouter()
+const route = useRoute()
 
 const totales = computed(() => calcularTotales(filasFijas, filasExtra))
 const mostrarToastSave = ref(false)
+const mostrarToastUpdate = ref(false)
 const errorMessage = ref('')
 
 const validarAntesDeEnviar = () => {
@@ -77,16 +95,24 @@ const lanzarToast = async () => {
 
   const resultado = await guardarDatos()
 
-  if (resultado.success) {
-    limpiarCampos()         // limpia filas fijas y extras
-    setNombre('')           // limpia nombre global
-    mostrarToastSave.value = true
-
-    setTimeout(() => {
-      mostrarToastSave.value = false
-    }, 3000)
-  } else {
-    alert('Error al guardar: ' + resultado.message)
+  if (resultado.success) {    
+    if (modoEdicion.value) {
+      mostrarToastUpdate.value = true
+      setTimeout(() => {
+        limpiarCampos()
+        setNombre('')
+        mostrarToastUpdate.value = false
+        router.push(`/listas/${route.params.id}`)
+      }, 1000)
+    }
+    else{
+      mostrarToastSave.value = true
+      setTimeout(() => {
+        limpiarCampos()
+        setNombre('')
+        mostrarToastSave.value = false
+      }, 3000)
+    }
   }
 }
 </script>

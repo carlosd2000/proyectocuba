@@ -39,16 +39,6 @@ const router = createRouter({
       component: () => import('../views/AñadirJugada.vue'),
     },
     {
-      path: '/parlet/:id',
-      name: 'parlet',
-      component: () => import('../views/Parlet.vue'),
-    },
-    {
-      path: '/candado/:id',
-      name: 'candado',
-      component: () => import('../views/Candado.vue'),
-    },
-    {
       path: '/listas/:id',
       name: 'listas',
       component: () => import('../views/Listas.vue'),
@@ -57,16 +47,6 @@ const router = createRouter({
       path: '/horario',
       name: 'horario',
       component: () => import('../views/Horario.vue'),
-    },
-    {      
-      path: '/patherlist/:id',      
-      name: 'Patherlist',
-      component: () => import('../views/Patherlist.vue'),          
-    },
-    {
-      path: '/centena/:id',
-      name: 'Centena',
-      component: () => import('../views/Centena.vue'),
     },
     // Ruta opcional para registro directo con tipo + id
     // Puedes comentar esta línea si aún no la usas

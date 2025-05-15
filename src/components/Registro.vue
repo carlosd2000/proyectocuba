@@ -42,13 +42,14 @@
 
             <div class="mb-3" v-if="showSelect">
               <label for="opciones" class="form-label">Tipo de cuenta</label>
-              <select v-model="tipoCuenta" class="form-select" id="opciones">
-                <option disabled value="">Seleccionar</option>
-                <option v-if="userProfile?.tipo === 'admin'" value="bancos">Banco</option>
-                <option v-if="userProfile?.tipo === 'bancos'" value="colectores">Colector</option>
-                <option v-if="['bancos', 'colectores'].includes(userProfile?.tipo)" value="listeros">Listero</option>
-              </select>
+                <select v-model="tipoCuenta" class="form-select" id="opciones">
+                  <option disabled value="">Seleccionar</option>
+                  <option v-if="authStore.profile?.tipo === 'admin'" value="bancos">Banco</option>
+                  <option v-if="authStore.profile?.tipo === 'bancos'" value="colectores">Colector</option>
+                  <option v-if="['bancos', 'colectores'].includes(authStore.profile?.tipo)" value="listeros">Listero</option>
+                </select>
             </div>
+
 
             <button
               type="submit"
@@ -75,8 +76,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AuthService } from '@/firebase/auth'
-import { auth } from '@/firebase/config'
-import { signOut } from 'firebase/auth'
+import { useAuthStore } from '@/stores/authStore'
 import Swal from 'sweetalert2'
 
 const nombre = ref('')
@@ -87,21 +87,21 @@ const mensajeNombre = ref('')
 const isValidNombre = ref(false)
 const mensajePassword = ref('')
 const isValidPassword = ref(false)
-const userProfile = ref(null)
 const isLoading = ref(false)
-
 const creadorId = ref('')
 const tipoCreador = ref('')
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
+
+// Usamos directamente authStore.profile en lugar de userProfile
+const showSelect = computed(() => {
+  const tipo = authStore.profile?.tipo
+  return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectores'
+})
 
 onMounted(() => {
-  const saved = localStorage.getItem('userProfile')
-  if (saved) {
-    userProfile.value = JSON.parse(saved)
-  }
-
   // Detectar creadorId y tipoCreador desde la URL
   creadorId.value = route.params.id || ''
 
@@ -110,11 +110,6 @@ onMounted(() => {
   } else if (route.path.includes('/colectores')) {
     tipoCreador.value = 'colector'
   }
-})
-
-const showSelect = computed(() => {
-  const tipo = userProfile.value?.tipo
-  return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectores'
 })
 
 const validateNombre = () => {
@@ -209,8 +204,7 @@ const limpiarCampos = () => {
 
 const cerrarSesion = async () => {
   try {
-    await signOut(auth)
-    localStorage.removeItem('userProfile')
+    await authStore.logout()
     router.push('/')
   } catch (error) {
     console.error("Error al cerrar sesión", error)

@@ -1,109 +1,245 @@
 // src/scripts/añadir.js
+import { db, auth } from '../firebase/config';
+import { serverTimestamp, updateDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { filasFijas, filasExtra, calcularTotales } from './operaciones';
+import { ref } from 'vue';
+import { obtenerHoraCuba, formatearHoraCuba } from './horacuba.js';
 
-import { db, auth } from '../firebase/config'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { filasFijas, filasExtra, calcularTotales } from './operaciones'
+// Variables reactivas
+export const nombreTemporal = ref('SinNombre');
+export const tipoOrigen = ref('tiros');
+export const horarioSeleccionado = ref('Dia');
+export const modoEdicion = ref(false);
+export const idEdicion = ref('');
 
-// Variables compartidas
-let nombreTemporal = 'SinNombre'
-let tipoOrigen = 'tiros' // Valor por defecto
-let horarioSeleccionado = 'Dia' // Valor por defecto
+let syncPending = false;
 
-// Actualiza el nombre del jugador
-export function setNombre(nombre) {
-  nombreTemporal = nombre?.trim() || 'SinNombre'
+/**
+ * Genera un UUID único para cada apuesta
+ */
+function generarUUID() {
+  return window.crypto?.randomUUID?.() || 
+         Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-// Define desde qué componente se originó la jugada
-export function setTipoOrigen(tipo) {
-  tipoOrigen = tipo || 'tiros'
-}
-
-// Define el horario seleccionado
-export function setHorario(horario) {
-  horarioSeleccionado = horario || 'Dia'
-}
-
-// Guarda los datos válidos en Firebase
-export async function guardarDatos() {
+/**
+ * Guarda apuestas pendientes en localStorage
+ */
+function guardarEnLocal(docAGuardar) {
   try {
-    const datosAGuardar = []
+    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
+    
+    if (!existe) {
+      pendientes.push(docAGuardar);
+      localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error guardando en localStorage:', error);
+    return false;
+  }
+}
 
-    // Calcular los totales
-    const { col3, col4, col5 } = calcularTotales(filasFijas, filasExtra)
-    const totalGlobal = col3 + col4 + col5
+// ================= CONFIGURACIÓN =================
+export function setNombre(nombre) {
+  nombreTemporal.value = nombre?.trim() || 'SinNombre';
+}
 
-    // Obtener circuloSolo desde la fila 3
-    const circuloSolo = filasFijas.value[2]?.circuloSolo
-    const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo)
+export function setTipoOrigen(tipo) {
+  tipoOrigen.value = tipo || 'tiros';
+}
 
-    // Solo aplicamos "/candado" si el tipoOrigen es "tiros"
-    let tipoFinal = tipoOrigen;
-    if (circuloSoloValido && tipoOrigen === "tiros") {  // ⚠️ Solo para "tiros"
-      tipoFinal = `${tipoOrigen}/candado`;  // Ej: "tiros/candado"
+export function setHorario(horario) {
+  horarioSeleccionado.value = horario || 'Dia';
+}
+
+export function setModoEdicion(editar, id) {
+  modoEdicion.value = editar;
+  idEdicion.value = id || '';
+}
+
+// ================= PROCESAMIENTO DE DATOS =================
+function procesarFilas(filas, tipo) {
+  return filas.map((fila, index) => {
+    if (index === 2 && tipo === 'fija') {
+      const { circuloSolo, ...resto } = fila;
+      fila = resto;
     }
 
-    // Procesar filas fijas
-    filasFijas.value.forEach((fila, index) => {
-      if (index === 2) {
-        const { circuloSolo, ...resto } = fila
-        fila = resto
+    const filaProcesada = { tipo, fila: index + 1 };
+    let tieneDatos = false;
+
+    for (const clave in fila) {
+      const valor = fila[clave];
+      if (valor !== '' && valor !== null && !isNaN(valor)) {
+        filaProcesada[clave] = Number(valor);
+        tieneDatos = true;
       }
+    }
 
-      const filaProcesada = { tipo: 'fija', fila: index + 1 }
-      let tieneDato = false
+    return tieneDatos ? filaProcesada : null;
+  }).filter(Boolean);
+}
 
-      for (let clave in fila) {
-        const valor = fila[clave]
-        if (valor !== '' && valor !== null && !isNaN(valor)) {
-          filaProcesada[clave] = Number(valor)
-          tieneDato = true
-        }
-      }
+// ================= FUNCIÓN PRINCIPAL =================
+export async function guardarDatos() {
+  const { hora24, hora12, timestamp } = obtenerHoraCuba();
+  const uuid = generarUUID();
 
-      if (tieneDato) datosAGuardar.push(filaProcesada)
-    })
+  try {
+    // 1. Calcular totales
+    const { col3, col4, col5 } = calcularTotales(filasFijas, filasExtra);
+    const totalGlobal = col3 + col4 + col5;
 
-    // Procesar filas extra
-    filasExtra.value.forEach((fila, index) => {
-      const filaProcesada = { tipo: 'extra', fila: index + 1 }
-      let tieneDato = false
+    // 2. Verificar círculo solo
+    const circuloSolo = filasFijas.value[2]?.circuloSolo;
+    const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
 
-      for (let clave in fila) {
-        const valor = fila[clave]
-        if (valor !== '' && valor !== null && !isNaN(valor)) {
-          filaProcesada[clave] = Number(valor)
-          tieneDato = true
-        }
-      }
+    // 3. Procesar filas
+    const datosAGuardar = [
+      ...procesarFilas(filasFijas.value, 'fija'),
+      ...procesarFilas(filasExtra.value, 'extra')
+    ];
 
-      if (tieneDato) datosAGuardar.push(filaProcesada)
-    })
-
+    // 4. Validación
     if (datosAGuardar.length === 0 && !circuloSoloValido && totalGlobal === 0) {
-      return { success: false, message: 'No se ingresaron datos válidos.' }
+      return { 
+        success: false, 
+        message: 'No hay datos válidos para guardar'
+      };
     }
 
-    // Documento final
+    // 5. Preparar documento final
     const docAGuardar = {
-      nombre: nombreTemporal,
+      nombre: nombreTemporal.value,
       totalGlobal,
       datos: datosAGuardar,
       creadoEn: serverTimestamp(),
-      id_listero: auth.currentUser?.uid || 'sin-autenticacion',
-      tipo: tipoFinal, // Usamos el tipo final aquí
-      horario: horarioSeleccionado // Añadimos el horario aquí
-    }
+      id_listero: auth.currentUser?.uid || 'sin-autenticar',
+      tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
+      horario: horarioSeleccionado.value,
+      uuid,
+      horaCuba24: hora24,
+      horaCuba12: hora12,
+      candadoAbierto: true,
+      timestampLocal: timestamp
+    };
 
+    // 6. Agregar circuloSolo si es válido
     if (circuloSoloValido) {
-      docAGuardar.circuloSolo = Number(circuloSolo)
+      docAGuardar.circuloSolo = Number(circuloSolo);
     }
 
-    await addDoc(collection(db, 'apuestas'), docAGuardar)
+    // 6.1 Guardar según conexión
+    if (!navigator.onLine) {
+      docAGuardar.creadoEn = new Date().toISOString();
+      docAGuardar.estado = 'Pendiente';
+      const guardado = guardarEnLocal(docAGuardar);
+      
+      return { 
+        success: guardado, 
+        offline: true,
+        uuid,
+        hora: hora24
+      };
+    }
 
-    return { success: true, message: 'Datos guardados correctamente' }
+    // 7. Lógica diferente para edición vs creación
+    if (modoEdicion.value && idEdicion.value) {
+      await updateDoc(doc(db, 'apuestas', idEdicion.value), docAGuardar);
+      
+      return { 
+        success: true, 
+        message: `Datos actualizados a las ${hora24}`,
+        horaExacta: hora24,
+        docId: idEdicion.value
+      };
+    } else {
+      const docRef = doc(db, 'apuestas', uuid);
+      await setDoc(docRef, docAGuardar);
+
+      return { 
+        success: true, 
+        uuid,
+        message: `Datos guardados a las ${hora24}`,
+        horaExacta: hora24,
+        docId: docRef.id
+      };
+    }
   } catch (error) {
-    console.error('Error guardando en Firebase:', error)
-    return { success: false, message: error.message }
+    console.error('Error al guardar:', error);
+    const { hora24 } = obtenerHoraCuba();
+    return { 
+      success: false, 
+      message: `Error a las ${hora24}: ${error.message}`,
+      horaError: hora24
+    };
   }
+}
+
+// ================= SINCRONIZACIÓN =================
+export async function sincronizarPendientes() {
+  if (!navigator.onLine || syncPending) return;
+  
+  syncPending = true;
+  console.log('[SYNC] Iniciando sincronización de pendientes...');
+  
+  try {
+    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    const pendientesExitosos = [];
+    
+    for (const apuesta of pendientes) {
+      try {
+        const docRef = doc(db, 'apuestas', apuesta.uuid);
+        const snap = await getDoc(docRef);
+        
+        if (!snap.exists()) {
+          console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
+          
+          await setDoc(docRef, {
+            ...apuesta,
+            creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
+            sincronizadoEn: serverTimestamp(),
+            estado: 'Cargado',
+            candadoAbierto: true
+          });
+          pendientesExitosos.push(apuesta.uuid);
+        }
+      } catch (error) {
+        console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
+        break;
+      }
+    }
+    
+    if (pendientesExitosos.length > 0) {
+      const nuevosPendientes = pendientes.filter(p => !pendientesExitosos.includes(p.uuid));
+      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes));
+      console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas`);
+    }
+  } catch (error) {
+    console.error('[SYNC] Error general:', error);
+  } finally {
+    syncPending = false;
+  }
+}
+
+// ================= LISTENERS DE CONEXIÓN =================
+if (typeof window !== 'undefined') {
+  // Sincronizar inmediatamente si hay conexión
+  if (navigator.onLine) {
+    setTimeout(() => {
+      if (!syncPending) {
+        sincronizarPendientes();
+      }
+    }, 2000);
+  }
+
+  // Listener para cambios de conexión
+  window.addEventListener('online', () => {
+    if (!syncPending) {
+      setTimeout(sincronizarPendientes, 1000);
+    }
+  });
 }

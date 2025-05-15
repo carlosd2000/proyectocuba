@@ -39,43 +39,43 @@ watch(desplegado2, (newValue) => {
         </div>
         <div v-if="desplegado2" class="col-12">
             <div class="col-12 row p-0 m-0">
-                <div class="col-3 p-1 buttons-heith">
+                <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/horario')">
                         <i class="bi bi-clock-history m-0 p-0"></i>
                         <span>Horario</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
+                <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
                         <i class="bi bi-cash-coin m-0 p-0"></i>
                         <span>Pagos</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
+                <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
                         <i class="bi bi-exclamation-triangle m-0 p-0"></i>
                         <span>Limitados</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
+                <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
                         <i class="bi bi-exclamation-triangle m-0 p-0"></i>
                         <span>Limites</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
+                <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
                         <i class="bi bi-8-circle-fill m-0 p-0"></i>
                         <span>Historico</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
+                <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
                         <i class="bi bi-receipt-cutoff m-0 p-0"></i>
                         <span>Deuda</span>
                     </button>
                 </div>
-                <div class="col-3 p-1 buttons-heith">
+                <div class="col-3 p-0 py-1 buttons-heith">
                     <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center"  @click="logout">
                         <i class="bi bi-arrow-left m-0 p-0"></i>
                         <span>Cerrar</span>

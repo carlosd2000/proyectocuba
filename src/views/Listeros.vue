@@ -2,7 +2,28 @@
 import Header from '../components/Header.vue'
 import Dailyplay from '../components/Dailyplay.vue'
 import Tools from '../components/Tools.vue'
+import { onMounted, ref } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+const isLoading = ref(true)
+const error = ref(null)
+
+onMounted(async () => {
+  try {
+    if (authStore.isAuthenticated && !authStore.profile) {
+      await authStore.loadUserProfile()
+    }
+    // Aquí puedes cargar datos específicos de Listeros si es necesario
+  } catch (e) {
+    error.value = "Error cargando datos"
+    console.error("Error en Listeros:", e)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
+
 
 <template>
   <div class="container-login">

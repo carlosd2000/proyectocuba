@@ -37,6 +37,7 @@
                 class="form-input cuadrado celda"
                 min="0"
                 step="1"
+                placeholder="000"
                 @keypress="soloEnteros($event)"
                 v-model="filasFijas[fila - 1].cuadrado"
               />
@@ -55,6 +56,7 @@
                 class="form-input cuadrado celda"
                 min="0"
                 step="1"
+                placeholder="000"
                 @keypress="soloEnteros($event)"
                 v-model="fila.cuadrado"
               />
@@ -81,36 +83,67 @@
         </div>
       </div>
     </div>
-  </template>
+</template>
   
-  <script setup>
-  import { ref, watch, onUnmounted } from 'vue'
-  import {
+<script setup>
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import {
+  filasFijas,
+  filasExtra,
+  agregarFila,
+  limpiarCampos,
+  nombreUsuario
+} from '../scripts/operaciones.js'
+import { setNombre, setTipoOrigen, setModoEdicion } from '../scripts/añadir.js'
+import { soloEnteros, cargarDatosEdicion as cargarDatosEdicionCompartida } from '../scripts/inputsFunction.js'
+
+const props = defineProps({
+  datosEdicion: Object,
+  modoEdicion: Boolean,
+  idEdicion: String
+})
+
+setTipoOrigen('centena')
+
+// Cargar datos de edición usando función compartida
+const cargarDatosEdicion = () => {
+  cargarDatosEdicionCompartida(
+    props,
+    nombreUsuario,
     filasFijas,
     filasExtra,
-    agregarFila,
-    limpiarCampos,
-    nombreUsuario
-  } from '../scripts/operaciones.js'
-  import { setNombre, setTipoOrigen } from '../scripts/añadir.js'
-  setTipoOrigen('centena')
-  
-  // Sincronizar el nombre ingresado
-  watch(nombreUsuario, (nuevo) => {
-    setNombre(nuevo)
-  })
-  
-  const soloEnteros = (e) => {
-    const charCode = e.which ? e.which : e.keyCode
-    if (charCode < 48 || charCode > 57) {
-      e.preventDefault()
-    }
+    5 // longitud de filas fijas
+  )
+  // Lógica específica para círculo solo (si aplica)
+  if (props.datosEdicion?.circuloSolo) {
+    filasFijas.value[2].circuloSolo = props.datosEdicion.circuloSolo.toString()
   }
-  
-  onUnmounted(() => {
-    limpiarCampos()
-  })
-  </script>
+}
+
+// Reactivo: actualiza si los datos de edición cambian
+watch(() => props.datosEdicion, (nuevosDatos) => {
+  if (props.modoEdicion && nuevosDatos) {
+    console.log('Actualización detectada en datosEdicion:', nuevosDatos)
+    cargarDatosEdicion()
+  }
+}, { deep: true, immediate: true })
+
+// Sincroniza nombre con añadir.js
+watch(nombreUsuario, (nuevo) => {
+  setNombre(nuevo)
+})
+
+onMounted(() => {
+  if (props.modoEdicion && props.idEdicion) {
+    setModoEdicion(true, props.idEdicion)
+  }
+})
+
+onUnmounted(() => {
+  limpiarCampos()
+  setModoEdicion(false, '')
+})
+</script>
   
   <style scoped>
   .form-input {
@@ -161,4 +194,3 @@
     -moz-appearance: textfield;
   }
   </style>
-  

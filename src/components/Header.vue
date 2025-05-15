@@ -24,10 +24,12 @@
   import { computed, ref, onMounted, onUnmounted } from 'vue'
   import { db } from '../firebase/config'
   import { doc, onSnapshot } from 'firebase/firestore'
+  import { useAuthStore } from '@/stores/authStore'
 
   // Variables
   const route = useRoute()
   const router = useRouter()
+  const authStore = useAuthStore()
 
   const turnos = ['dia', 'tarde', 'noche']
   const turnoActual = ref('')
@@ -39,18 +41,14 @@
   const back = computed(() => route.path.startsWith('/listeros'))
   const bell = computed(() => route.path.startsWith('/listeros'))
 
-  // Función para volver al home (dinámico por ID)
-
   const irwallet = () => {
-    const userProfile = JSON.parse(localStorage.getItem('userProfile'))
-
-    if (userProfile && userProfile.uid && userProfile.tipo) {
-      router.push(`/${userProfile.tipo}/${userProfile.uid}`)
+    if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
+      router.push(`/${authStore.userType}/${authStore.userId}`)
     } else {
-      // Si no hay sesión guardada, envíalo al login
       router.push('/')
     }
   }
+
 
   // Obtener fecha y hora reales en Cuba
   const getFechaHoraCuba = () => {
