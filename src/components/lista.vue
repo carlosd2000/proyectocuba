@@ -3,8 +3,8 @@ import { onMounted, onUnmounted, ref, computed } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
-import { sincronizarPendientes, formatearHoraCuba } from '../scripts/añadir.js'
-
+import { sincronizarPendientes } from '../scripts/añadir.js'
+import { formatearHoraCuba, parsearFechaFirebase } from '../scripts/horacuba.js' 
 const router = useRouter()
 const route = useRoute()
 
@@ -42,33 +42,26 @@ function cargarApuestasLocales() {
 }
 // Función para mostrar la hora (CORREGIDA)
 const mostrarHora = (persona) => {
-  if (!persona || typeof persona !== 'object') return "--:-- --"
-
-  if (persona.estado === 'Pendiente') {
-    if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24)
-    if (persona.creadoEn) {
-      const fecha = typeof persona.creadoEn === 'string' ? new Date(persona.creadoEn) : persona.creadoEn
-      return fecha.toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      })
-    }
-    return "--:-- --"
+  if (!persona) return "--:-- --";
+  
+  // Prioridad 1: Hora preformateada (12h)
+  if (persona.horaCuba12) return persona.horaCuba12;
+  
+  // Prioridad 2: Hora en 24h (convertir a 12h)
+  if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24);
+  
+  // Prioridad 3: Timestamp (Firebase o string)
+  if (persona.creadoEn) {
+    const fecha = parsearFechaFirebase(persona.creadoEn);
+    return fecha.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true 
+    });
   }
-
-  if (persona.horaCuba12) return persona.horaCuba12
-  if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24)
-  if (persona.creadoEn?.toDate) {
-    return persona.creadoEn.toDate().toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    })
-  }
-
-  return "--:-- --"
-}
+  
+  return "--:-- --";
+};
 
 // Combina y ordena apuestas
 const apuestasCombinadas = computed(() => {
@@ -307,6 +300,10 @@ p {
   border: #000 solid 2px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
   padding: 10px;
+}
+.apuesta-pendiente {
+  background-color: #fff8e1;
+  border: 2px dashed #ffc107;
 }
 .apuestas {
   display: grid;
