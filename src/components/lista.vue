@@ -54,39 +54,29 @@ function cargarApuestasLocales() {
 const mostrarHora = (persona) => {
   if (!persona || typeof persona !== 'object') return "--:-- --"
 
-    // Primero intentamos con sincronizadoEn
-  if (persona.sincronizadoEn?.toDate) {
-    return persona.sincronizadoEn.toDate().toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    })
-  } else if (persona.sincronizadoEn && typeof persona.sincronizadoEn === 'string') {
-    const fechaSync = new Date(persona.sincronizadoEn)
-    return fechaSync.toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    })
+  const opciones = {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Havana' // Huso horario de Cuba
+  };
+
+  const formatearHora = (fecha) => {
+    if (!fecha) return "--:-- --";
+    const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha.toDate?.() || fecha;
+    return fechaObj.toLocaleTimeString('es-ES', opciones);
+  };
+
+  if (persona.sincronizadoEn) {
+    return formatearHora(persona.sincronizadoEn);
   }
 
-  if (persona.estado === 'Pendiente') {
-    if (persona.creadoEn) {
-      const fecha = typeof persona.creadoEn === 'string' ? new Date(persona.creadoEn) : persona.creadoEn
-      return fecha.toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      })
-    }
-    return "--:-- --"
+  if (persona.estado === 'Pendiente' && persona.creadoEn) {
+    return formatearHora(persona.creadoEn);
   }
-  if (persona.creadoEn?.toDate) {
-    return persona.creadoEn.toDate().toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    })
+
+  if (persona.creadoEn) {
+    return formatearHora(persona.creadoEn);
   }
 
   return "--:-- --"

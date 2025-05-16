@@ -3,7 +3,7 @@ import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
 import { ref } from 'vue';
-import { obtenerHoraCuba, formatearHoraCuba } from './horacuba.js';
+import { obtenerHoraCuba } from './horacuba.js';
 
 // Variables reactivas
 export const nombreTemporal = ref('SinNombre');
@@ -141,6 +141,7 @@ export async function guardarDatos() {
         success: guardado, 
         offline: true,
         uuid,
+        
         hora: hora24
       };
     }
@@ -155,8 +156,10 @@ export async function guardarDatos() {
         horaExacta: hora24,
         docId: idEdicion.value
       };
-    } else {
+    } 
+    else {
       const docRef = doc(db, 'apuestas', uuid);
+      docAGuardar.creadoEn = serverTimestamp();
       await setDoc(docRef, docAGuardar);
 
       return { 
@@ -169,6 +172,7 @@ export async function guardarDatos() {
     }
   } catch (error) {
     console.error('Error al guardar:', error);
+
     const { hora24 } = obtenerHoraCuba();
     return { 
       success: false, 
