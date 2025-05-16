@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import Swal from 'sweetalert2'
-import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
+import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
 import { sincronizarPendientes } from '../scripts/añadir.js'
 import { formatearHoraCuba, parsearFechaFirebase } from '../scripts/horacuba.js' 
@@ -33,12 +33,22 @@ const obtenerIconoEstado = (persona) => {
 
 // Cargar apuestas locales desde localStorage
 function cargarApuestasLocales() {
-  const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
-  apuestasLocales.value = pendientes.map(a => ({
-    ...a,
-    estado: 'Pendiente',
-    id: a.uuid
-  }))
+  try {
+    const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}');
+    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    
+    apuestasLocales.value = pendientes
+      .filter(a => !eliminacionesPermanentes[a.uuid])
+      .map(a => ({
+        ...a,
+        estado: 'Pendiente',
+        id: a.uuid,
+        uuid: a.uuid
+      }));
+  } catch (error) {
+    console.error('Error cargando apuestas locales:', error);
+    apuestasLocales.value = [];
+  }
 }
 // Función para mostrar la hora (CORREGIDA)
 const mostrarHora = (persona) => {
@@ -80,16 +90,19 @@ const apuestasCombinadas = computed(() => {
 
 // Actualizar estado de conexión
 const updateOnlineStatus = () => {
-  isOnline.value = navigator.onLine
-  if (isOnline.value && !isSyncing.value) {
-    isSyncing.value = true
-    sincronizarPendientes().finally(() => {
-      isSyncing.value = false
-      cargarApuestasLocales()
-    })
+  isOnline.value = navigator.onLine;
+  if (isOnline.value) {
+    isSyncing.value = true;
+    Promise.all([
+      sincronizarPendientes(),
+      sincronizarEliminaciones() // ← Añadir esta línea
+    ]).finally(() => {
+      isSyncing.value = false;
+      cargarApuestasLocales();
+    });
   }
 }
-// Resto de funciones del componente
+// Resto de funciones del componenten
 const cuadroClick = (persona) => {
   if (!persona.candadoAbierto) return
   personaSeleccionada.value = persona
@@ -113,11 +126,64 @@ const editarPersona = async () => {
 };
 
 const eliminarPersona = async () => {
-  await eliminarApuesta(personaSeleccionada.value.id)
-  mostrarConfirmacionEliminar.value = false
-  mostrarModal.value = false
+  try {
+    const id = personaSeleccionada.value.id;
+    const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
+    
+    // Eliminar visualmente INMEDIATAMENTE
+    if (esPendiente) {
+      apuestasLocales.value = apuestasLocales.value.filter(a => a.uuid !== id);
+      
+      // Eliminar COMPLETAMENTE de localStorage
+      const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+      const nuevasPendientes = pendientes.filter(p => p.uuid !== id);
+      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevasPendientes));
+      
+      // Crear registro de eliminación permanente
+      const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}');
+      eliminacionesPermanentes[id] = true;
+      localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesPermanentes));
+    } else {
+      apuestas.value = apuestas.value.filter(a => a.id !== id);
+    }
+    
+    // Llamar a la función de eliminación (indicando si es pendiente)
+    const { success } = await eliminarApuesta(id, esPendiente);
+    
+    if (!success) {
+      throw new Error('No se pudo completar la eliminación');
+    }
+    
+    // Cerrar modales
+    mostrarConfirmacionEliminar.value = false;
+    mostrarModal.value = false;
+    
+    Swal.fire({
+      icon: 'success',
+      title: '¡Eliminada!',
+      text: 'La apuesta fue removida',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  } catch (error) {
+    console.error('Error en eliminarPersona:', error);
+    
+    // Revertir cambios visuales si falló
+    if (esPendiente) {
+      cargarApuestasLocales();
+    } else {
+      // Forzar recarga de apuestas de Firebase
+      obtenerApuestas();
+    }
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo eliminar la apuesta',
+      timer: 2000
+    });
+  }
 }
-
 const confirmarEliminar = () => {
   mostrarConfirmacionEliminar.value = true
 }
@@ -147,9 +213,12 @@ onMounted(() => {
   
   if (navigator.onLine) {
     isSyncing.value = true
-    sincronizarPendientes().finally(() => {
-      isSyncing.value = false
-    })
+    // Primero sincroniza eliminaciones pendientes, luego apuestas nuevas
+    sincronizarEliminaciones()
+      .then(sincronizarPendientes)
+      .finally(() => {
+        isSyncing.value = false
+      })
   }
 })
 
@@ -304,6 +373,7 @@ p {
 .apuesta-pendiente {
   background-color: #fff8e1;
   border: 2px dashed #ffc107;
+  transition: all 0.3s ease; /* Añade transición */
 }
 .apuestas {
   display: grid;
@@ -378,5 +448,25 @@ p {
 .btn:hover {
   opacity: 0.8;
   font-weight: bold;
+}
+
+/* En tu sección <style scoped> */
+.persona {
+  transition: all 0.3s ease;
+}
+.persona.eliminando {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+.eliminando {
+  transform: scale(0.8);
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 </style>
