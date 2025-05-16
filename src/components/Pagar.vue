@@ -42,7 +42,7 @@
     >
       <div class="p-3 d-flex justify-content-center">
         <i class="mx-2 bi bi-check-circle-fill text-success"></i>
-        Jugada enviada
+        Jugada actualizada
       </div>
     </div>
   </div>
@@ -95,23 +95,23 @@ const lanzarToast = async () => {
 
   const resultado = await guardarDatos()
 
-  if (resultado.success) {    
+  if (resultado.success) {
     if (modoEdicion.value) {
       mostrarToastUpdate.value = true
       setTimeout(() => {
+        mostrarToastUpdate.value = false
         limpiarCampos()
         setNombre('')
-        mostrarToastUpdate.value = false
         router.push(`/listas/${route.params.id}`)
       }, 1000)
     }
     else{
+      limpiarCampos()
+      setNombre('')  
       mostrarToastSave.value = true
       setTimeout(() => {
-        limpiarCampos()
-        setNombre('')
-        mostrarToastSave.value = false
-      }, 3000)
+        mostrarToastSave.value = false  
+      }, 2000)
     }
   }
 }

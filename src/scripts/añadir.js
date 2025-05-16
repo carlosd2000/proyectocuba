@@ -118,34 +118,10 @@ function obtenerHoraCuba() {
     hour: '2-digit',
     minute: '2-digit'
   };
-  
-  const opciones12h = {
-    timeZone: 'America/Havana',
-    hour12: true,
-    hour: 'numeric',
-    minute: '2-digit'
-  };
-
   return {
     hora24: ahora.toLocaleTimeString('es-ES', opciones24h),
-    hora12: ahora.toLocaleTimeString('es-ES', opciones12h),
     timestamp: ahora.getTime()
   };
-}
-
-export function formatearHoraCuba(horaString) {
-  if (!horaString) return "--:-- --";
-  
-  try {
-    // Convierte "HH:MM:SS" a "H:MM a.m./p.m."
-    const [horas, minutos] = horaString.split(':');
-    const hora12 = horas % 12 || 12;
-    const periodo = horas < 12 ? 'a.m.' : 'p.m.';
-    return `${hora12}:${minutos} ${periodo}`;
-  } catch (e) {
-    console.error("Error formateando hora:", e);
-    return "--:-- --";
-  }
 }
 
 // ================= PROCESAMIENTO DE DATOS =================
@@ -175,7 +151,7 @@ function procesarFilas(filas, tipo) {
 
 // ================= FUNCIÓN PRINCIPAL =================
 export async function guardarDatos() {
-  const { hora24, hora12, fechaCompleta, timestamp } = obtenerHoraCuba();
+  const { hora24, timestamp } = obtenerHoraCuba();
   const uuid = generarUUID();
   try {
     // 1. Calcular totales
@@ -206,14 +182,12 @@ export async function guardarDatos() {
       nombre: nombreTemporal,
       totalGlobal,
       datos: datosAGuardar,
-      creadoEn: serverTimestamp(),        // Timestamp Firebase (UTC)
       id_listero: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen === "tiros" ? `${tipoOrigen}/candado` : tipoOrigen,
       horario: horarioSeleccionado,
       uuid,
       // Metadatos de hora
       horaCuba24: hora24,               // "17:25:43"
-      horaCuba12: hora12,               // "5:25 p.m."
       candadoAbierto: true,         // "12/05/2025, 17:25:43"
       timestampLocal: timestamp         // 1744478743000
     };

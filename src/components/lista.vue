@@ -3,7 +3,7 @@ import { onMounted, onUnmounted, ref, computed } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
-import { sincronizarPendientes, formatearHoraCuba } from '../scripts/añadir.js'
+import { sincronizarPendientes } from '../scripts/añadir.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -44,8 +44,23 @@ function cargarApuestasLocales() {
 const mostrarHora = (persona) => {
   if (!persona || typeof persona !== 'object') return "--:-- --"
 
+    // Primero intentamos con sincronizadoEn
+  if (persona.sincronizadoEn?.toDate) {
+    return persona.sincronizadoEn.toDate().toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  } else if (persona.sincronizadoEn && typeof persona.sincronizadoEn === 'string') {
+    const fechaSync = new Date(persona.sincronizadoEn)
+    return fechaSync.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  }
+
   if (persona.estado === 'Pendiente') {
-    if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24)
     if (persona.creadoEn) {
       const fecha = typeof persona.creadoEn === 'string' ? new Date(persona.creadoEn) : persona.creadoEn
       return fecha.toLocaleTimeString('es-ES', {
@@ -56,9 +71,6 @@ const mostrarHora = (persona) => {
     }
     return "--:-- --"
   }
-
-  if (persona.horaCuba12) return persona.horaCuba12
-  if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24)
   if (persona.creadoEn?.toDate) {
     return persona.creadoEn.toDate().toLocaleTimeString('es-ES', {
       hour: '2-digit',
@@ -172,16 +184,16 @@ onUnmounted(() => {
   <div class="m-0 p-0">
     <div v-for="persona in apuestasCombinadas" 
          :key="persona.id" 
-         class="col-12 m-0 mb-2 p-0 pt-3 pb-2 persona" 
+         class="col-12 m-0 mb-2 p-0 pt-2 pb-2 persona" 
          @click="cuadroClick(persona)" 
          style="cursor: pointer;"
          :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
          
-      <header class="col-12 row m-0 p-0">
+      <header class="col-12 row m-0 px-1 py-2">
         <div class="col-10 -flex justify-content-start align-items-center">
-          <p>{{ persona.nombre }}</p>
+          <p class="name">{{ persona.nombre }}</p>
         </div>
-        <div class="col-2 d-flex justify-content-end align-items-center" @click.stop>
+        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center" @click.stop>
           <i :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
              class="fs-4"
              style="cursor: pointer;"
@@ -290,15 +302,21 @@ p {
   padding: 0px;
   font-size: 0.9rem;
 }
+p.name{
+  font-size: 1.1rem;
+}
+i.bi{
+  font-size: 1.3rem;
+}
 .container-number-cuadrado {
-  width: 42px;
-  height: 30px;
+  width: 37px;
+  height: 25px;
   font-size: 1.1rem;
   background-color: #f1f1f1;
 }
 .container-number {
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
   background-color: #f1f1f1;
 }
 .persona {
