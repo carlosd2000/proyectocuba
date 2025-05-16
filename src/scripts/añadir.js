@@ -1,17 +1,18 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
-import { collection, addDoc, serverTimestamp, updateDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { serverTimestamp, updateDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
-import { ref } from 'vue'
+import { ref } from 'vue';
+import { obtenerHoraCuba, formatearHoraCuba } from './horacuba.js';
 
 // Variables reactivas
-let nombreTemporal = ref('SinNombre')
-let tipoOrigen = ref('tiros')
-let horarioSeleccionado = ref('Dia')
-let syncPending = false;
-export const modoEdicion = ref(false)
-export const idEdicion = ref('')
+export const nombreTemporal = ref('SinNombre');
+export const tipoOrigen = ref('tiros');
+export const horarioSeleccionado = ref('Dia');
+export const modoEdicion = ref(false);
+export const idEdicion = ref('');
 
+let syncPending = false;
 
 /**
  * Genera un UUID único para cada apuesta
@@ -22,14 +23,13 @@ function generarUUID() {
 }
 
 /**
- * Guarda apuestas pendientes en localStorage con verificación de duplicados
+ * Guarda apuestas pendientes en localStorage
  */
 function guardarEnLocal(docAGuardar) {
   try {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-    
-    // Verificar si ya existe en localStorage
     const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
+    
     if (!existe) {
       pendientes.push(docAGuardar);
       localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
@@ -42,92 +42,27 @@ function guardarEnLocal(docAGuardar) {
   }
 }
 
-export async function sincronizarPendientes() {
-  if (!navigator.onLine || syncPending) return;
-  
-  console.log('[SYNC] Iniciando sincronización de pendientes...');
-  syncPending = true;
-  
-  try {
-    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-    const pendientesExitosos = [];
-    
-    for (const apuesta of pendientes) {
-      try {
-        const docRef = doc(db, 'apuestas', apuesta.uuid);
-        const snap = await getDoc(docRef);
-        
-        if (!snap.exists()) {
-          console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
-          
-          await setDoc(docRef, {
-            ...apuesta,
-            creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
-            sincronizadoEn: serverTimestamp(),
-            estado: 'Cargado',
-            candadoAbierto: true
-          });
-        }
-        pendientesExitosos.push(apuesta.uuid);
-      } catch (error) {
-        console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
-        break;
-      }
-    }
-    
-    // Actualizar localStorage
-    if (pendientesExitosos.length > 0) {
-      const nuevosPendientes = pendientes.filter(p => !pendientesExitosos.includes(p.uuid));
-      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes));
-      console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas`);
-    }
-  } catch (error) {
-    console.error('[SYNC] Error general:', error);
-  } finally {
-    syncPending = false;
-  }
-}
-
-
 // ================= CONFIGURACIÓN =================
 export function setNombre(nombre) {
-  nombreTemporal = nombre?.trim() || 'SinNombre';
+  nombreTemporal.value = nombre?.trim() || 'SinNombre';
 }
 
 export function setTipoOrigen(tipo) {
-  tipoOrigen = tipo || 'tiros';
+  tipoOrigen.value = tipo || 'tiros';
 }
 
 export function setHorario(horario) {
-  horarioSeleccionado = horario || 'Dia';
+  horarioSeleccionado.value = horario || 'Dia';
 }
 
 export function setModoEdicion(editar, id) {
-  modoEdicion.value = editar
-  idEdicion.value = id || ''
-}
-
-
-
-// ================= MANEJO DE HORAS =================
-function obtenerHoraCuba() {
-  const ahora = new Date();
-  const opciones24h = {
-    timeZone: 'America/Havana',
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit'
-  };
-  return {
-    hora24: ahora.toLocaleTimeString('es-ES', opciones24h),
-    timestamp: ahora.getTime()
-  };
+  modoEdicion.value = editar;
+  idEdicion.value = id || '';
 }
 
 // ================= PROCESAMIENTO DE DATOS =================
 function procesarFilas(filas, tipo) {
   return filas.map((fila, index) => {
-    // Excluir circuloSolo específicamente de la fila 3
     if (index === 2 && tipo === 'fija') {
       const { circuloSolo, ...resto } = fila;
       fila = resto;
@@ -136,7 +71,6 @@ function procesarFilas(filas, tipo) {
     const filaProcesada = { tipo, fila: index + 1 };
     let tieneDatos = false;
 
-    // Procesar solo valores numéricos válidos
     for (const clave in fila) {
       const valor = fila[clave];
       if (valor !== '' && valor !== null && !isNaN(valor)) {
@@ -146,13 +80,14 @@ function procesarFilas(filas, tipo) {
     }
 
     return tieneDatos ? filaProcesada : null;
-  }).filter(Boolean); // Eliminar filas sin datos
+  }).filter(Boolean);
 }
 
 // ================= FUNCIÓN PRINCIPAL =================
 export async function guardarDatos() {
   const { hora24, timestamp } = obtenerHoraCuba();
   const uuid = generarUUID();
+
   try {
     // 1. Calcular totales
     const { col3, col4, col5 } = calcularTotales(filasFijas, filasExtra);
@@ -172,19 +107,18 @@ export async function guardarDatos() {
     if (datosAGuardar.length === 0 && !circuloSoloValido && totalGlobal === 0) {
       return { 
         success: false, 
-        message: 'No hay datos válidos para guardar',
-        
+        message: 'No hay datos válidos para guardar'
       };
     }
 
     // 5. Preparar documento final
     const docAGuardar = {
-      nombre: nombreTemporal,
+      nombre: nombreTemporal.value,
       totalGlobal,
       datos: datosAGuardar,
       id_listero: auth.currentUser?.uid || 'sin-autenticar',
-      tipo: circuloSoloValido && tipoOrigen === "tiros" ? `${tipoOrigen}/candado` : tipoOrigen,
-      horario: horarioSeleccionado,
+      tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
+      horario: horarioSeleccionado.value,
       uuid,
       // Metadatos de hora
       horaCuba24: hora24,               // "17:25:43"
@@ -213,7 +147,6 @@ export async function guardarDatos() {
 
     // 7. Lógica diferente para edición vs creación
     if (modoEdicion.value && idEdicion.value) {
-      // Modo edición - actualizar documento existente
       await updateDoc(doc(db, 'apuestas', idEdicion.value), docAGuardar);
       
       return { 
@@ -223,10 +156,6 @@ export async function guardarDatos() {
         docId: idEdicion.value
       };
     } else {
-      // Modo creación - agregar nuevo documento
-      docAGuardar.creadoEn = serverTimestamp();
-      docAGuardar.estado = 'Cargado';
-    
       const docRef = doc(db, 'apuestas', uuid);
       await setDoc(docRef, docAGuardar);
 
@@ -248,8 +177,54 @@ export async function guardarDatos() {
     };
   }
 }
-// ================= INICIALIZACIÓN =================
-// Configurar listener para sincronización automática
+
+// ================= SINCRONIZACIÓN =================
+export async function sincronizarPendientes() {
+  if (!navigator.onLine || syncPending) return;
+  
+  syncPending = true;
+  console.log('[SYNC] Iniciando sincronización de pendientes...');
+  
+  try {
+    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    const pendientesExitosos = [];
+    
+    for (const apuesta of pendientes) {
+      try {
+        const docRef = doc(db, 'apuestas', apuesta.uuid);
+        const snap = await getDoc(docRef);
+        
+        if (!snap.exists()) {
+          console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
+          
+          await setDoc(docRef, {
+            ...apuesta,
+            creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
+            sincronizadoEn: serverTimestamp(),
+            estado: 'Cargado',
+            candadoAbierto: true
+          });
+          pendientesExitosos.push(apuesta.uuid);
+        }
+      } catch (error) {
+        console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
+        break;
+      }
+    }
+    
+    if (pendientesExitosos.length > 0) {
+      const nuevosPendientes = pendientes.filter(p => !pendientesExitosos.includes(p.uuid));
+      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes));
+      console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas`);
+    }
+  } catch (error) {
+    console.error('[SYNC] Error general:', error);
+  } finally {
+    syncPending = false;
+  }
+}
+
+// ================= LISTENERS DE CONEXIÓN =================
 if (typeof window !== 'undefined') {
   // Sincronizar inmediatamente si hay conexión
   if (navigator.onLine) {
@@ -257,7 +232,7 @@ if (typeof window !== 'undefined') {
       if (!syncPending) {
         sincronizarPendientes();
       }
-    }, 2000); // Pequeño delay para asegurar que todo está cargado
+    }, 2000);
   }
 
   // Listener para cambios de conexión
