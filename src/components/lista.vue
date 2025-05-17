@@ -27,7 +27,6 @@ const obtenerIconoEstado = (persona) => {
     case 'Pendiente': return 'bi bi-cloud-slash text-danger'
     case 'EnTiempo': return 'bi bi-stopwatch text-success'
     case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
-  
   }
 }
 
@@ -43,14 +42,16 @@ function cargarApuestasLocales() {
         ...a,
         estado: 'Pendiente',
         id: a.uuid,
-        uuid: a.uuid
+        uuid: a.uuid,
+        totalGlobal: Number(a.totalGlobal) || 0, // Asegúrate de que sea numérico
       }));
   } catch (error) {
     console.error('Error cargando apuestas locales:', error);
     apuestasLocales.value = [];
   }
 }
-// Función para mostrar la hora (CORREGIDA)
+
+// Función para mostrar la hora
 const mostrarHora = (persona) => {
   if (!persona || typeof persona !== 'object') return "--:-- --"
 
@@ -58,7 +59,7 @@ const mostrarHora = (persona) => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'America/Havana' // Huso horario de Cuba
+    timeZone: 'America/Havana'
   };
 
   const formatearHora = (fecha) => {
@@ -104,14 +105,15 @@ const updateOnlineStatus = () => {
     isSyncing.value = true;
     Promise.all([
       sincronizarPendientes(),
-      sincronizarEliminaciones() // ← Añadir esta línea
+      sincronizarEliminaciones()
     ]).finally(() => {
       isSyncing.value = false;
       cargarApuestasLocales();
     });
   }
 }
-// Resto de funciones del componenten
+
+// Resto de funciones del componente
 const cuadroClick = (persona) => {
   if (!persona.candadoAbierto) return
   personaSeleccionada.value = persona
@@ -124,11 +126,14 @@ const cerrarModal = () => {
 
 const editarPersona = async () => {
   const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal';
+  const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
+  
   router.push({
     path: `/anadirjugada/${route.params.id}`,
     query: {
       tipo: tipoJugada,
-      editar: personaSeleccionada.value.id
+      editar: esPendiente ? personaSeleccionada.value.uuid : personaSeleccionada.value.id,
+      esPendiente: esPendiente.toString()
     }
   });
   cerrarModal();
@@ -156,7 +161,7 @@ const eliminarPersona = async () => {
       apuestas.value = apuestas.value.filter(a => a.id !== id);
     }
     
-    // Llamar a la función de eliminación (indicando si es pendiente)
+    // Llamar a la función de eliminación
     const { success } = await eliminarApuesta(id, esPendiente);
     
     if (!success) {
@@ -181,7 +186,6 @@ const eliminarPersona = async () => {
     if (esPendiente) {
       cargarApuestasLocales();
     } else {
-      // Forzar recarga de apuestas de Firebase
       obtenerApuestas();
     }
     
@@ -193,6 +197,7 @@ const eliminarPersona = async () => {
     });
   }
 }
+
 const confirmarEliminar = () => {
   mostrarConfirmacionEliminar.value = true
 }
@@ -222,7 +227,6 @@ onMounted(() => {
   
   if (navigator.onLine) {
     isSyncing.value = true
-    // Primero sincroniza eliminaciones pendientes, luego apuestas nuevas
     sincronizarEliminaciones()
       .then(sincronizarPendientes)
       .finally(() => {
@@ -298,7 +302,7 @@ onUnmounted(() => {
                 <i class="bi bi-coin m-1"></i>
               </div>
               <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                <p class="m-1">{{ persona.totalGlobal }}</p>
+                <p class="m-1">{{ Number(persona.totalGlobal) || 0 }}</p>
               </div>
             </div>
             <div class="col-12 m-0 p-0 flex d-flex flex-column justify-content-center align-items-center">
@@ -388,7 +392,7 @@ i.bi{
 .apuesta-pendiente {
   background-color: #fff8e1;
   border: 2px dashed #ffc107;
-  transition: all 0.3s ease; /* Añade transición */
+  transition: all 0.3s ease;
 }
 .apuestas {
   display: grid;
@@ -465,7 +469,6 @@ i.bi{
   font-weight: bold;
 }
 
-/* En tu sección <style scoped> */
 .persona {
   transition: all 0.3s ease;
 }

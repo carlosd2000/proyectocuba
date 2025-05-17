@@ -25,17 +25,28 @@ function generarUUID() {
 /**
  * Guarda apuestas pendientes en localStorage
  */
-function guardarEnLocal(docAGuardar) {
+function guardarEnLocal(docAGuardar, esEdicion = false) {
   try {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-    const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
     
-    if (!existe) {
-      pendientes.push(docAGuardar);
-      localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
-      return true;
+    if (esEdicion) {
+      // Modo edición: Reemplazar el registro existente
+      const index = pendientes.findIndex(p => p.uuid === docAGuardar.uuid);
+      if (index !== -1) {
+        pendientes[index] = docAGuardar;
+      } else {
+        pendientes.push(docAGuardar);
+      }
+    } else {
+      // Modo creación: Añadir nuevo registro
+      const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
+      if (!existe) {
+        pendientes.push(docAGuardar);
+      }
     }
-    return false;
+    
+    localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
+    return true;
   } catch (error) {
     console.error('Error guardando en localStorage:', error);
     return false;
@@ -86,7 +97,23 @@ function procesarFilas(filas, tipo) {
 // ================= FUNCIÓN PRINCIPAL =================
 export async function guardarDatos() {
   const { hora24, timestamp } = obtenerHoraCuba();
-  const uuid = generarUUID();
+  
+  // Determinar el ID correcto para Firebase y el UUID para identificación única
+  let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
+  let uuid = firebaseId;
+
+  // Si estamos editando online, obtener el UUID original del documento
+  if (modoEdicion.value && navigator.onLine) {
+    try {
+      const docRef = doc(db, 'apuestas', firebaseId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().uuid) {
+        uuid = docSnap.data().uuid;
+      }
+    } catch (error) {
+      console.error('Error obteniendo UUID original:', error);
+    }
+  }
 
   try {
     // 1. Calcular totales
@@ -119,11 +146,10 @@ export async function guardarDatos() {
       id_listero: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
       horario: horarioSeleccionado.value,
-      uuid,
-      // Metadatos de hora
-      horaCuba24: hora24,               // "17:25:43"
-      candadoAbierto: true,         // "12/05/2025, 17:25:43"
-      timestampLocal: timestamp         // 1744478743000
+      uuid, // Usamos el mismo UUID para mantener consistencia
+      horaCuba24: hora24,
+      candadoAbierto: true,
+      timestampLocal: timestamp
     };
 
     // 6. Agregar circuloSolo si es válido
@@ -135,36 +161,40 @@ export async function guardarDatos() {
     if (!navigator.onLine) {
       docAGuardar.creadoEn = new Date().toISOString();
       docAGuardar.estado = 'Pendiente';
-      const guardado = guardarEnLocal(docAGuardar);
+      
+      const guardado = guardarEnLocal(docAGuardar, modoEdicion.value);
       
       return { 
         success: guardado, 
         offline: true,
         uuid,
-        
-        hora: hora24
+        firebaseId,
+        hora: hora24,
+        esEdicion: modoEdicion.value
       };
     }
 
     // 7. Lógica diferente para edición vs creación
     if (modoEdicion.value && idEdicion.value) {
-      await updateDoc(doc(db, 'apuestas', idEdicion.value), docAGuardar);
+      await updateDoc(doc(db, 'apuestas', firebaseId), docAGuardar);
       
       return { 
         success: true, 
         message: `Datos actualizados a las ${hora24}`,
         horaExacta: hora24,
-        docId: idEdicion.value
+        docId: firebaseId,
+        uuid
       };
     } 
     else {
-      const docRef = doc(db, 'apuestas', uuid);
+      const docRef = doc(db, 'apuestas', firebaseId);
       docAGuardar.creadoEn = serverTimestamp();
       await setDoc(docRef, docAGuardar);
 
       return { 
         success: true, 
         uuid,
+        firebaseId,
         message: `Datos guardados a las ${hora24}`,
         horaExacta: hora24,
         docId: docRef.id
