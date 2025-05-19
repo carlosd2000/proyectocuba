@@ -3,6 +3,9 @@ import Header from '../components/Header.vue';
 import Calendario from '../components/Calendario.vue';
 import Results from '../components/results.vue';
 import Pestañas from '../components/Pestañas.vue';
+import { ref } from 'vue'
+
+const fechaSeleccionada = ref(new Date())
 </script>
 
 <template>
@@ -12,14 +15,14 @@ import Pestañas from '../components/Pestañas.vue';
     </header>
     <div class="header-main">
       <div>
-        <Calendario/>
+        <Calendario @cambiar-fecha="fechaSeleccionada = $event" />
       </div>
       <div>
         <Results/>
       </div>
     </div>
     <div class="footer-main">
-      <Pestañas/>
+      <Pestañas :fecha="fechaSeleccionada" />
     </div>
   </div>
 

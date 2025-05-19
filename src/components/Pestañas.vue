@@ -12,24 +12,30 @@
       </button>
     </div>
 
-    <!-- Contenido de las pestañas -->
     <div class="tabs-content m-0 px-3 py-2 ">
       <div v-if="activeTab === 'Lista'">
-        <lista/>
+        <lista :fecha="fecha" />
       </div>
       <div v-else-if="activeTab === 'Bote'">
-        
       </div>
       <div v-else-if="activeTab === 'Resumen'">
-        <lista/>
+        <!--<lista :fecha="fecha" />-->
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, toRef } from 'vue'
+import Calendario from './Calendario.vue'
 import lista from './lista.vue'
-import { ref } from 'vue'
+
+const props = defineProps({
+  fecha: {
+    type: Date,
+    required: true
+  }
+})
 
 const tabs = ['Lista', 'Bote', 'Resumen']
 const activeTab = ref('Lista')

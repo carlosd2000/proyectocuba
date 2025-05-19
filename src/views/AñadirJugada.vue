@@ -26,22 +26,44 @@ const tipoJugada = computed(() => {
 onMounted(async () => {
   if (idEditar.value) {
     setModoEdicion(true, idEditar.value);
-    const docRef = doc(db, 'apuestas', idEditar.value);
-    const docSnap = await getDoc(docRef);
     
-    if (docSnap.exists()) {
-      datosEdicion.value = {
-        id: docSnap.id,
-        ...docSnap.data(),
-                // Asegurar estructura básica si falta
-        datos: docSnap.data().datos || [],
-        circuloSolo: docSnap.data().circuloSolo || ''
-      };
-      horarioEdicion.value = docSnap.data().horario || 'Dia';
+    // Verificar si es una edición offline (pendiente)
+    if (route.query.esPendiente === 'true') {
+      const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || []);
+      const apuestaPendiente = pendientes.find(p => p.uuid === idEditar.value);
+      
+      if (apuestaPendiente) {
+        datosEdicion.value = {
+          id: apuestaPendiente.uuid,
+          ...apuestaPendiente,
+          datos: apuestaPendiente.datos || [],
+          circuloSolo: apuestaPendiente.circuloSolo || ''
+        };
+        horarioEdicion.value = apuestaPendiente.horario || 'Dia';
+      }
+    } else {
+      // Edición online (Firebase)
+      try {
+        const docRef = doc(db, 'apuestas', idEditar.value);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          datosEdicion.value = {
+            id: docSnap.id,
+            ...docSnap.data(),
+            datos: docSnap.data().datos || [],
+            circuloSolo: docSnap.data().circuloSolo || '',
+            uuid: docSnap.data().uuid || docSnap.id // Asegurar que tenga uuid
+          };
+          horarioEdicion.value = docSnap.data().horario || 'Dia';
+        }
+      } catch (error) {
+        console.error('Error cargando datos para edición:', error);
+      }
     }
   } else {
     setModoEdicion(false, null);
-    horarioEdicion.value = 'Dia'; // Resetear a valor por defecto
+    horarioEdicion.value = 'Dia';
   }
 });
 

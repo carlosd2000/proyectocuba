@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
@@ -7,6 +7,13 @@ import { sincronizarPendientes } from '../scripts/añadir.js'
 
 const router = useRouter()
 const route = useRoute()
+
+const props = defineProps({
+  fecha: {
+    type: Date,
+    required: true
+  }
+})
 
 // Variables reactivas
 const mostrarModal = ref(false)
@@ -18,6 +25,16 @@ const isSyncing = ref(false)
 // Apuestas locales (offline)
 const apuestasLocales = ref([])
 
+
+// Función para comparar fechas (solo día, mes, año)
+const esMismoDia = (fechaA, fechaB) => {
+  const a = new Date(fechaA)
+  const b = new Date(fechaB)
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate()
+}
+
 // Función para obtener icono de estado
 const obtenerIconoEstado = (persona) => {
   if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
@@ -27,7 +44,6 @@ const obtenerIconoEstado = (persona) => {
     case 'Pendiente': return 'bi bi-cloud-slash text-danger'
     case 'EnTiempo': return 'bi bi-stopwatch text-success'
     case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
-  
   }
 }
 
@@ -43,14 +59,16 @@ function cargarApuestasLocales() {
         ...a,
         estado: 'Pendiente',
         id: a.uuid,
-        uuid: a.uuid
+        uuid: a.uuid,
+        totalGlobal: Number(a.totalGlobal) || 0, // Asegúrate de que sea numérico
       }));
   } catch (error) {
     console.error('Error cargando apuestas locales:', error);
     apuestasLocales.value = [];
   }
 }
-// Función para mostrar la hora (CORREGIDA)
+
+// Función para mostrar la hora
 const mostrarHora = (persona) => {
   if (!persona || typeof persona !== 'object') return "--:-- --"
 
@@ -58,7 +76,7 @@ const mostrarHora = (persona) => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'America/Havana' // Huso horario de Cuba
+    timeZone: 'America/Havana'
   };
 
   const formatearHora = (fecha) => {
@@ -82,19 +100,25 @@ const mostrarHora = (persona) => {
   return "--:-- --"
 }
 
-// Combina y ordena apuestas
+// Combina y ordena apuestas, filtrando por la fecha seleccionada
 const apuestasCombinadas = computed(() => {
   const firebaseUuids = new Set(apuestas.value.map(a => a.uuid))
   const localesFiltradas = apuestasLocales.value.filter(local => 
     !firebaseUuids.has(local.uuid)
   )
-  
-  return [...apuestas.value, ...localesFiltradas].sort((a, b) => {
-    if (a.estado === 'Pendiente') return -1
-    if (b.estado === 'Pendiente') return 1
-    return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
-           (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
-  })
+  return [...apuestas.value, ...localesFiltradas]
+    .filter(a => {
+      let fecha = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+                  a.creadoEn?.toDate ? a.creadoEn.toDate() :
+                  a.creadoEn ? new Date(a.creadoEn) : null;
+      return fecha && esMismoDia(fecha, props.fecha)
+    })
+    .sort((a, b) => {
+      if (a.estado === 'Pendiente') return -1
+      if (b.estado === 'Pendiente') return 1
+      return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
+            (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
+    })
 })
 
 // Actualizar estado de conexión
@@ -104,14 +128,14 @@ const updateOnlineStatus = () => {
     isSyncing.value = true;
     Promise.all([
       sincronizarPendientes(),
-      sincronizarEliminaciones() // ← Añadir esta línea
+      sincronizarEliminaciones()
     ]).finally(() => {
       isSyncing.value = false;
       cargarApuestasLocales();
     });
   }
 }
-// Resto de funciones del componenten
+// Resto de funciones del componente
 const cuadroClick = (persona) => {
   if (!persona.candadoAbierto) return
   personaSeleccionada.value = persona
@@ -124,11 +148,14 @@ const cerrarModal = () => {
 
 const editarPersona = async () => {
   const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal';
+  const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
+  
   router.push({
     path: `/anadirjugada/${route.params.id}`,
     query: {
       tipo: tipoJugada,
-      editar: personaSeleccionada.value.id
+      editar: esPendiente ? personaSeleccionada.value.uuid : personaSeleccionada.value.id,
+      esPendiente: esPendiente.toString()
     }
   });
   cerrarModal();
@@ -156,7 +183,7 @@ const eliminarPersona = async () => {
       apuestas.value = apuestas.value.filter(a => a.id !== id);
     }
     
-    // Llamar a la función de eliminación (indicando si es pendiente)
+    // Llamar a la función de eliminación
     const { success } = await eliminarApuesta(id, esPendiente);
     
     if (!success) {
@@ -181,7 +208,6 @@ const eliminarPersona = async () => {
     if (esPendiente) {
       cargarApuestasLocales();
     } else {
-      // Forzar recarga de apuestas de Firebase
       obtenerApuestas();
     }
     
@@ -193,6 +219,7 @@ const eliminarPersona = async () => {
     });
   }
 }
+
 const confirmarEliminar = () => {
   mostrarConfirmacionEliminar.value = true
 }
@@ -222,7 +249,6 @@ onMounted(() => {
   
   if (navigator.onLine) {
     isSyncing.value = true
-    // Primero sincroniza eliminaciones pendientes, luego apuestas nuevas
     sincronizarEliminaciones()
       .then(sincronizarPendientes)
       .finally(() => {
@@ -237,6 +263,15 @@ onUnmounted(() => {
   window.removeEventListener('offline', updateOnlineStatus)
   window.removeEventListener('storage', cargarApuestasLocales)
 })
+
+const apuestasFiltradas = computed(() =>
+  apuestas.value.filter(a => {
+    let fecha = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+                a.creadoEn?.toDate ? a.creadoEn.toDate() :
+                a.creadoEn ? new Date(a.creadoEn) : null;
+    return fecha && esMismoDia(fecha, props.fecha)
+  })
+)
 </script>
 
 <template>
@@ -298,7 +333,7 @@ onUnmounted(() => {
                 <i class="bi bi-coin m-1"></i>
               </div>
               <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                <p class="m-1">{{ persona.totalGlobal }}</p>
+                <p class="m-1">{{ Number(persona.totalGlobal) || 0 }}</p>
               </div>
             </div>
             <div class="col-12 m-0 p-0 flex d-flex flex-column justify-content-center align-items-center">
@@ -388,7 +423,7 @@ i.bi{
 .apuesta-pendiente {
   background-color: #fff8e1;
   border: 2px dashed #ffc107;
-  transition: all 0.3s ease; /* Añade transición */
+  transition: all 0.3s ease;
 }
 .apuestas {
   display: grid;
@@ -465,7 +500,6 @@ i.bi{
   font-weight: bold;
 }
 
-/* En tu sección <style scoped> */
 .persona {
   transition: all 0.3s ease;
 }
