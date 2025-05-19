@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
@@ -7,6 +7,13 @@ import { sincronizarPendientes } from '../scripts/añadir.js'
 
 const router = useRouter()
 const route = useRoute()
+
+const props = defineProps({
+  fecha: {
+    type: Date,
+    required: true
+  }
+})
 
 // Variables reactivas
 const mostrarModal = ref(false)
@@ -17,6 +24,16 @@ const isSyncing = ref(false)
 
 // Apuestas locales (offline)
 const apuestasLocales = ref([])
+
+
+// Función para comparar fechas (solo día, mes, año)
+const esMismoDia = (fechaA, fechaB) => {
+  const a = new Date(fechaA)
+  const b = new Date(fechaB)
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate()
+}
 
 // Función para obtener icono de estado
 const obtenerIconoEstado = (persona) => {
@@ -82,19 +99,25 @@ const mostrarHora = (persona) => {
   return "--:-- --"
 }
 
-// Combina y ordena apuestas
+// Combina y ordena apuestas, filtrando por la fecha seleccionada
 const apuestasCombinadas = computed(() => {
   const firebaseUuids = new Set(apuestas.value.map(a => a.uuid))
   const localesFiltradas = apuestasLocales.value.filter(local => 
     !firebaseUuids.has(local.uuid)
   )
-  
-  return [...apuestas.value, ...localesFiltradas].sort((a, b) => {
-    if (a.estado === 'Pendiente') return -1
-    if (b.estado === 'Pendiente') return 1
-    return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
-           (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
-  })
+  return [...apuestas.value, ...localesFiltradas]
+    .filter(a => {
+      let fecha = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+                  a.creadoEn?.toDate ? a.creadoEn.toDate() :
+                  a.creadoEn ? new Date(a.creadoEn) : null;
+      return fecha && esMismoDia(fecha, props.fecha)
+    })
+    .sort((a, b) => {
+      if (a.estado === 'Pendiente') return -1
+      if (b.estado === 'Pendiente') return 1
+      return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
+            (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
+    })
 })
 
 // Actualizar estado de conexión
@@ -104,14 +127,14 @@ const updateOnlineStatus = () => {
     isSyncing.value = true;
     Promise.all([
       sincronizarPendientes(),
-      sincronizarEliminaciones() // ← Añadir esta línea
+      sincronizarEliminaciones()
     ]).finally(() => {
       isSyncing.value = false;
       cargarApuestasLocales();
     });
   }
 }
-// Resto de funciones del componenten
+// Resto de funciones del componente
 const cuadroClick = (persona) => {
   if (!persona.candadoAbierto) return
   personaSeleccionada.value = persona
@@ -237,6 +260,15 @@ onUnmounted(() => {
   window.removeEventListener('offline', updateOnlineStatus)
   window.removeEventListener('storage', cargarApuestasLocales)
 })
+
+const apuestasFiltradas = computed(() =>
+  apuestas.value.filter(a => {
+    let fecha = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+                a.creadoEn?.toDate ? a.creadoEn.toDate() :
+                a.creadoEn ? new Date(a.creadoEn) : null;
+    return fecha && esMismoDia(fecha, props.fecha)
+  })
+)
 </script>
 
 <template>
