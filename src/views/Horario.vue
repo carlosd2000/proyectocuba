@@ -22,6 +22,22 @@ const mostrarToastSave = ref(false);
 const mostrarToastError = ref(false);
 const mostrarToastComplete = ref(false);
 
+// Nueva función para validar y formatear los inputs
+const handleInput = (value, type) => {
+  // Eliminar cualquier caracter que no sea número
+  let numericValue = value.replace(/[^0-9]/g, '');
+  
+  // Limitar a 2 dígitos
+  if (numericValue.length > 2) {
+    numericValue = numericValue.slice(0, 2);
+  }
+  
+  // Asignar el valor formateado
+  if (type === 'hora') horas.value = numericValue;
+  else if (type === 'minuto') minutos.value = numericValue;
+  else if (type === 'segundo') segundos.value = numericValue;
+};
+
 // FUNCIÓN PARA CARGAR LOS DATOS DE FIRESTORE
 const cargarDatos = async () => {
     try {
@@ -30,9 +46,10 @@ const cargarDatos = async () => {
         
         if (docSnap.exists()) {
             const data = docSnap.data();
-            dbHoras.value = data.hh || '';
-            dbMinutos.value = data.mm || '';
-            dbSegundos.value = data.ss || '';
+            // Convertimos los números a strings para mostrarlos en los placeholders
+            dbHoras.value = data.hh !== undefined ? data.hh.toString() : '';
+            dbMinutos.value = data.mm !== undefined ? data.mm.toString() : '';
+            dbSegundos.value = data.ss !== undefined ? data.ss.toString() : '';
         } else {
             // Si no existe el documento, limpiamos los placeholders
             dbHoras.value = '';
@@ -64,15 +81,22 @@ const guardarHora = async () => {
         if (!horas.value || !minutos.value || !segundos.value) {
             mostrarToastComplete.value = true;
             lanzarToast();
-        return;
+            return;
+        }
+        
+        // Validar que sean números válidos (incluyendo '00')
+        if (isNaN(horas.value) || isNaN(minutos.value) || isNaN(segundos.value)) {
+            mostrarToastError.value = true;
+            lanzarToast();
+            return;
         }
 
         // Crear el objeto con los datos
         const horaData = {
-        hh: horas.value,
-        mm: minutos.value,
-        ss: segundos.value,
-        timestamp: new Date().toISOString()
+            hh: horas.value.padStart(2, '0'), // Asegura 2 dígitos
+            mm: minutos.value.padStart(2, '0'),
+            ss: segundos.value.padStart(2, '0'),
+            timestamp: new Date().toISOString()
         };
 
         // Referencia al documento según el turno seleccionado
@@ -85,10 +109,10 @@ const guardarHora = async () => {
         mostrarToastSave.value = true;
         lanzarToast();
         
-        // Actualizar los placeholders con los nuevos valores
-        dbHoras.value = horas.value;
-        dbMinutos.value = minutos.value;
-        dbSegundos.value = segundos.value;
+        // Actualizar placeholders
+        dbHoras.value = horaData.hh;
+        dbMinutos.value = horaData.mm;
+        dbSegundos.value = horaData.ss;
 
         // Limpiar los campos
         horas.value = '';

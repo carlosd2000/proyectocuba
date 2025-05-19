@@ -4,6 +4,9 @@ import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
 import { sincronizarPendientes } from '../scripts/añadir.js'
+import { iniciarMonitorHorarios } from '../scripts/monitorHorarios.js';
+
+let unsubscribeMonitor;
 
 const router = useRouter()
 const route = useRoute()
@@ -61,14 +64,14 @@ function cargarApuestasLocales() {
         id: a.uuid,
         uuid: a.uuid,
         totalGlobal: Number(a.totalGlobal) || 0, // Asegúrate de que sea numérico
+        candadoAbierto: a.candadoAbierto ?? false,
       }));
   } catch (error) {
     console.error('Error cargando apuestas locales:', error);
     apuestasLocales.value = [];
   }
 }
-
-// Función para mostrar la hora
+// Función para mostrar la hora (CORREGIDA)
 const mostrarHora = (persona) => {
   if (!persona || typeof persona !== 'object') return "--:-- --"
 
@@ -76,7 +79,7 @@ const mostrarHora = (persona) => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'America/Havana'
+    timeZone: 'America/Havana' // Huso horario de Cuba
   };
 
   const formatearHora = (fecha) => {
@@ -246,7 +249,6 @@ onMounted(() => {
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
   window.addEventListener('storage', cargarApuestasLocales)
-  
   if (navigator.onLine) {
     isSyncing.value = true
     sincronizarEliminaciones()
@@ -255,6 +257,7 @@ onMounted(() => {
         isSyncing.value = false
       })
   }
+  unsubscribeMonitor = iniciarMonitorHorarios();
 })
 
 onUnmounted(() => {
@@ -262,6 +265,9 @@ onUnmounted(() => {
   window.removeEventListener('online', updateOnlineStatus)
   window.removeEventListener('offline', updateOnlineStatus)
   window.removeEventListener('storage', cargarApuestasLocales)
+  if (unsubscribeMonitor) {
+    unsubscribeMonitor();
+  }
 })
 
 const apuestasFiltradas = computed(() =>
