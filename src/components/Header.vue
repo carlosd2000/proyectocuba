@@ -6,7 +6,7 @@
         <p class="col-8 m-0 p-0 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
       </div>
       <div class="col-7 row p-0 m-0 d-flex justify-content-end align-items-center">
-        <button class=" btn btn-light border-0 mx-1 p-0 bg-transparent" @click="irwallet">
+        <button class=" btn btn-light border-0 mx-1 p-0 bg-transparent" @click="$router.push(`/wallet/${$route.params.id}`)">
           <p class="m-0 p-0">$20,000,000.00</p>
         </button>
 
@@ -40,14 +40,6 @@
   // Bell y Back (corregido con startsWith)
   const back = computed(() => route.path.startsWith('/listeros'))
   const bell = computed(() => route.path.startsWith('/listeros'))
-
-  const irwallet = () => {
-    if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
-      router.push(`/${authStore.userType}/${authStore.userId}`)
-    } else {
-      router.push('/')
-    }
-  }
 
 
   // Obtener fecha y hora reales en Cuba

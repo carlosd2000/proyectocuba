@@ -68,6 +68,8 @@ const mostrarToastSave = ref(false)
 const mostrarToastUpdate = ref(false)
 const errorMessage = ref('')
 
+const enviando = ref(false)
+
 const validarAntesDeEnviar = () => {
   const { esValido, circulosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra);
   
@@ -91,28 +93,40 @@ const validarAntesDeEnviar = () => {
 }
 
 const lanzarToast = async () => {
+  if (enviando.value) return; // Evitar múltiples ejecuciones
   if (!validarAntesDeEnviar()) return;
 
-  const resultado = await guardarDatos()
+  enviando.value = true; // Comienza el proceso
+  errorMessage.value = ''; // Limpiar mensajes de error previos
 
-  if (resultado.success) {
-    if (modoEdicion.value) {
-      mostrarToastUpdate.value = true
-      setTimeout(() => {
-        mostrarToastUpdate.value = false
+  try{
+    const resultado = await guardarDatos()
+
+    if (resultado.success) {
+      if (modoEdicion.value) {
+        mostrarToastUpdate.value = true
+        setTimeout(() => {
+          mostrarToastUpdate.value = false
+          limpiarCampos()
+          setNombre('')
+          router.push(`/listas/${route.params.id}`)
+        }, 1000)
+      }
+      else{
         limpiarCampos()
-        setNombre('')
-        router.push(`/listas/${route.params.id}`)
-      }, 1000)
+        setNombre('')  
+        mostrarToastSave.value = true
+        setTimeout(() => {
+          mostrarToastSave.value = false  
+        }, 2000)
+      }
     }
-    else{
-      limpiarCampos()
-      setNombre('')  
-      mostrarToastSave.value = true
-      setTimeout(() => {
-        mostrarToastSave.value = false  
-      }, 2000)
-    }
+  }
+  catch (error) {
+    errorMessage.value = 'Error al guardar: ' + error.message
+  } 
+  finally {
+    enviando.value = false // Finaliza el proceso (éxito o error)
   }
 }
 </script>

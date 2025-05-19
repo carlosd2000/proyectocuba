@@ -48,6 +48,11 @@ const router = createRouter({
       name: 'horario',
       component: () => import('../views/Horario.vue'),
     },
+    {
+      path: '/wallet/:id',
+      name: 'wallet',
+      component: () => import('../views/wallet.vue'),
+    },
     // Ruta opcional para registro directo con tipo + id
     // Puedes comentar esta línea si aún no la usas
     // {
