@@ -4,9 +4,6 @@ import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
 import { sincronizarPendientes } from '../scripts/añadir.js'
-import { iniciarMonitorHorarios } from '../scripts/monitorHorarios.js';
-
-let unsubscribeMonitor;
 
 const router = useRouter()
 const route = useRoute()
@@ -227,20 +224,6 @@ const confirmarEliminar = () => {
   mostrarConfirmacionEliminar.value = true
 }
 
-const toggleCandado = async (persona) => {
-  if (persona.candadoAbierto) {
-    const result = await Swal.fire({
-      title: '¿Deseas cerrar la apuesta?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí',
-      cancelButtonText: 'Cancelar'
-    })
-    if (!result.isConfirmed) return
-  }
-  persona.candadoAbierto = !persona.candadoAbierto
-}
-
 // Suscripción a datos
 let unsubscribe = null
 onMounted(() => {
@@ -257,7 +240,6 @@ onMounted(() => {
         isSyncing.value = false
       })
   }
-  unsubscribeMonitor = iniciarMonitorHorarios();
 })
 
 onUnmounted(() => {
@@ -265,9 +247,6 @@ onUnmounted(() => {
   window.removeEventListener('online', updateOnlineStatus)
   window.removeEventListener('offline', updateOnlineStatus)
   window.removeEventListener('storage', cargarApuestasLocales)
-  if (unsubscribeMonitor) {
-    unsubscribeMonitor();
-  }
 })
 
 const apuestasFiltradas = computed(() =>

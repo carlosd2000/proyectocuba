@@ -1,4 +1,3 @@
-// src/scripts/monitorHorarios.js
 import { db } from '../firebase/config.js';
 import { 
   doc, 
@@ -7,119 +6,160 @@ import {
   query, 
   where, 
   getDocs, 
-  updateDoc, 
-  serverTimestamp 
+  writeBatch,
+  serverTimestamp
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const HORARIOS = ['dia', 'tarde', 'noche'];
+const AJUSTE_HORARIO_CUBA = 1; // +1 hora para ajustar a Cuba (UTC-4)
 
-console.log('[1] Módulo monitorHorarios cargado correctamente');
-
-const capitalizarPrimeraLetra = (string) => {
-  console.log('[2] Capitalizando string:', string);
-  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+// Estado para manejar conexión
+const estadoConexion = {
+  online: navigator.onLine,
+  horariosPerdidos: [] // Horarios que pasaron mientras estaba offline
 };
 
-async function actualizarCandados(horario, userId) {
-  console.log('[3] Iniciando actualizarCandados para:', horario, 'usuario:', userId);
+// Configurar listeners de conexión
+function configurarListenersConexion(userId) {
+  window.addEventListener('online', async () => {
+    estadoConexion.online = true;
+    console.log('[CONEXIÓN] Conexión restablecida');
+    await procesarHorariosPerdidos(userId);
+  });
+  
+  window.addEventListener('offline', () => {
+    estadoConexion.online = false;
+    console.log('[CONEXIÓN] Sin conexión');
+  });
+}
+
+// Ajustar hora a zona horaria de Cuba
+function ajustarHoraCuba(fecha) {
+  const ajustada = new Date(fecha);
+  ajustada.setHours(ajustada.getHours() + AJUSTE_HORARIO_CUBA);
+  return ajustada;
+}
+
+// Capitalizar primera letra (Dia, Tarde, Noche)
+function capitalizarHorario(horario) {
+  return horario.charAt(0).toUpperCase() + horario.slice(1).toLowerCase();
+}
+
+// Función principal para cerrar candados
+async function cerrarCandados(horario, userId) {
   try {
-    const apuestasRef = collection(db, 'apuestas');
-    const horarioCapitalizado = capitalizarPrimeraLetra(horario);
-    console.log('[4] Horario capitalizado:', horarioCapitalizado);
+    const horarioCapitalizado = capitalizarHorario(horario);
+    const batch = writeBatch(db);
     
-    console.log('[5] Construyendo query...');
+    // Obtener todas las apuestas abiertas para este horario
     const q = query(
-      apuestasRef,
+      collection(db, 'apuestas'),
       where('id_listero', '==', userId),
       where('horario', '==', horarioCapitalizado),
       where('candadoAbierto', '==', true)
     );
-
-    console.log('[6] Ejecutando consulta...');
+    
     const snapshot = await getDocs(q);
-    console.log('[7] Documentos encontrados:', snapshot.size);
-
-    const updates = snapshot.docs.map(docRef => {
-      console.log('[8] Preparando actualización para doc:', docRef.id);
-      return updateDoc(docRef.ref, { 
+    
+    // Cerrar todas las apuestas encontradas
+    snapshot.forEach(doc => {
+      batch.update(doc.ref, {
         candadoAbierto: false,
         ultimaActualizacion: serverTimestamp()
       });
     });
-
-    console.log('[9] Ejecutando actualizaciones...');
-    await Promise.all(updates);
-    console.log('[10] Actualizaciones completadas. Total:', updates.length);
     
-    return { success: true, updated: updates.length };
+    await batch.commit();
+    console.log(`[CANDADOS] Cerrados ${snapshot.size} candados para ${horarioCapitalizado}`);
+    
   } catch (error) {
-    console.error('[ERROR en actualizarCandados]', error);
-    return { success: false, error };
+    console.error(`[ERROR] Cerrando candados para ${horario}:`, error);
   }
 }
 
+// Verificar si algún horario pasó durante la desconexión
+async function verificarHorariosPerdidos(userId) {
+  const ahora = ajustarHoraCuba(new Date());
+  
+  for (const horario of HORARIOS) {
+    try {
+      const docSnap = await getDoc(doc(db, 'hora', horario));
+      if (!docSnap.exists()) continue;
+      
+      const config = docSnap.data();
+      const horaCierre = new Date();
+      horaCierre.setHours(
+        parseInt(config.hh) || 0,
+        parseInt(config.mm) || 0,
+        parseInt(config.ss) || 0,
+        0
+      );
+      const horaCierreAjustada = ajustarHoraCuba(horaCierre);
+      
+      // Si la hora actual es posterior a la hora de cierre
+      if (ahora > horaCierreAjustada) {
+        console.log(`[HORARIO PERDIDO] ${horario} pasó durante la desconexión`);
+        await cerrarCandados(horario, userId);
+      }
+    } catch (error) {
+      console.error(`[ERROR] Verificando horario ${horario}:`, error);
+    }
+  }
+}
+
+// Procesar horarios que pasaron offline al reconectarse
+async function procesarHorariosPerdidos(userId) {
+  if (!estadoConexion.online) return;
+  
+  console.log('[PROCESANDO] Verificando horarios perdidos...');
+  await verificarHorariosPerdidos(userId);
+}
+
+// Monitor principal que se ejecuta cada segundo
 export function iniciarMonitorHorarios() {
-  console.log('[11] iniciarMonitorHorarios ejecutándose');
   const auth = getAuth();
   const usuarioActual = auth.currentUser;
   
   if (!usuarioActual) {
-    console.warn('[12] No hay usuario autenticado. Monitor no iniciado.');
+    console.warn('[MONITOR] Usuario no autenticado');
     return null;
   }
-
-  console.log('[13] Usuario autenticado:', usuarioActual.uid);
-  console.log('[14] Configurando intervalo de verificación...');
-
+  
+  const userId = usuarioActual.uid;
+  console.log(`[MONITOR] Iniciando para usuario ${userId}`);
+  
+  // Configurar listeners de conexión
+  configurarListenersConexion(userId);
+  
   const intervalId = setInterval(async () => {
-    console.log('[15] --- Inicio de verificación ---');
+    if (!estadoConexion.online) return;
+    
     try {
-      const ahora = new Date();
-      // Usar hora local si la configuración es en hora local
-      const hora = ahora.getHours(); // Cambiado de getUTCHours()
-      const minuto = ahora.getMinutes();
-      const segundo = ahora.getSeconds();
-
-      console.log('[16] Hora actual (LOCAL):', `${hora}:${minuto}:${segundo}`);
-
-      await Promise.all(HORARIOS.map(async (horario) => {
-        console.log(`[17] Procesando horario: ${horario}`);
-        const horarioRef = doc(db, 'hora', horario);
+      const ahora = ajustarHoraCuba(new Date());
+      const hh = ahora.getHours();
+      const mm = ahora.getMinutes();
+      const ss = ahora.getSeconds();
+      
+      for (const horario of HORARIOS) {
+        const docSnap = await getDoc(doc(db, 'hora', horario));
+        if (!docSnap.exists()) continue;
         
-        console.log('[18] Obteniendo documento de horario...');
-        const docSnap = await getDoc(horarioRef);
-        
-        if (!docSnap.exists()) {
-          console.log('[19] Documento no existe:', horario);
-          return;
-        }
-
         const config = docSnap.data();
-        console.log('[20] Configuración obtenida:', config);
-
-        const hh = parseInt(config.hh) || 0;
-        const mm = parseInt(config.mm) || 0;
-        const ss = parseInt(config.ss) || 0;
-
-        console.log(`[21] Hora configurada para ${horario}:`, `${hh}:${mm}:${ss}`);
-
-        if (hora === hh && minuto === mm && segundo === ss) {
-          console.log('[22] ¡Coincidencia de horario detectada!');
-          const resultado = await actualizarCandados(horario, usuarioActual.uid);
-          console.log('[23] Resultado de actualización:', resultado);
-        } else {
-          console.log('[24] No hay coincidencia de horario');
+        if (hh === parseInt(config.hh) && 
+            mm === parseInt(config.mm) && 
+            ss === parseInt(config.ss)) {
+          console.log(`[HORARIO] Coincide ${horario}`);
+          await cerrarCandados(horario, userId);
         }
-      }));
+      }
     } catch (error) {
-      console.error('[ERROR en intervalo]', error);
+      console.error('[ERROR] En intervalo:', error);
     }
-    console.log('[25] --- Fin de verificación ---');
   }, 1000);
-
+  
   return () => {
-    console.log('[26] Limpiando intervalo...');
     clearInterval(intervalId);
+    console.log('[MONITOR] Detenido');
   };
 }

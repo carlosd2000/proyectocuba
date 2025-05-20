@@ -138,7 +138,6 @@ const lanzarToast = async () => {
   if (enviando.value) return; // Evitar múltiples ejecuciones
   if (!validarAntesDeEnviar()) return;
 
-  const resultado = await guardarDatos();
   enviando.value = true; // Comienza el proceso
   errorMessage.value = ''; // Limpiar mensajes de error previos
 
