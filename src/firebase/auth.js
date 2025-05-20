@@ -130,8 +130,7 @@ export const AuthService = {
     }
   },
 
-  // Crear perfil correctamente según tipo
-  // Crear perfil correctamente según tipo
+// Crear perfil correctamente según tipo
 async createUserProfile(userId, userData) {
   try {
     const tipo = userData.tipo;
