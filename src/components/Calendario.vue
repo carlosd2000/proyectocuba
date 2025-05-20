@@ -42,62 +42,21 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, defineEmits } from 'vue'
+import { defineEmits } from 'vue'
+import { useCalendario } from '../scripts/calendario.js'
 
 const emit = defineEmits(['cambiar-fecha'])
 
-const fecha = ref(new Date())
-const numeros = ref('123 - 45 - 45')
-
-// --- Unificación de lógica de selección de fecha ---
-const fechaSeleccionada = ref(new Date())
-const fechaSeleccionadaString = ref(fechaSeleccionada.value.toISOString().slice(0, 10))
-
-watch(fechaSeleccionadaString, (val) => {
-  fechaSeleccionada.value = new Date(val + 'T00:00:00')
-})
-
-// Actualiza el input cuando cambian las flechas
-watch(fechaSeleccionada, (val) => {
-  fechaSeleccionadaString.value = val.toISOString().slice(0, 10)
-})
-
-// Sincroniza la fecha visual del calendario con la seleccionada
-watch(fechaSeleccionada, (val) => {
-  fecha.value = new Date(val)
-})
-
-// Emite la fecha seleccionada cada vez que cambia
-watch(fechaSeleccionada, (val) => {
-  emit('cambiar-fecha', new Date(val))
-})
-
-// Formato visual para mostrar la fecha
-const fechaFormateada = computed(() => {
-  const dia = fechaSeleccionada.value.getDate().toString().padStart(2, '0')
-  const mes = (fechaSeleccionada.value.getMonth() + 1).toString().padStart(2, '0')
-  const anio = fechaSeleccionada.value.getFullYear()
-  return `${dia}/${mes}/${anio}`
-})
-
-const diaAnterior = () => {
-  fechaSeleccionada.value.setDate(fechaSeleccionada.value.getDate() - 1)
-  fechaSeleccionada.value = new Date(fechaSeleccionada.value)
-}
-
-const diaSiguiente = () => {
-  fechaSeleccionada.value.setDate(fechaSeleccionada.value.getDate() + 1)
-  fechaSeleccionada.value = new Date(fechaSeleccionada.value)
-}
-
-// Función para comparar fechas (solo día, mes, año)
-const esMismoDia = (fechaA, fechaB) => {
-  const a = new Date(fechaA)
-  const b = new Date(fechaB)
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth() === b.getMonth() &&
-         a.getDate() === b.getDate()
-}
+const {
+  fecha,
+  numeros,
+  fechaSeleccionada,
+  fechaSeleccionadaString,
+  fechaFormateada,
+  diaAnterior,
+  diaSiguiente,
+  esMismoDia
+} = useCalendario(emit)
 </script>
 
 <style scoped>
