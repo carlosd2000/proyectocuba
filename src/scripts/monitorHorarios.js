@@ -98,7 +98,7 @@ async function verificarHorariosPerdidos(userId) {
       const horaCierreAjustada = ajustarHoraCuba(horaCierre);
       
       // Si la hora actual es posterior a la hora de cierre
-      if (ahora > horaCierreAjustada) {
+      if (ahora > horaCierre) {
         console.log(`[HORARIO PERDIDO] ${horario} pasó durante la desconexión`);
         await cerrarCandados(horario, userId);
       }
