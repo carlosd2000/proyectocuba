@@ -131,54 +131,64 @@ export const AuthService = {
   },
 
   // Crear perfil correctamente según tipo
-  async createUserProfile(userId, userData) {
-    try {
-      const tipo = userData.tipo;
-      const creadorId = userData.creadorId || null;
-      const tipoCreador = userData.tipoCreador || null;
+  // Crear perfil correctamente según tipo
+async createUserProfile(userId, userData) {
+  try {
+    const tipo = userData.tipo;
+    const creadorId = userData.creadorId || null;
+    const tipoCreador = userData.tipoCreador || null;
 
-      if (tipo === 'bancos' || tipo === 'admin') {
-        await setDoc(doc(db, tipo, userId), userData);
-      } else if (tipo === 'colectores') {
-        if (!creadorId || !tipoCreador) throw new Error("Falta creadorId o tipoCreador para colectores");
-        await setDoc(doc(db, `bancos/${creadorId}/colectores/${userId}`), userData);
-      } else if (tipo === 'listeros') {
-        if (!creadorId || !tipoCreador) throw new Error("Falta creadorId o tipoCreador para listeros");
+    if (tipo === 'bancos' || tipo === 'admin') {
+      await setDoc(doc(db, tipo, userId), userData);
+    } 
+    else if (tipo === 'colectores') {
+      if (!creadorId || !tipoCreador) throw new Error("Falta creadorId o tipoCreador para colectores");
+      await setDoc(doc(db, `bancos/${creadorId}/colectores/${userId}`), userData);
+    } 
+    else if (tipo === 'listeros') {
+      if (!creadorId || !tipoCreador) throw new Error("Falta creadorId o tipoCreador para listeros");
 
-        if (tipoCreador === 'banco') {
-          await setDoc(doc(db, `bancos/${creadorId}/listeros/${userId}`), userData);
-        } else if (tipoCreador === 'colector') {
-          // Buscar banco automáticamente
-          const bancosSnapshot = await getDocs(collection(db, 'bancos'));
-          let bancoIdEncontrado = null;
+      // Determinar el ID del banco padre
+      let bancoId = null;
 
-          for (const bancoDoc of bancosSnapshot.docs) {
-            const colectoresSnapshot = await getDocs(collection(db, `bancos/${bancoDoc.id}/colectores`));
-            for (const colectorDoc of colectoresSnapshot.docs) {
-              if (colectorDoc.id === creadorId) {
-                bancoIdEncontrado = bancoDoc.id;
-                break;
-              }
-            }
-            if (bancoIdEncontrado) break;
+      if (tipoCreador === 'banco') {
+        bancoId = creadorId;
+      } 
+      else if (tipoCreador === 'colector') {
+        // Buscar el banco padre del colector
+        const bancosSnapshot = await getDocs(collection(db, 'bancos'));
+        for (const bancoDoc of bancosSnapshot.docs) {
+          const colectorRef = doc(db, `bancos/${bancoDoc.id}/colectores/${creadorId}`);
+          const colectorSnap = await getDoc(colectorRef);
+          if (colectorSnap.exists()) {
+            bancoId = bancoDoc.id;
+            break;
           }
-
-          if (!bancoIdEncontrado) {
-            throw new Error("No se pudo determinar el banco para el colector.");
-          }
-
-          await setDoc(doc(db, `bancos/${bancoIdEncontrado}/colectores/${creadorId}/listeros/${userId}`), userData);
         }
-      } else {
-        throw new Error("Tipo de usuario inválido");
+
+        if (!bancoId) {
+          throw new Error("No se encontró el banco padre para este colector");
+        }
       }
 
-      return { success: true };
-    } catch (error) {
-      console.error('Error creando perfil:', error);
-      throw error;
+      // Guardar el listero en la subcolección de listeros del banco
+      await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), {
+        ...userData,
+        // Mantener referencia al creador directo (colector o banco)
+        creadorDirectoId: creadorId,
+        creadorDirectoTipo: tipoCreador
+      });
+    } 
+    else {
+      throw new Error("Tipo de usuario inválido");
     }
-  },
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error creando perfil:', error);
+    throw error;
+  }
+},
 
   // Obtener perfil de usuario
   async getUserProfile(userId) {
