@@ -232,7 +232,7 @@ export async function sincronizarPendientes() {
           console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
           
           // Verificar si está fuera de tiempo
-          const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario);
+          const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, apuesta);
 
           await setDoc(docRef, {
             ...apuesta,
@@ -290,7 +290,7 @@ async function obtenerHoraServidor() {
 }
 
 // Función para verificar si está fuera de tiempo (agregar con las demás funciones)
-async function verificarFueraDeTiempo(horario) {
+async function verificarFueraDeTiempo(horario, apuestaData) {
   try {
     // 1. Obtener hora del servidor
     const serverTime = await obtenerHoraServidor();
@@ -311,8 +311,21 @@ async function verificarFueraDeTiempo(horario) {
       parseInt(config.ss) || 0,
     );
     
-    // 4. Comparar fechas (ajustando a zona horaria de Cuba si es necesario)
-    return serverTime.toMillis() > horaCierre.getTime();
+    // 4. Comparación principal: hora del servidor vs hora de cierre
+    const horarioYaPaso = serverTime.toMillis() > horaCierre.getTime();
+    
+        // Si el horario no ha pasado, no está fuera de tiempo
+    if (!horarioYaPaso) return false;
+    
+    // 5. Nueva lógica: Verificar fechas de creación y sincronización
+    if (apuestaData) {
+      const creadoEn = apuestaData.creadoEn?.toDate?.() || new Date(apuestaData.creadoEn);
+      const creadoAntesDeCierre = creadoEn.getTime() < horaCierre.getTime();
+      
+      return creadoAntesDeCierre;
+    }
+    
+    return false;
   } catch (error) {
     console.error('Error verificando horario:', error);
     return false; // En caso de error, no marcar como fuera de tiempo
