@@ -3,7 +3,6 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from '@/stores/authStore'
-import { sincronizarApuestasOffline } from './scripts/sincronizarApuestas.js'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -16,5 +15,3 @@ const authStore = useAuthStore()
 authStore.initializeAuthListener().then(() => {
     app.mount('#app')
 })
-
-window.addEventListener('online', sincronizarApuestasOffline)
