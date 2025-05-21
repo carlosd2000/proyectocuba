@@ -52,6 +52,25 @@ async function cerrarCandados(horario, userId) {
     const horarioCapitalizado = capitalizarHorario(horario);
     const batch = writeBatch(db);
     
+        // Obtener configuración del horario primero
+    const horarioRef = doc(db, 'hora', horario);
+    const horarioSnap = await getDoc(horarioRef);
+    
+    if (!horarioSnap.exists()) {
+      console.log(`[CANDADOS] Configuración no encontrada para ${horario}`);
+      return { success: false };
+    }
+    
+    const config = horarioSnap.data();
+    const horaCierre = new Date();
+    horaCierre.setHours(
+      parseInt(config.hh) || 0,
+      parseInt(config.mm) || 0,
+      parseInt(config.ss) || 0,
+      0
+    );
+    const horaCierreAjustada = horaCierre;
+
     // Obtener todas las apuestas abiertas para este horario
     const q = query(
       collection(db, 'apuestas'),
@@ -61,20 +80,34 @@ async function cerrarCandados(horario, userId) {
     );
     
     const snapshot = await getDocs(q);
+    let actualizadas = 0;
     
-    // Cerrar todas las apuestas encontradas
-    snapshot.forEach(doc => {
-      batch.update(doc.ref, {
-        candadoAbierto: false,
-        ultimaActualizacion: serverTimestamp()
-      });
-    });
+    // Verificar cada apuesta individualmente
+    for (const apuestaDoc of snapshot.docs) {
+      const esAntigua = await fueCreadaAntesDelCierre(apuestaDoc, horaCierreAjustada);
+      
+      if (esAntigua) {
+        batch.update(apuestaDoc.ref, {
+          candadoAbierto: false,
+          ultimaActualizacion: serverTimestamp()
+        });
+        actualizadas++;
+      } else {
+        console.log(`[CANDADOS] Apuesta ${apuestaDoc.id} creada después del cierre, manteniendo abierta`);
+      }
+    }
     
-    await batch.commit();
-    console.log(`[CANDADOS] Cerrados ${snapshot.size} candados para ${horarioCapitalizado}`);
+    if (actualizadas > 0) {
+      await batch.commit();
+      console.log(`[CANDADOS] Actualizados ${actualizadas} candados para ${horarioCapitalizado}`);
+      return { success: true, updated: actualizadas };
+    }
+    
+    return { success: true, updated: 0 };
     
   } catch (error) {
     console.error(`[ERROR] Cerrando candados para ${horario}:`, error);
+    return { success: false, error };
   }
 }
 
@@ -162,4 +195,31 @@ export function iniciarMonitorHorarios() {
     clearInterval(intervalId);
     console.log('[MONITOR] Detenido');
   };
+}
+
+// Función para verificar si una apuesta fue creada antes del cierre
+async function fueCreadaAntesDelCierre(apuestaDoc, horaCierre) {
+  try {
+    const apuestaData = apuestaDoc.data();
+    let fechaCreacion;
+    
+    // Obtener la fecha de creación de la apuesta
+    if (apuestaData.sincronizadoEn) {
+      fechaCreacion = apuestaData.sincronizadoEn.toDate();
+    } else if (apuestaData.creadoEn) {
+      fechaCreacion = apuestaData.creadoEn.toDate();
+    } else {
+      // Si no hay fecha de creación, asumimos que es antigua
+      return true;
+    }
+    
+    // Comparar con la hora de cierre (ambas ajustadas a Cuba)
+    const fechaCreacionAjustada = ajustarHoraCuba(fechaCreacion);
+    return fechaCreacionAjustada <= horaCierre;
+    
+  } catch (error) {
+    console.error('Error verificando fecha apuesta:', error);
+    // En caso de error, asumimos que es antigua para ser conservadores
+    return true;
+  }
 }
