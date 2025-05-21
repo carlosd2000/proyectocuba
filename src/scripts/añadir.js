@@ -1,6 +1,6 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
-import { serverTimestamp, updateDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
@@ -231,11 +231,14 @@ export async function sincronizarPendientes() {
         if (!snap.exists()) {
           console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
           
+          // Verificar si está fuera de tiempo
+          const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario);
+
           await setDoc(docRef, {
             ...apuesta,
             creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
             sincronizadoEn: serverTimestamp(),
-            estado: 'Cargado',
+            estado: fueraDeTiempo ? 'fueradetiempo' : 'Cargado',
             candadoAbierto: true
           });
           pendientesExitosos.push(apuesta.uuid);
@@ -275,4 +278,44 @@ if (typeof window !== 'undefined') {
       setTimeout(sincronizarPendientes, 1000);
     }
   });
+}
+
+// Función para obtener hora del servidor (agregar con las demás funciones)
+async function obtenerHoraServidor() {
+  const tempDocRef = doc(db, "temp", "serverTimeCheck");
+  await setDoc(tempDocRef, { timestamp: serverTimestamp() });
+  const docSnap = await getDoc(tempDocRef);
+  await deleteDoc(tempDocRef);
+  return docSnap.data().timestamp;
+}
+
+// Función para verificar si está fuera de tiempo (agregar con las demás funciones)
+async function verificarFueraDeTiempo(horario) {
+  try {
+    // 1. Obtener hora del servidor
+    const serverTime = await obtenerHoraServidor();
+    
+    // 2. Obtener configuración del horario
+    const horarioRef = doc(db, 'hora', horario.toLowerCase());
+    const horarioSnap = await getDoc(horarioRef);
+    
+    if (!horarioSnap.exists()) return false;
+    
+    const config = horarioSnap.data();
+    
+    // 3. Crear fecha límite para comparación
+    const horaCierre = new Date(serverTime.toDate());
+    horaCierre.setHours(
+      parseInt(config.hh) || 0,
+      parseInt(config.mm) || 0,
+      parseInt(config.ss) || 0,
+      0
+    );
+    
+    // 4. Comparar fechas (ajustando a zona horaria de Cuba si es necesario)
+    return serverTime.toMillis() > horaCierre.getTime();
+  } catch (error) {
+    console.error('Error verificando horario:', error);
+    return false; // En caso de error, no marcar como fuera de tiempo
+  }
 }

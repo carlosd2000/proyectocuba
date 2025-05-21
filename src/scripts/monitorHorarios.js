@@ -7,7 +7,7 @@ import {
   where, 
   getDocs, 
   writeBatch,
-  serverTimestamp
+  serverTimestamp,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
