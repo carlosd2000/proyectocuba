@@ -128,7 +128,6 @@ async function verificarHorariosPerdidos(userId) {
         parseInt(config.ss) || 0,
         0
       );
-      const horaCierreAjustada = ajustarHoraCuba(horaCierre);
       
       // Si la hora actual es posterior a la hora de cierre
       if (ahora > horaCierre) {
