@@ -6,7 +6,7 @@
         <p class="col-8 m-0 p-0 ml-2">{{ cuentaRegresiva || 'hh:mm:ss' }}</p>
       </div>
       <div class="col-7 row p-0 m-0 d-flex justify-content-end align-items-center">
-        <button class=" btn btn-light border-0 mx-1 p-0 bg-transparent" @click="irwallet">
+        <button class=" btn btn-light border-0 mx-1 p-0 bg-transparent" @click="$router.push(`/wallet/${$route.params.id}`)">
           <p class="m-0 p-0">$20,000,000.00</p>
         </button>
 

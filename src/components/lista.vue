@@ -61,14 +61,14 @@ function cargarApuestasLocales() {
         id: a.uuid,
         uuid: a.uuid,
         totalGlobal: Number(a.totalGlobal) || 0, // Asegúrate de que sea numérico
+        candadoAbierto: a.candadoAbierto ?? false,
       }));
   } catch (error) {
     console.error('Error cargando apuestas locales:', error);
     apuestasLocales.value = [];
   }
 }
-
-// Función para mostrar la hora
+// Función para mostrar la hora (CORREGIDA)
 const mostrarHora = (persona) => {
   if (!persona || typeof persona !== 'object') return "--:-- --"
 
@@ -76,7 +76,7 @@ const mostrarHora = (persona) => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'America/Havana'
+    timeZone: 'America/Havana' // Huso horario de Cuba
   };
 
   const formatearHora = (fecha) => {
@@ -224,20 +224,6 @@ const confirmarEliminar = () => {
   mostrarConfirmacionEliminar.value = true
 }
 
-const toggleCandado = async (persona) => {
-  if (persona.candadoAbierto) {
-    const result = await Swal.fire({
-      title: '¿Deseas cerrar la apuesta?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí',
-      cancelButtonText: 'Cancelar'
-    })
-    if (!result.isConfirmed) return
-  }
-  persona.candadoAbierto = !persona.candadoAbierto
-}
-
 // Suscripción a datos
 let unsubscribe = null
 onMounted(() => {
@@ -246,7 +232,6 @@ onMounted(() => {
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
   window.addEventListener('storage', cargarApuestasLocales)
-  
   if (navigator.onLine) {
     isSyncing.value = true
     sincronizarEliminaciones()

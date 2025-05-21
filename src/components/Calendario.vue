@@ -17,15 +17,14 @@
 
       <!-- Columna 2: Fecha y números -->
       <div class="text-center mx-1" style="width: 110px;">
-        <div>{{ fechaFormateada }}</div>
-        <div>{{ numeros }}</div>
-        <!-- Selector de fecha editable -->
         <input
           type="date"
           v-model="fechaSeleccionadaString"
-          class="form-control mt-1"
-          style="max-width: 130px; font-size: 0.9rem;"
+          class=" border-0 bg-transparent mt-1"
+          style="max-width: 130px; font-size: 1.0rem;"
         />
+        <div>{{ numeros }}</div>
+        <!-- Selector de fecha editable -->
       </div>
 
       <!-- Columna 3: Calendario -->
