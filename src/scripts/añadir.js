@@ -238,7 +238,7 @@ export async function sincronizarPendientes() {
             ...apuesta,
             creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
             sincronizadoEn: serverTimestamp(),
-            estado: fueraDeTiempo ? 'fueradetiempo' : 'Cargado',
+            estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
             candadoAbierto: true
           });
           pendientesExitosos.push(apuesta.uuid);
@@ -309,7 +309,6 @@ async function verificarFueraDeTiempo(horario) {
       parseInt(config.hh) || 0,
       parseInt(config.mm) || 0,
       parseInt(config.ss) || 0,
-      0
     );
     
     // 4. Comparar fechas (ajustando a zona horaria de Cuba si es necesario)
