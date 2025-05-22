@@ -223,6 +223,8 @@ export async function sincronizarPendientes() {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
     const pendientesExitosos = [];
     
+    const serverTime = await obtenerHoraServidor();
+
     for (const apuesta of pendientes) {
       try {
         const docRef = doc(db, 'apuestas', apuesta.uuid);
@@ -232,13 +234,16 @@ export async function sincronizarPendientes() {
           console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
           
           // Verificar si está fuera de tiempo
-          const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, apuesta);
+          const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, apuesta, serverTime);
+
+          // Verificar estado del candado
+          const candadoAbierto = await verificarEstadoCandado(apuesta.horario, serverTime);
 
           await setDoc(docRef, {
             ...apuesta,
             creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
             sincronizadoEn: serverTimestamp(),
-            estado: fueraDeTiempo ? 'fueradetiempo' : 'Cargado',
+            estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
             candadoAbierto: true
           });
           pendientesExitosos.push(apuesta.uuid);
@@ -303,12 +308,11 @@ async function obtenerHoraServidor() {
 }
 
 
+
 // Función para verificar si está fuera de tiempo (agregar con las demás funciones)
-async function verificarFueraDeTiempo(horario, apuestaData) {
+async function verificarFueraDeTiempo(horario, apuestaData, serverTime) {
   try {
-    // 1. Obtener hora del servidor
-    const serverTime = await obtenerHoraServidor();
-    
+    // 1. Obtener hora del servidor    
     // 2. Obtener configuración del horario
     const horarioRef = doc(db, 'hora', horario.toLowerCase());
     const horarioSnap = await getDoc(horarioRef);
@@ -345,5 +349,36 @@ async function verificarFueraDeTiempo(horario, apuestaData) {
   } catch (error) {
     console.error('Error verificando horario:', error);
     return false; // En caso de error, no marcar como fuera de tiempo
+  }
+}
+
+
+// Nueva función para verificar estado del candado
+async function verificarEstadoCandado(horario, serverTime) {
+  try {
+    const horarioRef = doc(db, 'hora', horario.toLowerCase());
+    const horarioSnap = await getDoc(horarioRef);
+    
+    if (!horarioSnap.exists()) {
+      console.error('Horario no encontrado:', horario);
+      return false; // Por defecto candado cerrado si no existe el horario
+    }
+    
+    const config = horarioSnap.data();
+    const horaCierre = new Date(serverTime.toDate());
+    horaCierre.setHours(
+      parseInt(config.hh) || 0,
+      parseInt(config.mm) || 0,
+      parseInt(config.ss) || 0
+    );
+    
+    // Candado abierto si el horario NO ha pasado
+    const candadoAbierto = serverTime.toMillis() < horaCierre.getTime();
+    console.log(`Estado candado para ${horario}:`, candadoAbierto ? 'ABIERTO' : 'CERRADO');
+    
+    return candadoAbierto;
+  } catch (error) {
+    console.error('Error verificando estado del candado:', error);
+    return false; // Por defecto candado cerrado si hay error
   }
 }
