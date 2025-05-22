@@ -244,7 +244,7 @@ export async function sincronizarPendientes() {
             creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
             sincronizadoEn: serverTimestamp(),
             estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
-            candadoAbierto: true
+            candadoAbierto: candadoAbierto
           });
           pendientesExitosos.push(apuesta.uuid);
         }
