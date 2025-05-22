@@ -333,9 +333,10 @@ async function verificarFueraDeTiempo(horario, apuestaData) {
     
     // 5. Nueva lógica: Verificar fechas de creación y sincronización
     if (apuestaData) {
-      const creadoEn = apuestaData.creadoEn?.toDate?.() || new Date(apuestaData.creadoEn);
+      const creadoEnBase = apuestaData.creadoEn?.toDate?.() || new Date(apuestaData.creadoEn);
+      const creadoEn = new Date(creadoEnBase.getTime() + 3600000); // Sumar 1 hora (3600000 ms)
       const creadoAntesDeCierre = creadoEn.getTime() < horaCierre.getTime();
-      
+      console.error('creado en:', creadoEn);
       return creadoAntesDeCierre;
     }
     
