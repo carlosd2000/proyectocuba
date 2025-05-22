@@ -275,8 +275,7 @@ const apuestasFiltradas = computed(() =>
         <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center" @click.stop>
           <i :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
              class="fs-4"
-             style="cursor: pointer;"
-             @click="toggleCandado(persona)"></i>
+             style="cursor: pointer;"></i>
         </div>
       </header>
       

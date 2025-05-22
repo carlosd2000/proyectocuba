@@ -286,8 +286,22 @@ async function obtenerHoraServidor() {
   await setDoc(tempDocRef, { timestamp: serverTimestamp() });
   const docSnap = await getDoc(tempDocRef);
   await deleteDoc(tempDocRef);
-  return docSnap.data().timestamp;
+
+  const rawTimestamp = docSnap.data().timestamp;
+  const date = rawTimestamp.toDate();
+
+  // Aumentar 1 hora (3600000 ms = 1 hora)
+  const fechaAjustada = new Date(date.getTime() + 3600000);
+
+  console.log('Hora original:', date);
+  console.log('Hora ajustada +1h:', fechaAjustada);
+
+  return {
+    toDate: () => fechaAjustada,
+    toMillis: () => fechaAjustada.getTime()
+  };
 }
+
 
 // Función para verificar si está fuera de tiempo (agregar con las demás funciones)
 async function verificarFueraDeTiempo(horario, apuestaData) {
