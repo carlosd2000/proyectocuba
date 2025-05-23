@@ -67,6 +67,12 @@ export function validarFilas(fijas, extras) {
     return tieneCirculosNormales && sinCuadrado;
   });
 
+  const cuadradosInvalidos = !tieneCirculoSolo && todasFilas.some(fila => {
+    const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
+    const sinCirculos = !(fila.circulo1 !== '' || fila.circulo2 !== '');
+    return tieneCuadrado && sinCirculos;
+  });
+
   // 2. Validar que circuloSolo tenga al menos 1 cuadrado
   const circuloSoloInvalido = tieneCirculoSolo && 
     !todasFilas.some(fila => fila.cuadrado !== '' && fila.cuadrado !== null);
@@ -80,8 +86,9 @@ export function validarFilas(fijas, extras) {
   }) || (tieneCirculoSolo && !circuloSoloInvalido);
 
   return {
-    esValido: hayDatosValidos && !circulosInvalidos && !circuloSoloInvalido,
+    esValido: hayDatosValidos && !circulosInvalidos && !cuadradosInvalidos && !circuloSoloInvalido,
     circulosInvalidos,
+    cuadradosInvalidos,
     circuloSoloInvalido
   };
 }

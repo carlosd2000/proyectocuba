@@ -51,10 +51,15 @@ export function usePagar() {
         const apuestaId = route.query.editar;
         console.log('ID de la apuesta:', apuestaId);
 
-        const { esValido, circulosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra)
+        const { esValido, circulosInvalidos, cuadradosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra)
 
         if (circulosInvalidos) {
             errorMessage.value = 'Cada círculo normal debe tener su cuadrado correspondiente'
+            return false
+        }
+
+        if (cuadradosInvalidos) {
+            errorMessage.value = 'Los cuadrados sin círculos solo son válidos cuando creas candados';
             return false
         }
 
