@@ -90,7 +90,7 @@ export function usePagar() {
     }
 
     const lanzarToast = async () => {
-        if (!(await validarAntesDeEnviar())) {
+        if (!(validarAntesDeEnviar())) {
             mostrarToastError.value = true
             setTimeout(() => mostrarToastError.value = false, 2000)
             return
