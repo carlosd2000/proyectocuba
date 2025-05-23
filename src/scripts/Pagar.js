@@ -48,7 +48,7 @@ export function usePagar() {
 
     const validarAntesDeEnviar = async () => {
         // 1. Obtener el ID/UUID de la apuesta
-        const apuestaId = route.query.editar || datosEdicion.value?.id || datosEdicion.value?.uuid;
+        const apuestaId = route.query.editar;
         console.log('ID de la apuesta:', apuestaId);
 
         const { esValido, circulosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra)
@@ -68,21 +68,23 @@ export function usePagar() {
             return false
         }
 
-        try {
-            verificandoCandado.value = true;
-            const candadoAbierto = await verificarCandadoPorId(apuestaId);
-            if (!candadoAbierto) { // Si el candado está CERRADO (false)
-                errorMessage.value = 'La apuesta está bloqueada para edición(candado cerrado)';
-                return false;
+        if (apuestaId) {
+            try {
+                verificandoCandado.value = true;
+                const candadoAbierto = await verificarCandadoPorId(apuestaId);
+                if (!candadoAbierto) {
+                    errorMessage.value = 'La apuesta está bloqueada para edición(candado cerrado)';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error al verificar candado:', error);
+                return true;
+            } finally {
+                verificandoCandado.value = false;
             }
         }
-        catch (error) {
-            console.error('Error al verificar candado:', error);
-            // En caso de error, permitimos continuar por seguridad
-            return true;
-        } 
-        finally {
-            verificandoCandado.value = false;
+        else{
+            return true
         }
 
         errorMessage.value = ''
