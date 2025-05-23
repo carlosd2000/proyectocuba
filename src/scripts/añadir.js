@@ -164,13 +164,23 @@ export async function guardarDatos() {
       
       const guardado = guardarEnLocal(docAGuardar, modoEdicion.value);
       
+            // Calcular el totalGlobal sumando todas las apuestas pendientes (incluyendo la recién guardada)
+      let pendientes = [];
+      try {
+        pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+      } catch (e) {
+        pendientes = [];
+      }
+      const totalGlobalPendientes = pendientes.reduce((sum, a) => sum + (Number(a.totalGlobal) || 0), 0);
+
       return { 
         success: guardado, 
         offline: true,
         uuid,
         firebaseId,
         hora: hora24,
-        esEdicion: modoEdicion.value
+        esEdicion: modoEdicion.value,
+        totalGlobalPendientes,
       };
     }
 

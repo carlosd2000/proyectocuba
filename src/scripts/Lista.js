@@ -1,9 +1,9 @@
-    import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-    import Swal from 'sweetalert2'
-    import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
-    import { sincronizarPendientes } from '../scripts/añadir.js'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import Swal from 'sweetalert2'
+import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
+import { sincronizarPendientes } from '../scripts/añadir.js'
 
-    export default function useLista(fechaRef, router, route) {
+export default function useLista(fechaRef, router, route) {
     const mostrarModal = ref(false)
     const mostrarConfirmacionEliminar = ref(false)
     const personaSeleccionada = ref(null)
@@ -12,11 +12,16 @@
     const apuestasLocales = ref([])
 
     const esMismoDia = (fechaA, fechaB) => {
-        const a = new Date(fechaA)
-        const b = new Date(fechaB)
-        return a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate()
+        try {
+            const a = new Date(fechaA);
+            const b = new Date(fechaB);
+            return a.getFullYear() === b.getFullYear() &&
+                a.getMonth() === b.getMonth() &&
+                a.getDate() === b.getDate();
+        } catch (e) {
+            console.error('Error al comparar fechas:', e);
+            return false;
+        }
     }
 
     const obtenerIconoEstado = (persona) => {
@@ -66,15 +71,18 @@
     const apuestasCombinadas = computed(() => {
             // Si estamos offline, mostrar solo apuestas locales
         if (!isOnline.value) {
-        return apuestasLocales.value
-            .filter(a => {
-            let fecha = a.creadoEn ? new Date(a.creadoEn) : null;
-            return fecha && esMismoDia(fecha, props.fecha);
-            })
-            .sort((a, b) => {
-            const fechaA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
-            const fechaB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
-            return fechaB - fechaA;
+            const filtradas = apuestasLocales.value.filter(a => {
+                let fecha = a.creadoEn ? new Date(a.creadoEn) : null;
+                const mismoDia = fecha && esMismoDia(fecha, fechaRef.value);
+                console.log('Apuesta:', a.id, 'Fecha:', fecha, 'Mismo día?', mismoDia);
+                return mismoDia;
+            });
+            
+            console.log('Apuestas filtradas offline:', filtradas);
+            return filtradas.sort((a, b) => {
+                const fechaA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+                const fechaB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+                return fechaB - fechaA;
             });
         }
 
@@ -107,12 +115,17 @@
     const updateOnlineStatus = () => {
         isOnline.value = navigator.onLine
         if (isOnline.value) {
-        isSyncing.value = true
-        Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
-            .finally(() => {
-            isSyncing.value = false
-            cargarApuestasLocales()
-            })
+            isSyncing.value = true
+            Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
+                .then(() => {
+                    // 🔽 Recargar apuestas desde Firebase y local después de sincronizar
+                    if (typeof unsubscribe === 'function') unsubscribe();
+                    unsubscribe = obtenerApuestas();
+                    cargarApuestasLocales();
+                })
+                .finally(() => {
+                    isSyncing.value = false
+                })
         }
         else {
         // Forzar actualización de la lista cuando se va offline
@@ -180,6 +193,7 @@
     }
 
     let unsubscribe = null
+
     onMounted(() => {
         isOnline.value = navigator.onLine;
         unsubscribe = obtenerApuestas()
@@ -188,10 +202,16 @@
         window.addEventListener('offline', updateOnlineStatus)
         window.addEventListener('storage', cargarApuestasLocales)
         if (navigator.onLine) {
-        isSyncing.value = true
-        sincronizarEliminaciones()
-            .then(sincronizarPendientes)
-            .finally(() => { isSyncing.value = false })
+            isSyncing.value = true
+            sincronizarEliminaciones()
+                .then(sincronizarPendientes)
+                .then(() => {
+                    // 🔽 Recargar apuestas después de sincronizar al cargar la página
+                    if (typeof unsubscribe === 'function') unsubscribe();
+                    unsubscribe = obtenerApuestas();
+                    cargarApuestasLocales();
+                })
+                .finally(() => { isSyncing.value = false })
         }
     })
 

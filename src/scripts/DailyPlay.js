@@ -15,14 +15,31 @@ import { setHorario } from '../scripts/añadir.js'
 
 // Total sumado
     const totalGlobal = ref(0)
+    const isOnline = ref(navigator.onLine)
 
 // Router
     const route = useRoute()
     const router = useRouter()
 
-// Mostrar total con formato
+    // Sumar apuestas locales si está offline
+    function calcularTotalLocal() {
+        try {
+            const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
+            // Solo sumar las del turno seleccionado
+            return pendientes
+                .filter(a => a.horario === turnoSeleccionado.value)
+                .reduce((sum, a) => sum + (Number(a.totalGlobal) || 0), 0)
+        } catch {
+            return 0
+        }
+    }
+    // Mostrar total con formato (incluye local si offline)
     const totalFormateado = computed(() => {
-        return `$${totalGlobal.value.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
+        let total = totalGlobal.value
+        if (!isOnline.value) {
+            total = calcularTotalLocal()
+        }
+        return `$${total.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
     })
 
 // Listener actual de Firebase
@@ -34,30 +51,44 @@ import { setHorario } from '../scripts/añadir.js'
 
         const q = query(apuestasRef, where('horario', '==', turnoSeleccionado.value))
         unsubscribe = onSnapshot(q, (snapshot) => {
-        totalGlobal.value = snapshot.docs.reduce((sum, doc) => {
-            const data = doc.data()
-            return sum + (typeof data.totalGlobal === 'number' ? data.totalGlobal : 0)
-        }, 0)
+            totalGlobal.value = snapshot.docs.reduce((sum, doc) => {
+                const data = doc.data()
+                return sum + (typeof data.totalGlobal === 'number' ? data.totalGlobal : 0)
+            }, 0)
         }, (error) => {
-        console.error("Error en listener de Firebase:", error)
+            console.error("Error en listener de Firebase:", error)
         })
     }
 
-// Watcher para cambios de turno
+        // Watcher para cambios de turno
     watch(turnoSeleccionado, (nuevoHorario) => {
         setHorario(nuevoHorario)
-        escucharCambios()
+        if (isOnline.value) {
+            escucharCambios()
+        }
     })
+
+    // Watcher para cambios de conexión
+    function updateOnlineStatus() {
+        isOnline.value = navigator.onLine
+        if (isOnline.value) {
+            escucharCambios()
+        }
+    }
 
     onMounted(() => {
         turnoSeleccionado.value = 'Dia'
         setHorario('Dia')
-        escucharCambios()
+                if (isOnline.value) {
+            escucharCambios()
+        }
+        window.addEventListener('online', updateOnlineStatus)
+        window.addEventListener('offline', updateOnlineStatus)
 
      // Carga estado de desplegado
         const savedDesplegado1 = localStorage.getItem('desplegado1')
         if (savedDesplegado1 !== null) {
-        desplegado1.value = JSON.parse(savedDesplegado1)
+            desplegado1.value = JSON.parse(savedDesplegado1)
         }
     })
 
@@ -67,6 +98,8 @@ import { setHorario } from '../scripts/añadir.js'
 
     onBeforeUnmount(() => {
         if (unsubscribe) unsubscribe()
+        window.removeEventListener('online', updateOnlineStatus)
+        window.removeEventListener('offline', updateOnlineStatus)
     })
 
     return {
