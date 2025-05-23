@@ -3,7 +3,7 @@ import { getFirestore, collection, query, where, onSnapshot } from 'firebase/fir
 import { useRoute, useRouter } from 'vue-router'
 import { setHorario } from '../scripts/añadir.js'
 
-    export function useHorario(props) {
+export function useHorario(props) {
     // Firebase
     const db = getFirestore()
     const apuestasRef = collection(db, 'apuestas')
@@ -16,12 +16,38 @@ import { setHorario } from '../scripts/añadir.js'
     const opciones = ['Dia', 'Tarde', 'Noche']
     const turnoSeleccionado = ref('Dia')
 
-    // Total sumado
+    // Total sumado online
     const totalGlobal = ref(0)
+    // Reactividad para apuestas locales
+    const apuestasLocalesVersion = ref(0)
+    // Estado de conexión
+    const isOnline = ref(navigator.onLine)
 
-    // Mostrar total con formato
+    // Sumar apuestas locales del turno seleccionado
+    function calcularTotalLocal() {
+        try {
+            const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
+            return pendientes
+                .filter(a => a.horario === turnoSeleccionado.value)
+                .reduce((sum, a) => sum + (Number(a.totalGlobal) || 0), 0)
+        } catch {
+            return 0
+        }
+    }
+
+    // Total formateado: suma online + offline si online, o total guardado + offline si offline
     const totalFormateado = computed(() => {
-        return `$${totalGlobal.value.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
+        apuestasLocalesVersion.value // Dependencia reactiva
+        const totalesOnline = JSON.parse(localStorage.getItem('totalesOnline') || '{}')
+        const totalOnlineGuardado = totalesOnline[turnoSeleccionado.value] || 0
+        const totalOffline = calcularTotalLocal()
+        let total = 0
+        if (isOnline.value) {
+            total = totalGlobal.value + totalOffline
+        } else {
+            total = totalOnlineGuardado + totalOffline
+        }
+        return `$${total.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
     })
 
     // Ícono según turno
@@ -39,24 +65,39 @@ import { setHorario } from '../scripts/añadir.js'
         if (unsubscribe) unsubscribe()
         const q = query(apuestasRef, where('horario', '==', turnoSeleccionado.value))
         unsubscribe = onSnapshot(q, (snapshot) => {
-        let suma = 0
-        snapshot.forEach(doc => {
-            const data = doc.data()
-            if (typeof data.totalGlobal === 'number') {
-            suma += data.totalGlobal
-            }
-        })
-        totalGlobal.value = suma
+            let suma = 0
+            snapshot.forEach(doc => {
+                const data = doc.data()
+                if (typeof data.totalGlobal === 'number') {
+                    suma += data.totalGlobal
+                }
+            })
+            totalGlobal.value = suma
+            // Guarda el total online por horario en localStorage
+            const totalesOnline = JSON.parse(localStorage.getItem('totalesOnline') || '{}')
+            totalesOnline[turnoSeleccionado.value] = suma
+            localStorage.setItem('totalesOnline', JSON.stringify(totalesOnline))
         })
     }
 
     // Iniciar escucha al montar
     onMounted(() => {
         if (!props.modoEdicion) {
-        turnoSeleccionado.value = 'Dia'
-        setHorario('Dia')
+            turnoSeleccionado.value = 'Dia'
+            setHorario('Dia')
         }
         escucharCambios()
+        // Reactividad para apuestas locales
+        window.addEventListener('apuestas-locales-actualizadas', () => {
+            apuestasLocalesVersion.value++
+        })
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'apuestasPendientes') {
+                apuestasLocalesVersion.value++
+            }
+        })
+        window.addEventListener('online', () => isOnline.value = true)
+        window.addEventListener('offline', () => isOnline.value = false)
     })
 
     // Escuchar cambios de turno
@@ -68,14 +109,22 @@ import { setHorario } from '../scripts/añadir.js'
     // Escuchar cambios en horarioEdicion
     watch(() => props.horarioEdicion, (nuevoHorario) => {
         if (props.modoEdicion && nuevoHorario) {
-        turnoSeleccionado.value = nuevoHorario
-        setHorario(nuevoHorario)
+            turnoSeleccionado.value = nuevoHorario
+            setHorario(nuevoHorario)
         }
     }, { immediate: true })
 
     // Cancelar listener al desmontar
     onBeforeUnmount(() => {
         if (unsubscribe) unsubscribe()
+        window.removeEventListener('apuestas-locales-actualizadas', () => {
+            apuestasLocalesVersion.value++
+        })
+        window.removeEventListener('storage', () => {
+            apuestasLocalesVersion.value++
+        })
+        window.removeEventListener('online', () => isOnline.value = true)
+        window.removeEventListener('offline', () => isOnline.value = false)
     })
 
     return {

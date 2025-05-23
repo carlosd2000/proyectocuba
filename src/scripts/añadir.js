@@ -46,6 +46,8 @@ function guardarEnLocal(docAGuardar, esEdicion = false) {
     }
     
     localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
+    // 🔽 Notifica a los listeners que cambió el localStorage
+    window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
     return true;
   } catch (error) {
     console.error('Error guardando en localStorage:', error);
@@ -263,13 +265,16 @@ export async function sincronizarPendientes() {
     
     if (pendientesExitosos.length > 0) {
       const nuevosPendientes = pendientes.filter(p => !pendientesExitosos.includes(p.uuid));
-      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes));
+      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes))
+      window.dispatchEvent(new Event('apuestas-locales-actualizadas'))
       console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas`);
     }
   } catch (error) {
     console.error('[SYNC] Error general:', error);
   } finally {
     syncPending = false;
+    // Notifica a DailyPlay que debe recalcular el total local
+    window.dispatchEvent(new Event('apuestas-sincronizadas'));
   }
 }
 
