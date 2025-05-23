@@ -1,9 +1,9 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
-import { serverTimestamp, updateDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
 import { ref } from 'vue';
-import { obtenerHoraCuba, formatearHoraCuba } from './horacuba.js';
+import { obtenerHoraCuba } from './horacuba.js';
 
 // Variables reactivas
 export const nombreTemporal = ref('SinNombre');
@@ -25,17 +25,28 @@ function generarUUID() {
 /**
  * Guarda apuestas pendientes en localStorage
  */
-function guardarEnLocal(docAGuardar) {
+function guardarEnLocal(docAGuardar, esEdicion = false) {
   try {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-    const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
     
-    if (!existe) {
-      pendientes.push(docAGuardar);
-      localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
-      return true;
+    if (esEdicion) {
+      // Modo edición: Reemplazar el registro existente
+      const index = pendientes.findIndex(p => p.uuid === docAGuardar.uuid);
+      if (index !== -1) {
+        pendientes[index] = docAGuardar;
+      } else {
+        pendientes.push(docAGuardar);
+      }
+    } else {
+      // Modo creación: Añadir nuevo registro
+      const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
+      if (!existe) {
+        pendientes.push(docAGuardar);
+      }
     }
-    return false;
+    
+    localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
+    return true;
   } catch (error) {
     console.error('Error guardando en localStorage:', error);
     return false;
@@ -85,8 +96,24 @@ function procesarFilas(filas, tipo) {
 
 // ================= FUNCIÓN PRINCIPAL =================
 export async function guardarDatos() {
-  const { hora24, hora12, timestamp } = obtenerHoraCuba();
-  const uuid = generarUUID();
+  const { hora24, timestamp } = obtenerHoraCuba();
+  
+  // Determinar el ID correcto para Firebase y el UUID para identificación única
+  let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
+  let uuid = firebaseId;
+
+  // Si estamos editando online, obtener el UUID original del documento
+  if (modoEdicion.value && navigator.onLine) {
+    try {
+      const docRef = doc(db, 'apuestas', firebaseId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().uuid) {
+        uuid = docSnap.data().uuid;
+      }
+    } catch (error) {
+      console.error('Error obteniendo UUID original:', error);
+    }
+  }
 
   try {
     // 1. Calcular totales
@@ -116,13 +143,11 @@ export async function guardarDatos() {
       nombre: nombreTemporal.value,
       totalGlobal,
       datos: datosAGuardar,
-      creadoEn: serverTimestamp(),
       id_listero: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
       horario: horarioSeleccionado.value,
-      uuid,
+      uuid, // Usamos el mismo UUID para mantener consistencia
       horaCuba24: hora24,
-      horaCuba12: hora12,
       candadoAbierto: true,
       timestampLocal: timestamp
     };
@@ -136,33 +161,40 @@ export async function guardarDatos() {
     if (!navigator.onLine) {
       docAGuardar.creadoEn = new Date().toISOString();
       docAGuardar.estado = 'Pendiente';
-      const guardado = guardarEnLocal(docAGuardar);
+      
+      const guardado = guardarEnLocal(docAGuardar, modoEdicion.value);
       
       return { 
         success: guardado, 
         offline: true,
         uuid,
-        hora: hora24
+        firebaseId,
+        hora: hora24,
+        esEdicion: modoEdicion.value
       };
     }
 
     // 7. Lógica diferente para edición vs creación
     if (modoEdicion.value && idEdicion.value) {
-      await updateDoc(doc(db, 'apuestas', idEdicion.value), docAGuardar);
+      await updateDoc(doc(db, 'apuestas', firebaseId), docAGuardar);
       
       return { 
         success: true, 
         message: `Datos actualizados a las ${hora24}`,
         horaExacta: hora24,
-        docId: idEdicion.value
+        docId: firebaseId,
+        uuid
       };
-    } else {
-      const docRef = doc(db, 'apuestas', uuid);
+    } 
+    else {
+      const docRef = doc(db, 'apuestas', firebaseId);
+      docAGuardar.creadoEn = serverTimestamp();
       await setDoc(docRef, docAGuardar);
 
       return { 
         success: true, 
         uuid,
+        firebaseId,
         message: `Datos guardados a las ${hora24}`,
         horaExacta: hora24,
         docId: docRef.id
@@ -170,6 +202,7 @@ export async function guardarDatos() {
     }
   } catch (error) {
     console.error('Error al guardar:', error);
+
     const { hora24 } = obtenerHoraCuba();
     return { 
       success: false, 
@@ -190,6 +223,8 @@ export async function sincronizarPendientes() {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
     const pendientesExitosos = [];
     
+    const serverTime = await obtenerHoraServidor();
+
     for (const apuesta of pendientes) {
       try {
         const docRef = doc(db, 'apuestas', apuesta.uuid);
@@ -198,12 +233,15 @@ export async function sincronizarPendientes() {
         if (!snap.exists()) {
           console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
           
+          // Verificar si está fuera de tiempo
+          const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, apuesta, serverTime);
+
           await setDoc(docRef, {
             ...apuesta,
             creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
             sincronizadoEn: serverTimestamp(),
-            estado: 'Cargado',
-            candadoAbierto: true
+            estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
+            candadoAbierto: !fueraDeTiempo
           });
           pendientesExitosos.push(apuesta.uuid);
         }
@@ -242,4 +280,70 @@ if (typeof window !== 'undefined') {
       setTimeout(sincronizarPendientes, 1000);
     }
   });
+}
+
+// Función para obtener hora del servidor (agregar con las demás funciones)
+async function obtenerHoraServidor() {
+  const tempDocRef = doc(db, "temp", "serverTimeCheck");
+  await setDoc(tempDocRef, { timestamp: serverTimestamp() });
+  const docSnap = await getDoc(tempDocRef);
+  await deleteDoc(tempDocRef);
+
+  const rawTimestamp = docSnap.data().timestamp;
+  const date = rawTimestamp.toDate();
+
+  // Aumentar 1 hora (3600000 ms = 1 hora)
+  const fechaAjustada = new Date(date.getTime() + 3600000);
+
+  console.log('Hora original:', date);
+  console.log('Hora ajustada +1h:', fechaAjustada);
+
+  return {
+    toDate: () => fechaAjustada,
+    toMillis: () => fechaAjustada.getTime()
+  };
+}
+
+
+// Función para verificar si está fuera de tiempo (agregar con las demás funciones)
+async function verificarFueraDeTiempo(horario, apuestaData, serverTime) {
+  try {
+    // 1. Obtener hora del servidor    
+    // 2. Obtener configuración del horario
+    const horarioRef = doc(db, 'hora', horario.toLowerCase());
+    const horarioSnap = await getDoc(horarioRef);
+    
+    if (!horarioSnap.exists()) return false;
+    
+    const config = horarioSnap.data();
+    
+    // 3. Crear fecha límite para comparación
+    const horaCierre = new Date(serverTime.toDate());
+    horaCierre.setHours(
+      parseInt(config.hh) || 0,
+      parseInt(config.mm) || 0,
+      parseInt(config.ss) || 0,
+      0
+    );
+    
+    // 4. Comparación principal: hora del servidor vs hora de cierre
+    const horarioYaPaso = serverTime.toMillis() > horaCierre.getTime();
+    
+        // Si el horario no ha pasado, no está fuera de tiempo
+    if (!horarioYaPaso) return false;
+    
+    // 5. Nueva lógica: Verificar fechas de creación y sincronización
+    if (apuestaData) {
+      const creadoEnBase = apuestaData.creadoEn?.toDate?.() || new Date(apuestaData.creadoEn);
+      const creadoEn = new Date(creadoEnBase.getTime() + 3600000); // Sumar 1 hora (3600000 ms)
+      const creadoAntesDeCierre = creadoEn.getTime() < horaCierre.getTime();
+      console.error('creado en:', creadoEn);
+      return creadoAntesDeCierre;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error verificando horario:', error);
+    return false; // En caso de error, no marcar como fuera de tiempo
+  }
 }

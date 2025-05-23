@@ -1,12 +1,19 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import Swal from 'sweetalert2'
-import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
+import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
 import { useRouter, useRoute} from 'vue-router' 
 import { sincronizarPendientes } from '../scripts/añadir.js'
-import { formatearHoraCuba, parsearFechaFirebase } from '../scripts/horacuba.js' 
+
 const router = useRouter()
 const route = useRoute()
+
+const props = defineProps({
+  fecha: {
+    type: Date,
+    required: true
+  }
+})
 
 // Variables reactivas
 const mostrarModal = ref(false)
@@ -18,6 +25,16 @@ const isSyncing = ref(false)
 // Apuestas locales (offline)
 const apuestasLocales = ref([])
 
+
+// Función para comparar fechas (solo día, mes, año)
+const esMismoDia = (fechaA, fechaB) => {
+  const a = new Date(fechaA)
+  const b = new Date(fechaB)
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate()
+}
+
 // Función para obtener icono de estado
 const obtenerIconoEstado = (persona) => {
   if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
@@ -27,66 +44,95 @@ const obtenerIconoEstado = (persona) => {
     case 'Pendiente': return 'bi bi-cloud-slash text-danger'
     case 'EnTiempo': return 'bi bi-stopwatch text-success'
     case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
-  
   }
 }
 
 // Cargar apuestas locales desde localStorage
 function cargarApuestasLocales() {
-  const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
-  apuestasLocales.value = pendientes.map(a => ({
-    ...a,
-    estado: 'Pendiente',
-    id: a.uuid
-  }))
+  try {
+    const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}');
+    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    
+    apuestasLocales.value = pendientes
+      .filter(a => !eliminacionesPermanentes[a.uuid])
+      .map(a => ({
+        ...a,
+        estado: 'Pendiente',
+        id: a.uuid,
+        uuid: a.uuid,
+        totalGlobal: Number(a.totalGlobal) || 0, // Asegúrate de que sea numérico
+        candadoAbierto: a.candadoAbierto ?? false,
+      }));
+  } catch (error) {
+    console.error('Error cargando apuestas locales:', error);
+    apuestasLocales.value = [];
+  }
 }
 // Función para mostrar la hora (CORREGIDA)
 const mostrarHora = (persona) => {
-  if (!persona) return "--:-- --";
-  
-  // Prioridad 1: Hora preformateada (12h)
-  if (persona.horaCuba12) return persona.horaCuba12;
-  
-  // Prioridad 2: Hora en 24h (convertir a 12h)
-  if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24);
-  
-  // Prioridad 3: Timestamp (Firebase o string)
-  if (persona.creadoEn) {
-    const fecha = parsearFechaFirebase(persona.creadoEn);
-    return fecha.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: true 
-    });
-  }
-  
-  return "--:-- --";
-};
+  if (!persona || typeof persona !== 'object') return "--:-- --"
 
-// Combina y ordena apuestas
+  const opciones = {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Havana' // Huso horario de Cuba
+  };
+
+  const formatearHora = (fecha) => {
+    if (!fecha) return "--:-- --";
+    const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha.toDate?.() || fecha;
+    return fechaObj.toLocaleTimeString('es-ES', opciones);
+  };
+
+  if (persona.sincronizadoEn) {
+    return formatearHora(persona.sincronizadoEn);
+  }
+
+  if (persona.estado === 'Pendiente' && persona.creadoEn) {
+    return formatearHora(persona.creadoEn);
+  }
+
+  if (persona.creadoEn) {
+    return formatearHora(persona.creadoEn);
+  }
+
+  return "--:-- --"
+}
+
+// Combina y ordena apuestas, filtrando por la fecha seleccionada
 const apuestasCombinadas = computed(() => {
   const firebaseUuids = new Set(apuestas.value.map(a => a.uuid))
   const localesFiltradas = apuestasLocales.value.filter(local => 
     !firebaseUuids.has(local.uuid)
   )
-  
-  return [...apuestas.value, ...localesFiltradas].sort((a, b) => {
-    if (a.estado === 'Pendiente') return -1
-    if (b.estado === 'Pendiente') return 1
-    return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
-           (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
-  })
+  return [...apuestas.value, ...localesFiltradas]
+    .filter(a => {
+      let fecha = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+                  a.creadoEn?.toDate ? a.creadoEn.toDate() :
+                  a.creadoEn ? new Date(a.creadoEn) : null;
+      return fecha && esMismoDia(fecha, props.fecha)
+    })
+    .sort((a, b) => {
+      if (a.estado === 'Pendiente') return -1
+      if (b.estado === 'Pendiente') return 1
+      return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
+            (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
+    })
 })
 
 // Actualizar estado de conexión
 const updateOnlineStatus = () => {
-  isOnline.value = navigator.onLine
-  if (isOnline.value && !isSyncing.value) {
-    isSyncing.value = true
-    sincronizarPendientes().finally(() => {
-      isSyncing.value = false
-      cargarApuestasLocales()
-    })
+  isOnline.value = navigator.onLine;
+  if (isOnline.value) {
+    isSyncing.value = true;
+    Promise.all([
+      sincronizarPendientes(),
+      sincronizarEliminaciones()
+    ]).finally(() => {
+      isSyncing.value = false;
+      cargarApuestasLocales();
+    });
   }
 }
 // Resto de funciones del componente
@@ -102,38 +148,80 @@ const cerrarModal = () => {
 
 const editarPersona = async () => {
   const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal';
+  const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
+  
   router.push({
     path: `/anadirjugada/${route.params.id}`,
     query: {
       tipo: tipoJugada,
-      editar: personaSeleccionada.value.id
+      editar: esPendiente ? personaSeleccionada.value.uuid : personaSeleccionada.value.id,
+      esPendiente: esPendiente.toString()
     }
   });
   cerrarModal();
 };
 
 const eliminarPersona = async () => {
-  await eliminarApuesta(personaSeleccionada.value.id)
-  mostrarConfirmacionEliminar.value = false
-  mostrarModal.value = false
+  try {
+    const id = personaSeleccionada.value.id;
+    const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
+    
+    // Eliminar visualmente INMEDIATAMENTE
+    if (esPendiente) {
+      apuestasLocales.value = apuestasLocales.value.filter(a => a.uuid !== id);
+      
+      // Eliminar COMPLETAMENTE de localStorage
+      const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+      const nuevasPendientes = pendientes.filter(p => p.uuid !== id);
+      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevasPendientes));
+      
+      // Crear registro de eliminación permanente
+      const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}');
+      eliminacionesPermanentes[id] = true;
+      localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesPermanentes));
+    } else {
+      apuestas.value = apuestas.value.filter(a => a.id !== id);
+    }
+    
+    // Llamar a la función de eliminación
+    const { success } = await eliminarApuesta(id, esPendiente);
+    
+    if (!success) {
+      throw new Error('No se pudo completar la eliminación');
+    }
+    
+    // Cerrar modales
+    mostrarConfirmacionEliminar.value = false;
+    mostrarModal.value = false;
+    
+    Swal.fire({
+      icon: 'success',
+      title: '¡Eliminada!',
+      text: 'La apuesta fue removida',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  } catch (error) {
+    console.error('Error en eliminarPersona:', error);
+    
+    // Revertir cambios visuales si falló
+    if (esPendiente) {
+      cargarApuestasLocales();
+    } else {
+      obtenerApuestas();
+    }
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo eliminar la apuesta',
+      timer: 2000
+    });
+  }
 }
 
 const confirmarEliminar = () => {
   mostrarConfirmacionEliminar.value = true
-}
-
-const toggleCandado = async (persona) => {
-  if (persona.candadoAbierto) {
-    const result = await Swal.fire({
-      title: '¿Deseas cerrar la apuesta?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí',
-      cancelButtonText: 'Cancelar'
-    })
-    if (!result.isConfirmed) return
-  }
-  persona.candadoAbierto = !persona.candadoAbierto
 }
 
 // Suscripción a datos
@@ -144,12 +232,13 @@ onMounted(() => {
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
   window.addEventListener('storage', cargarApuestasLocales)
-  
   if (navigator.onLine) {
     isSyncing.value = true
-    sincronizarPendientes().finally(() => {
-      isSyncing.value = false
-    })
+    sincronizarEliminaciones()
+      .then(sincronizarPendientes)
+      .finally(() => {
+        isSyncing.value = false
+      })
   }
 })
 
@@ -159,26 +248,34 @@ onUnmounted(() => {
   window.removeEventListener('offline', updateOnlineStatus)
   window.removeEventListener('storage', cargarApuestasLocales)
 })
+
+const apuestasFiltradas = computed(() =>
+  apuestas.value.filter(a => {
+    let fecha = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+                a.creadoEn?.toDate ? a.creadoEn.toDate() :
+                a.creadoEn ? new Date(a.creadoEn) : null;
+    return fecha && esMismoDia(fecha, props.fecha)
+  })
+)
 </script>
 
 <template>
   <div class="m-0 p-0">
     <div v-for="persona in apuestasCombinadas" 
          :key="persona.id" 
-         class="col-12 m-0 mb-2 p-0 pt-3 pb-2 persona" 
+         class="col-12 m-0 mb-2 p-0 pt-2 pb-2 persona" 
          @click="cuadroClick(persona)" 
          style="cursor: pointer;"
          :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
          
-      <header class="col-12 row m-0 p-0">
+      <header class="col-12 row m-0 px-1 py-2">
         <div class="col-10 -flex justify-content-start align-items-center">
-          <p>{{ persona.nombre }}</p>
+          <p class="name">{{ persona.nombre }}</p>
         </div>
-        <div class="col-2 d-flex justify-content-end align-items-center" @click.stop>
+        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center" @click.stop>
           <i :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
              class="fs-4"
-             style="cursor: pointer;"
-             @click="toggleCandado(persona)"></i>
+             style="cursor: pointer;"></i>
         </div>
       </header>
       
@@ -220,7 +317,7 @@ onUnmounted(() => {
                 <i class="bi bi-coin m-1"></i>
               </div>
               <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                <p class="m-1">{{ persona.totalGlobal }}</p>
+                <p class="m-1">{{ Number(persona.totalGlobal) || 0 }}</p>
               </div>
             </div>
             <div class="col-12 m-0 p-0 flex d-flex flex-column justify-content-center align-items-center">
@@ -283,15 +380,21 @@ p {
   padding: 0px;
   font-size: 0.9rem;
 }
+p.name{
+  font-size: 1.1rem;
+}
+i.bi{
+  font-size: 1.3rem;
+}
 .container-number-cuadrado {
-  width: 42px;
-  height: 30px;
+  width: 37px;
+  height: 25px;
   font-size: 1.1rem;
   background-color: #f1f1f1;
 }
 .container-number {
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
   background-color: #f1f1f1;
 }
 .persona {
@@ -304,6 +407,7 @@ p {
 .apuesta-pendiente {
   background-color: #fff8e1;
   border: 2px dashed #ffc107;
+  transition: all 0.3s ease;
 }
 .apuestas {
   display: grid;
@@ -378,5 +482,24 @@ p {
 .btn:hover {
   opacity: 0.8;
   font-weight: bold;
+}
+
+.persona {
+  transition: all 0.3s ease;
+}
+.persona.eliminando {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+.eliminando {
+  transform: scale(0.8);
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 </style>

@@ -3,9 +3,9 @@
     <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-top border-dark">
       <div class="celda text-center fw-bold">Totales</div>
       <div class="celda"></div>
-      <div class="celda text-center">${{ totales.col3 }}</div>
-      <div class="celda text-center">${{ totales.col4 }}</div>
-      <div class="celda text-center">${{ totales.col5 }}</div>
+      <div class="celda text-center">${{ formatNumber(totales.col3) }}</div>
+      <div class="celda text-center">${{ formatNumber(totales.col4) }}</div>
+      <div class="celda text-center">${{ formatNumber(totales.col5) }}</div>
     </div>
     <div class="text-start">
       <button
@@ -13,7 +13,7 @@
         @click="lanzarToast"
       >
         <span>Enviar</span>
-        <span>${{ totales.col3 + totales.col4 + totales.col5 }}</span>
+        <span>${{ formatNumber(totalGeneral) }}</span>
       </button>
     </div>
     <div v-if="errorMessage" class="alert alert-danger mt-2">
@@ -29,7 +29,7 @@
     >
       <div class="p-3 d-flex justify-content-center">
         <i class="mx-2 bi bi-check-circle-fill text-success"></i>
-        Jugada enviada
+        {{ isOnline ? 'Jugada enviada' : 'Jugada guardada (offline)' }}
       </div>
     </div>
   </div>
@@ -42,79 +42,39 @@
     >
       <div class="p-3 d-flex justify-content-center">
         <i class="mx-2 bi bi-check-circle-fill text-success"></i>
-        Jugada actualizada
+        {{ isOnline ? 'Jugada actualizada' : 'Cambios guardados (offline)' }}
+      </div>
+    </div>
+  </div>
+  <div v-if="mostrarToastError" class="toast-container bg-danger">
+    <div
+      class="toast show w-100 rounded-0"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
+      <div class="p-3 d-flex justify-content-center text-white">
+        <i class="mx-2 bi bi-exclamation-triangle-fill"></i>
+        {{ errorMessage }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router' // Importa router y route
-import {
-  filasFijas,
-  filasExtra,
-  calcularTotales,
-  limpiarCampos,
-  validarFilas
-} from '../scripts/operaciones.js'
-import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
+import { usePagar } from '../scripts/Pagar.js'
 
-const router = useRouter()
-const route = useRoute()
-
-const totales = computed(() => calcularTotales(filasFijas, filasExtra))
-const mostrarToastSave = ref(false)
-const mostrarToastUpdate = ref(false)
-const errorMessage = ref('')
-
-const validarAntesDeEnviar = () => {
-  const { esValido, circulosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra);
-  
-  if (circulosInvalidos) {
-    errorMessage.value = 'Cada círculo normal debe tener su cuadrado correspondiente';
-    return false;
-  }
-  
-  if (circuloSoloInvalido) {
-    errorMessage.value = 'El círculo especial requiere al menos 1 cuadrado con dato';
-    return false;
-  }
-  
-  if (!esValido) {
-    errorMessage.value = 'Ingrese al menos un par válido (cuadrado + círculo)';
-    return false;
-  }
-  
-  errorMessage.value = '';
-  return true;
-}
-
-const lanzarToast = async () => {
-  if (!validarAntesDeEnviar()) return;
-
-  const resultado = await guardarDatos()
-
-  if (resultado.success) {    
-    if (modoEdicion.value) {
-      mostrarToastUpdate.value = true
-      setTimeout(() => {
-        limpiarCampos()
-        setNombre('')
-        mostrarToastUpdate.value = false
-        router.push(`/listas/${route.params.id}`)
-      }, 1000)
-    }
-    else{
-      mostrarToastSave.value = true
-      setTimeout(() => {
-        limpiarCampos()
-        setNombre('')
-        mostrarToastSave.value = false
-      }, 3000)
-    }
-  }
-}
+const {
+  mostrarToastSave,
+  mostrarToastUpdate,
+  mostrarToastError,
+  errorMessage,
+  isOnline,
+  formatNumber,
+  totales,
+  totalGeneral,
+  lanzarToast
+} = usePagar()
 </script>
 
 <style scoped>
@@ -123,16 +83,12 @@ const lanzarToast = async () => {
   font-size: 16px;
 }
 
-.btn-enter {
+.btn-page {
   border: #000000 solid 2px;
   box-shadow: #000000 2px 2px 2px;
   border-radius: 6px;
   background-color: #ffc107;
   color: #000000;
-}
-
-button {
-  border: 2px solid black;
 }
 
 .toast-container {
@@ -145,5 +101,9 @@ button {
   box-shadow: 1px -2px 1px #00000064;
   border-radius: 8px;
   background-color: rgb(235, 235, 235);
+}
+
+.bg-danger {
+  background-color: #dc3545 !important;
 }
 </style>
