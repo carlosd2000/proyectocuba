@@ -3,12 +3,16 @@ import { useRouter, useRoute } from 'vue-router'
 import { AuthService } from '@/firebase/auth'
 import { useAuthStore } from '@/stores/authStore'
 import Swal from 'sweetalert2'
+import { db } from '@/firebase/config' // Asegúrate de importar tu instancia de Firebase
+import { collection, onSnapshot } from 'firebase/firestore'
 
-    export function useRegistro() {
+export function useRegistro() {
     const nombre = ref('')
     const email = ref('')
     const password = ref('')
     const tipoCuenta = ref('')
+    const padreSeleccionado = ref('')
+    const colectores = ref([])
     const mensajeNombre = ref('')
     const isValidNombre = ref(false)
     const mensajePassword = ref('')
@@ -29,9 +33,14 @@ import Swal from 'sweetalert2'
     onMounted(() => {
         creadorId.value = route.params.id || ''
         if (route.path.includes('/bancos')) {
-        tipoCreador.value = 'banco'
-        } else if (route.path.includes('/colectores')) {
-        tipoCreador.value = 'colector'
+            tipoCreador.value = 'banco'
+            const unsubscribe = cargarColectores()
+            return () => {
+                if (unsubscribe) unsubscribe()
+            }
+        }
+        else if (route.path.includes('/colectores')) {
+            tipoCreador.value = 'colector'
         }
     })
 
@@ -66,43 +75,83 @@ import Swal from 'sweetalert2'
         }
     }
 
+    const cargarColectores = async () => {
+        try {
+            if (authStore.profile?.tipo === 'bancos' && authStore.user?.uid) {
+                const colectoresRef = collection(db, 'bancos', authStore.user.uid, 'colectores')
+                const unsubscribe = onSnapshot(colectoresRef, (querySnapshot) => {
+                    colectores.value = querySnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    console.log('Colectores actualizados:', colectores.value)
+                })
+                return unsubscribe
+            }
+        } catch (error) {
+            console.error("Error cargando colectores:", error)
+        }
+    }
+
     const registrarUsuario = async () => {
         if (!showSelect.value) {
-        Swal.fire("Error", "No tienes permisos para crear cuentas", "error")
-        return
+            Swal.fire("Error", "No tienes permisos para crear cuentas", "error")
+            return
         }
         if (!nombre.value || !email.value || !password.value || !tipoCuenta.value) {
-        Swal.fire("Error", "Por favor llena todos los campos", "error")
-        return
+            Swal.fire("Error", "Por favor llena todos los campos", "error")
+            return
+        }
+        if (tipoCuenta.value === 'listeros' && !padreSeleccionado.value) {
+            Swal.fire("Error", "Por favor selecciona un padre", "error")
+            return
         }
         if (!isValidNombre.value || !isValidPassword.value) {
-        Swal.fire("Error", "Por favor completa los campos correctamente", "error")
-        return
+            Swal.fire("Error", "Por favor completa los campos correctamente", "error")
+            return
         }
         try {
-        isLoading.value = true
-        const userData = {
-            nombre: nombre.value,
-            tipo: tipoCuenta.value,
-            creadorId: creadorId.value,
-            tipoCreador: tipoCreador.value
-        }
-        const result = await AuthService.register({
-            email: email.value,
-            password: password.value,
-            userData
-        })
-        if (result.success) {
-            Swal.fire("Creación exitosa", "Usuario creado correctamente", "success")
-            limpiarCampos()
-        } else {
-            Swal.fire("Error", result.error, "error")
-        }
-        } catch (error) {
-        console.error("Error en registro:", error)
-        Swal.fire("Error", "No se pudo crear el usuario", "error")
+            isLoading.value = true
+
+            let padreData = {}
+            if (tipoCuenta.value === 'listeros' && padreSeleccionado.value) {
+                const [tipoPadre, idPadre] = padreSeleccionado.value.split('_')
+                padreData = {
+                    padreTipo: tipoPadre,
+                    padreId: idPadre
+                }
+                
+                // Si el padre es un colector, también guardamos el ID del banco
+                if (tipoPadre === 'colector') {
+                    padreData.bancoId = authStore.user?.uid
+                }
+            }
+
+            const userData = {
+                nombre: nombre.value,
+                tipo: tipoCuenta.value,
+                creadorId: creadorId.value,
+                tipoCreador: tipoCreador.value,
+                // Agrega el padre seleccionado si es banco
+                ...padreData
+            }
+            const result = await AuthService.register({
+                email: email.value,
+                password: password.value,
+                userData
+            })
+            if (result.success) {
+                Swal.fire("Creación exitosa", "Usuario creado correctamente", "success")
+                limpiarCampos()
+            } else {
+                Swal.fire("Error", result.error, "error")
+            }
+        } 
+        catch (error) {
+            console.error("Error en registro:", error)
+            Swal.fire("Error", "No se pudo crear el usuario", "error")
         } finally {
-        isLoading.value = false
+            isLoading.value = false
         }
     }
 
@@ -132,6 +181,8 @@ import Swal from 'sweetalert2'
         email,
         password,
         tipoCuenta,
+        padreSeleccionado,
+        colectores,
         mensajeNombre,
         isValidNombre,
         mensajePassword,
