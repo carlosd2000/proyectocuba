@@ -50,7 +50,7 @@
               </select>
             </div>
 
-            <div class="my-1 col-12 p-0" v-if="showSelect && tipoCuenta === 'listeros'">
+            <div class="my-1 col-12 p-0" v-if="authStore.profile?.tipo === 'bancos' && tipoCuenta === 'listeros'">
               <label for="padre" class="col-12 m-0 p-1 form-label">Padre al que pertenece</label>
               <div class="col-12 m-0 p-0 custom-select-wrapper">
                 <select 
@@ -62,7 +62,7 @@
                   @change="shrinkSelect"
                 >
                   <option disabled value="">Seleccionar</option>
-                  <option v-if="authStore.profile?.tipo === 'bancos'" :value="`banco_${authStore.user?.uid}`">
+                  <option :value="`banco_${authStore.user?.uid}`">
                     Banco ({{ authStore.profile?.nombre }})
                   </option>
                   <option v-for="colector in colectores" :key="colector.id" :value="`colector_${colector.id}`">
