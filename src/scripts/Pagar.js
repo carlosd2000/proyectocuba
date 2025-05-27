@@ -8,8 +8,8 @@ import {
   validarFilas
 } from '../scripts/operaciones.js'
 import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { db, auth } from '@/firebase/config';
 
 export function usePagar() {
     const router = useRouter()
@@ -20,26 +20,104 @@ export function usePagar() {
     const mostrarToastError = ref(false)
     const errorMessage = ref('')
     const isOnline = ref(navigator.onLine)
-    const verificandoCandado = ref(false) // Nuevo estado para controlar la carga
+    const verificandoCandado = ref(false)
+    const bancoId = ref(null) // Nuevo: almacenar bancoId
 
+    // Función para obtener el banco padre
+    async function obtenerBancoPadre() {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error("Usuario no autenticado");
 
-    // Función para formatear números y manejar NaN/undefined
+        const bancosSnapshot = await getDocs(collection(db, 'bancos'));
+        
+        for (const bancoDoc of bancosSnapshot.docs) {
+          const currentBancoId = bancoDoc.id;
+          
+          // Buscar en listeros directos del banco
+          const listeroRef = doc(db, `bancos/${currentBancoId}/listeros/${userId}`);
+          const listeroSnap = await getDoc(listeroRef);
+          if (listeroSnap.exists()) {
+            return currentBancoId;
+          }
+
+          // Buscar en listeros de colectores del banco
+          const colectoresSnapshot = await getDocs(collection(db, `bancos/${currentBancoId}/colectores`));
+          
+          for (const colectorDoc of colectoresSnapshot.docs) {
+            const listeroRef = doc(db, `bancos/${currentBancoId}/colectores/${colectorDoc.id}/listeros/${userId}`);
+            const listeroSnap = await getDoc(listeroRef);
+            if (listeroSnap.exists()) {
+              return currentBancoId;
+            }
+          }
+        }
+
+        throw new Error("No se encontró el banco padre para este usuario");
+      } catch (error) {
+        console.error("Error obteniendo banco padre:", error);
+        throw error;
+      }
+    }
+
+    // Obtener apuesta por ID (versión mejorada)
+    async function obtenerApuestaPorId(bancoId, idApuesta) {
+      try {
+        const apuestaRef = doc(db, `bancos/${bancoId}/apuestas`, idApuesta);
+        const apuestaSnap = await getDoc(apuestaRef);
+        
+        if (apuestaSnap.exists()) {
+          return { 
+            id: apuestaSnap.id, 
+            ...apuestaSnap.data(),
+            candadoAbierto: apuestaSnap.data().candadoAbierto ?? false,
+            nombre: apuestaSnap.data().nombre || 'Sin nombre',
+            tipo: apuestaSnap.data().tipo || 'tiros',
+            horario: apuestaSnap.data().horario || 'Dia'
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error('Error al obtener apuesta:', error);
+        throw error;
+      }
+    }
+
+    // Verificar candado con manejo de errores mejorado
+    async function verificarCandadoPorId(idApuesta) {
+      try {
+        if (!bancoId.value) {
+          bancoId.value = await obtenerBancoPadre();
+        }
+        
+        const apuestaData = await obtenerApuestaPorId(bancoId.value, idApuesta);
+        
+        if (!apuestaData) {
+          console.warn('Apuesta no encontrada, permitiendo edición por defecto');
+          return true;
+        }
+        
+        return apuestaData.candadoAbierto ?? true;
+      } catch (error) {
+        console.error('Error verificando candado:', error);
+        return true; // Por defecto permitir edición si hay error
+      }
+    }
+
     const formatNumber = (value) => {
         const num = Number(value || 0)
         return isNaN(num) ? 0 : num
     }
 
-    // Calculamos los totales con protección contra NaN
     const totales = computed(() => {
         const calculos = calcularTotales(filasFijas, filasExtra)
         return {
-        col3: formatNumber(calculos.col3),
-        col4: formatNumber(calculos.col4),
-        col5: formatNumber(calculos.col5)
+          col3: formatNumber(calculos.col3),
+          col4: formatNumber(calculos.col4),
+          col5: formatNumber(calculos.col5)
         }
     })
 
-    // Total general protegido
     const totalGeneral = computed(() => {
         return formatNumber(totales.value.col3) +
             formatNumber(totales.value.col4) +
@@ -47,10 +125,7 @@ export function usePagar() {
     })
 
     const validarAntesDeEnviar = async () => {
-        // 1. Obtener el ID/UUID de la apuesta
         const apuestaId = route.query.editar;
-        console.log('ID de la apuesta:', apuestaId);
-
         const { esValido, circulosInvalidos, cuadradosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra)
 
         if (circulosInvalidos) {
@@ -78,20 +153,17 @@ export function usePagar() {
                 verificandoCandado.value = true;
                 const candadoAbierto = await verificarCandadoPorId(apuestaId);
                 if (!candadoAbierto) {
-                    errorMessage.value = 'La apuesta está bloqueada para edición(candado cerrado)';
+                    errorMessage.value = 'La apuesta está bloqueada para edición (candado cerrado)';
                     return false;
                 }
             } catch (error) {
                 console.error('Error al verificar candado:', error);
-                return true;
+                return true; // Permitir continuar si hay error en verificación
             } finally {
                 verificandoCandado.value = false;
             }
         }
-        else{
-            return true
-        }
-
+        
         errorMessage.value = ''
         return true
     }
@@ -109,28 +181,26 @@ export function usePagar() {
             if (modoEdicion.value) {
                 mostrarToastUpdate.value = true
                 setTimeout(() => {
-                mostrarToastUpdate.value = false
-                limpiarCampos()
-                setNombre('')
-                router.push(`/listas/${route.params.id}`)
+                  mostrarToastUpdate.value = false
+                  limpiarCampos()
+                  setNombre('')
+                  router.push(`/listas/${route.params.id}`)
                 }, 1500)
             } else {
                 limpiarCampos()
                 setNombre('')
                 mostrarToastSave.value = true
                 setTimeout(() => {
-                mostrarToastSave.value = false
+                  mostrarToastSave.value = false
                 }, 1500)
             }
-        } 
-        else {
+        } else {
             errorMessage.value = resultado.message || 'Error al guardar'
             mostrarToastError.value = true
             setTimeout(() => mostrarToastError.value = false, 2000)
         }
     }
 
-    // Listeners para estado de conexión
     const updateOnlineStatus = () => {
         isOnline.value = navigator.onLine
     }
@@ -157,37 +227,4 @@ export function usePagar() {
         totalGeneral,
         lanzarToast
     }
-}
-
-async function obtenerApuestaPorId(idApuesta) {
-  try {
-    const apuestaRef = doc(db, 'apuestas', idApuesta);
-    const apuestaSnap = await getDoc(apuestaRef);
-    
-    if (apuestaSnap.exists()) {
-      return { id: apuestaSnap.id, ...apuestaSnap.data() };
-    } else {
-      console.log('No se encontró la apuesta con ID:', idApuesta);
-      return null;
-    }
-  } catch (error) {
-    console.error('Error al obtener apuesta:', error);
-    return null;
-  }
-}
-
-// Ejemplo de cómo usar ambas funciones
-async function verificarCandadoPorId(idApuesta) {
-    // 1. Obtener los datos de la apuesta
-    const apuestaData = await obtenerApuestaPorId(idApuesta);
-    
-    if (!apuestaData) {
-        return true; // o false según lo que necesites
-    }
-    // 2. Verificar el candado
-    if (apuestaData && typeof apuestaData.candadoAbierto === 'boolean') {
-        return apuestaData.candadoAbierto;
-    }
-    console.log('Campo candadoAbierto no existe en los datos, se considera ABIERTO');
-    return true; // Si no existe el campo, permitir edición
 }

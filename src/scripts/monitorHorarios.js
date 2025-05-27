@@ -1,4 +1,4 @@
-import { db } from '../firebase/config.js';
+import { db, auth } from '../firebase/config.js';
 import { 
   doc, 
   getDoc, 
@@ -9,101 +9,173 @@ import {
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
 
 const HORARIOS = ['dia', 'tarde', 'noche'];
-const AJUSTE_HORARIO_CUBA = 1; // +1 hora para ajustar a Cuba (UTC-4)
+const HORARIOS_CAPITALIZADOS = ['Dia', 'Tarde', 'Noche'];
 
-// Estado para manejar conexión
-const estadoConexion = {
-  online: navigator.onLine,
-  horariosPerdidos: [] // Horarios que pasaron mientras estaba offline
-};
+let cachedBancoId = null;
+let monitorActivo = false;
+let intervalId = null;
+let horariosYaProcesados = new Set();
 
-// Configurar listeners de conexión
-function configurarListenersConexion(userId) {
-  window.addEventListener('online', async () => {
-    estadoConexion.online = true;
-    console.log('[CONEXIÓN] Conexión restablecida');
-    await procesarHorariosPerdidos(userId);
-  });
-  
-  window.addEventListener('offline', () => {
-    estadoConexion.online = false;
-    console.log('[CONEXIÓN] Sin conexión');
-  });
-}
+async function obtenerBancoPadre() {
+  if (cachedBancoId) return cachedBancoId;
 
-// Ajustar hora a zona horaria de Cuba
-function ajustarHoraCuba(fecha) {
-  const ajustada = new Date(fecha);
-  ajustada.setHours(ajustada.getHours() + AJUSTE_HORARIO_CUBA);
-  return ajustada;
-}
-
-// Capitalizar primera letra (Dia, Tarde, Noche)
-function capitalizarHorario(horario) {
-  return horario.charAt(0).toUpperCase() + horario.slice(1).toLowerCase();
-}
-
-// Función principal para cerrar candados
-async function cerrarCandados(horario, userId) {
   try {
-    const horarioCapitalizado = capitalizarHorario(horario);
-    const batch = writeBatch(db);
+    const userId = auth.currentUser?.uid;
+    if (!userId) throw new Error("Usuario no autenticado");
+
+    const bancosSnapshot = await getDocs(collection(db, 'bancos'));
     
-        // Obtener configuración del horario primero
+    for (const bancoDoc of bancosSnapshot.docs) {
+      const bancoId = bancoDoc.id;
+      
+      const listeroRef = doc(db, `bancos/${bancoId}/listeros/${userId}`);
+      const listeroSnap = await getDoc(listeroRef);
+      if (listeroSnap.exists()) {
+        cachedBancoId = bancoId;
+        return bancoId;
+      }
+
+      const colectoresSnapshot = await getDocs(
+        collection(db, `bancos/${bancoId}/colectores`)
+      );
+      
+      for (const colectorDoc of colectoresSnapshot.docs) {
+        const listeroRef = doc(
+          db, 
+          `bancos/${bancoId}/colectores/${colectorDoc.id}/listeros/${userId}`
+        );
+        const listeroSnap = await getDoc(listeroRef);
+        if (listeroSnap.exists()) {
+          cachedBancoId = bancoId;
+          return bancoId;
+        }
+      }
+    }
+
+    throw new Error("No se encontró el banco padre para este usuario");
+  } catch (error) {
+    console.error("Error obteniendo banco padre:", error);
+    throw error;
+  }
+}
+
+function obtenerHoraCuba() {
+  const ahora = new Date();
+  const horaLocal = new Date(ahora.getTime() + (ahora.getTimezoneOffset() * 60000));
+  const horaCuba = new Date(horaLocal.getTime() + (-4 * 3600000));
+  return horaCuba;
+}
+
+function crearHoraCierre(config) {
+  const hoy = obtenerHoraCuba();
+  const horaCierre = new Date(hoy);
+  horaCierre.setHours(
+    parseInt(config.hh) || 0,
+    parseInt(config.mm) || 0,
+    parseInt(config.ss) || 0,
+    0
+  );
+  return horaCierre;
+}
+
+function fueCreadaAntesDelCierre(apuestaData, horaCierre) {
+  try {
+    let fechaCreacion;
+    
+    if (apuestaData.sincronizadoEn) {
+      fechaCreacion = apuestaData.sincronizadoEn.toDate();
+    } else if (apuestaData.creadoEn && apuestaData.creadoEn.toDate) {
+      fechaCreacion = apuestaData.creadoEn.toDate();
+    } else if (apuestaData.creadoEn) {
+      fechaCreacion = new Date(apuestaData.creadoEn);
+    } else {
+      console.warn('Apuesta sin fecha de creación, se considera antigua');
+      return true;
+    }
+    
+    return fechaCreacion <= horaCierre;
+    
+  } catch (error) {
+    console.error('Error verificando fecha de creación:', error);
+    return true;
+  }
+}
+
+async function cerrarCandadosHorario(horario) {
+  try {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      console.warn('[CANDADOS] Usuario no autenticado');
+      return { success: false };
+    }
+
+    const bancoId = await obtenerBancoPadre();
+    const horarioCapitalizado = horario.charAt(0).toUpperCase() + horario.slice(1);
+    
+    console.log(`[CANDADOS] Procesando horario: ${horarioCapitalizado}`);
+    
     const horarioRef = doc(db, 'hora', horario);
     const horarioSnap = await getDoc(horarioRef);
     
     if (!horarioSnap.exists()) {
-      console.log(`[CANDADOS] Configuración no encontrada para ${horario}`);
+      console.log(`[CANDADOS] No existe configuración para ${horario}`);
       return { success: false };
     }
     
     const config = horarioSnap.data();
-    const horaCierre = new Date();
-    horaCierre.setHours(
-      parseInt(config.hh) || 0,
-      parseInt(config.mm) || 0,
-      parseInt(config.ss) || 0,
-      0
-    );
-    const horaCierreAjustada = horaCierre;
-
-    // Obtener todas las apuestas abiertas para este horario
+    const horaCierre = crearHoraCierre(config);
+    
+    console.log(`[CANDADOS] Hora de cierre para ${horarioCapitalizado}: ${horaCierre.toLocaleTimeString()}`);
+    
+    const apuestasRef = collection(db, `bancos/${bancoId}/apuestas`);
     const q = query(
-      collection(db, 'apuestas'),
-      where('id_listero', '==', userId),
+      apuestasRef,
       where('horario', '==', horarioCapitalizado),
       where('candadoAbierto', '==', true)
     );
     
     const snapshot = await getDocs(q);
+    console.log(`[CANDADOS] Encontradas ${snapshot.docs.length} apuestas abiertas para ${horarioCapitalizado}`);
+    
+    if (snapshot.empty) {
+      return { success: true, updated: 0 };
+    }
+    
+    const batch = writeBatch(db);
     let actualizadas = 0;
     
-    // Verificar cada apuesta individualmente
     for (const apuestaDoc of snapshot.docs) {
-      const esAntigua = await fueCreadaAntesDelCierre(apuestaDoc, horaCierreAjustada);
+      const apuestaData = apuestaDoc.data();
+      const esAntigua = fueCreadaAntesDelCierre(apuestaData, horaCierre);
       
       if (esAntigua) {
+        console.log(`[CANDADOS] Cerrando candado para apuesta: ${apuestaDoc.id}`);
         batch.update(apuestaDoc.ref, {
           candadoAbierto: false,
-          ultimaActualizacion: serverTimestamp()
+          cerradoEn: serverTimestamp(),
+          estado: 'Cerrado'
         });
         actualizadas++;
-      } else {
-        console.log(`[CANDADOS] Apuesta ${apuestaDoc.id} creada después del cierre, manteniendo abierta`);
       }
     }
     
     if (actualizadas > 0) {
       await batch.commit();
-      console.log(`[CANDADOS] Actualizados ${actualizadas} candados para ${horarioCapitalizado}`);
-      return { success: true, updated: actualizadas };
+      console.log(`[CANDADOS] ✅ Actualizados ${actualizadas} candados para ${horarioCapitalizado}`);
+      
+      // Notificar a la UI que los candados han sido actualizados
+      window.dispatchEvent(new CustomEvent('candados-actualizados', {
+        detail: {
+          horario: horarioCapitalizado,
+          actualizadas: actualizadas,
+          timestamp: new Date().toISOString()
+        }
+      }));
     }
     
-    return { success: true, updated: 0 };
+    return { success: true, updated: actualizadas };
     
   } catch (error) {
     console.error(`[ERROR] Cerrando candados para ${horario}:`, error);
@@ -111,114 +183,138 @@ async function cerrarCandados(horario, userId) {
   }
 }
 
-// Verificar si algún horario pasó durante la desconexión
-async function verificarHorariosPerdidos(userId) {
-  const ahora = ajustarHoraCuba(new Date());
-  
-  for (const horario of HORARIOS) {
-    try {
-      const docSnap = await getDoc(doc(db, 'hora', horario));
-      if (!docSnap.exists()) continue;
-      
-      const config = docSnap.data();
-      const horaCierre = new Date();
-      horaCierre.setHours(
-        parseInt(config.hh) || 0,
-        parseInt(config.mm) || 0,
-        parseInt(config.ss) || 0,
-        0
-      );
-      
-      // Si la hora actual es posterior a la hora de cierre
-      if (ahora > horaCierre) {
-        console.log(`[HORARIO PERDIDO] ${horario} pasó durante la desconexión`);
-        await cerrarCandados(horario, userId);
+async function verificarYCerrarHorarios() {
+  if (!navigator.onLine) {
+    console.log('[CANDADOS] Sin conexión, saltando verificación');
+    return;
+  }
+
+  try {
+    const horaActual = obtenerHoraCuba();
+    console.log(`[CANDADOS] Verificando horarios - Hora actual: ${horaActual.toLocaleTimeString()}`);
+
+    for (const horario of HORARIOS) {
+      try {
+        const horarioRef = doc(db, 'hora', horario);
+        const horarioSnap = await getDoc(horarioRef);
+        
+        if (!horarioSnap.exists()) {
+          console.log(`[CANDADOS] No existe configuración para ${horario}`);
+          continue;
+        }
+        
+        const config = horarioSnap.data();
+        const horaCierre = crearHoraCierre(config);
+        
+        const claveHorario = `${horario}-${horaActual.toDateString()}`;
+        
+        if (horaActual > horaCierre && !horariosYaProcesados.has(claveHorario)) {
+          console.log(`[CANDADOS] ⏰ Horario ${horario} pasó (${horaCierre.toLocaleTimeString()}), cerrando candados...`);
+          
+          const resultado = await cerrarCandadosHorario(horario);
+          
+          if (resultado.success) {
+            horariosYaProcesados.add(claveHorario);
+            console.log(`[CANDADOS] ✅ Horario ${horario} procesado exitosamente`);
+          }
+        }
+        
+      } catch (error) {
+        console.error(`[ERROR] Procesando horario ${horario}:`, error);
       }
-    } catch (error) {
-      console.error(`[ERROR] Verificando horario ${horario}:`, error);
     }
+    
+  } catch (error) {
+    console.error('[ERROR] En verificación general de horarios:', error);
   }
 }
 
-// Procesar horarios que pasaron offline al reconectarse
-async function procesarHorariosPerdidos(userId) {
-  if (!estadoConexion.online) return;
+function limpiarCacheHorarios() {
+  const hoy = new Date().toDateString();
+  const clavesActuales = Array.from(horariosYaProcesados).filter(clave => 
+    clave.endsWith(hoy)
+  );
   
-  console.log('[PROCESANDO] Verificando horarios perdidos...');
-  await verificarHorariosPerdidos(userId);
+  horariosYaProcesados.clear();
+  clavesActuales.forEach(clave => horariosYaProcesados.add(clave));
+  
+  console.log('[CANDADOS] Cache de horarios limpiado');
 }
 
-// Monitor principal que se ejecuta cada segundo
 export function iniciarMonitorHorarios() {
-  const auth = getAuth();
-  const usuarioActual = auth.currentUser;
+  if (monitorActivo) {
+    console.log('[MONITOR] Ya está activo');
+    return detenerMonitorHorarios;
+  }
   
-  if (!usuarioActual) {
+  const userId = auth.currentUser?.uid;
+  if (!userId) {
     console.warn('[MONITOR] Usuario no autenticado');
     return null;
   }
   
-  const userId = usuarioActual.uid;
-  console.log(`[MONITOR] Iniciando para usuario ${userId}`);
+  console.log(`[MONITOR] 🚀 Iniciando para usuario ${userId}`);
+  monitorActivo = true;
   
-  // Configurar listeners de conexión
-  configurarListenersConexion(userId);
+  verificarYCerrarHorarios();
   
-  const intervalId = setInterval(async () => {
-    if (!estadoConexion.online) return;
-    
-    try {
-      const ahora = ajustarHoraCuba(new Date());
-      const hh = ahora.getHours();
-      const mm = ahora.getMinutes();
-      const ss = ahora.getSeconds();
-      
-      for (const horario of HORARIOS) {
-        const docSnap = await getDoc(doc(db, 'hora', horario));
-        if (!docSnap.exists()) continue;
-        
-        const config = docSnap.data();
-        if (hh === parseInt(config.hh) && 
-            mm === parseInt(config.mm) && 
-            ss === parseInt(config.ss)) {
-          console.log(`[HORARIO] Coincide ${horario}`);
-          await cerrarCandados(horario, userId);
-        }
-      }
-    } catch (error) {
-      console.error('[ERROR] En intervalo:', error);
+  intervalId = setInterval(() => {
+    if (monitorActivo && navigator.onLine) {
+      verificarYCerrarHorarios();
     }
-  }, 1000);
+  }, 30000);
   
-  return () => {
-    clearInterval(intervalId);
-    console.log('[MONITOR] Detenido');
+  const cacheInterval = setInterval(limpiarCacheHorarios, 3600000);
+  
+  const handleOnline = () => {
+    console.log('[MONITOR] 🔌 Conexión restablecida');
+    setTimeout(verificarYCerrarHorarios, 1000);
   };
+  
+  const handleOffline = () => {
+    console.log('[MONITOR] 📴 Sin conexión');
+  };
+  
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+  window.addEventListener('horario-cerrado', (event) => {
+    const { turno } = event.detail;
+    cerrarCandadosHorario(turno.toLowerCase());
+});
+  const detener = () => {
+    console.log('[MONITOR] 🛑 Deteniendo...');
+    monitorActivo = false;
+    
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+    
+    if (cacheInterval) {
+      clearInterval(cacheInterval);
+    }
+    
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
+    
+    horariosYaProcesados.clear();
+    console.log('[MONITOR] ✅ Detenido');
+  };
+  
+  return detener;
 }
 
-// Función para verificar si una apuesta fue creada antes del cierre
-async function fueCreadaAntesDelCierre(apuestaDoc, horaCierre) {
-  try {
-    const apuestaData = apuestaDoc.data();
-    let fechaCreacion;
-    
-    // Obtener la fecha de creación de la apuesta
-    if (apuestaData.sincronizadoEn) {
-      fechaCreacion = apuestaData.sincronizadoEn.toDate();
-    } else if (apuestaData.creadoEn) {
-      fechaCreacion = apuestaData.creadoEn.toDate();
-    } else {
-      // Si no hay fecha de creación, asumimos que es antigua
-      return true;
-    }
-    
-    // Comparar con la hora de cierre (ambas ajustadas a Cuba)
-    const fechaCreacionAjustada = ajustarHoraCuba(fechaCreacion);
-    return fechaCreacionAjustada <= horaCierre;
-    
-  } catch (error) {
-    console.error('Error verificando fecha apuesta:', error);
-    // En caso de error, asumimos que es antigua para ser conservadores
-    return true;
+export function detenerMonitorHorarios() {
+  if (monitorActivo && intervalId) {
+    clearInterval(intervalId);
+    monitorActivo = false;
+    intervalId = null;
+    horariosYaProcesados.clear();
+    console.log('[MONITOR] Detenido externamente');
   }
+}
+
+export async function forzarVerificacionHorarios() {
+  console.log('[MONITOR] Forzando verificación...');
+  await verificarYCerrarHorarios();
 }

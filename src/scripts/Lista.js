@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Swal from 'sweetalert2'
-import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
+import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/crudListas.js'
 import { sincronizarPendientes } from '../scripts/añadir.js'
 
 export default function useLista(fechaRef, router, route) {
@@ -10,6 +10,7 @@ export default function useLista(fechaRef, router, route) {
     const isOnline = ref(navigator.onLine)
     const isSyncing = ref(false)
     const apuestasLocales = ref([])
+    let unsubscribe = null
 
     const esMismoDia = (fechaA, fechaB) => {
         try {
@@ -69,16 +70,13 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const apuestasCombinadas = computed(() => {
-            // Si estamos offline, mostrar solo apuestas locales
         if (!isOnline.value) {
             const filtradas = apuestasLocales.value.filter(a => {
                 let fecha = a.creadoEn ? new Date(a.creadoEn) : null;
                 const mismoDia = fecha && esMismoDia(fecha, fechaRef.value);
-                console.log('Apuesta:', a.id, 'Fecha:', fecha, 'Mismo día?', mismoDia);
                 return mismoDia;
             });
             
-            console.log('Apuestas filtradas offline:', filtradas);
             return filtradas.sort((a, b) => {
                 const fechaA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
                 const fechaB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
@@ -103,23 +101,13 @@ export default function useLista(fechaRef, router, route) {
         })
     })
 
-    const apuestasFiltradas = computed(() =>
-        apuestas.value.filter(a => {
-        let fechaA = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
-            a.creadoEn?.toDate ? a.creadoEn.toDate() :
-            a.creadoEn ? new Date(a.creadoEn) : null;
-        return fechaA && esMismoDia(fechaA, fechaRef.value)
-        })
-    )
-
     const updateOnlineStatus = () => {
         isOnline.value = navigator.onLine
         if (isOnline.value) {
             isSyncing.value = true
             Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
                 .then(() => {
-                    // 🔽 Recargar apuestas desde Firebase y local después de sincronizar
-                    if (typeof unsubscribe === 'function') unsubscribe();
+                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
                     unsubscribe = obtenerApuestas();
                     cargarApuestasLocales();
                 })
@@ -128,9 +116,15 @@ export default function useLista(fechaRef, router, route) {
                 })
         }
         else {
-        // Forzar actualización de la lista cuando se va offline
             cargarApuestasLocales();
         }
+    }
+
+    const handleCandadosActualizados = () => {
+        console.log('Evento de candados actualizados recibido, actualizando lista...');
+        if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
+        unsubscribe = obtenerApuestas();
+        cargarApuestasLocales();
     }
 
     const cuadroClick = (persona) => {
@@ -183,7 +177,10 @@ export default function useLista(fechaRef, router, route) {
         } catch (error) {
         console.error('Error en eliminarPersona:', error)
         if (personaSeleccionada.value.estado === 'Pendiente') cargarApuestasLocales()
-        else obtenerApuestas()
+        else if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = obtenerApuestas();
+        }
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la apuesta', timer: 2000 })
         }
     }
@@ -192,8 +189,6 @@ export default function useLista(fechaRef, router, route) {
         mostrarConfirmacionEliminar.value = true
     }
 
-    let unsubscribe = null
-
     onMounted(() => {
         isOnline.value = navigator.onLine;
         unsubscribe = obtenerApuestas()
@@ -201,13 +196,19 @@ export default function useLista(fechaRef, router, route) {
         window.addEventListener('online', updateOnlineStatus)
         window.addEventListener('offline', updateOnlineStatus)
         window.addEventListener('storage', cargarApuestasLocales)
+        window.addEventListener('candados-actualizados', handleCandadosActualizados)
+        window.addEventListener('horario-cerrado', () => {
+    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
+    unsubscribe = obtenerApuestas();
+    cargarApuestasLocales();
+});
+
         if (navigator.onLine) {
             isSyncing.value = true
             sincronizarEliminaciones()
                 .then(sincronizarPendientes)
                 .then(() => {
-                    // 🔽 Recargar apuestas después de sincronizar al cargar la página
-                    if (typeof unsubscribe === 'function') unsubscribe();
+                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
                     unsubscribe = obtenerApuestas();
                     cargarApuestasLocales();
                 })
@@ -216,13 +217,13 @@ export default function useLista(fechaRef, router, route) {
     })
 
     onUnmounted(() => {
-        if (unsubscribe) unsubscribe()
+        if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
         window.removeEventListener('online', updateOnlineStatus)
         window.removeEventListener('offline', updateOnlineStatus)
         window.removeEventListener('storage', cargarApuestasLocales)
+        window.removeEventListener('candados-actualizados', handleCandadosActualizados)
     })
 
-    // ✅ observar cambios en la fecha
     watch(() => fechaRef.value, () => {
         cargarApuestasLocales()
     })
@@ -235,7 +236,6 @@ export default function useLista(fechaRef, router, route) {
         isSyncing,
         apuestasLocales,
         apuestasCombinadas,
-        apuestasFiltradas,
         cuadroClick,
         cerrarModal,
         editarPersona,

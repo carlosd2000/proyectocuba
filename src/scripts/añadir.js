@@ -1,6 +1,6 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
-import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
+import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
@@ -13,6 +13,7 @@ export const modoEdicion = ref(false);
 export const idEdicion = ref('');
 
 let syncPending = false;
+let cachedBancoId = null; // Cache para el ID del banco
 
 /**
  * Genera un UUID único para cada apuesta
@@ -23,6 +24,49 @@ function generarUUID() {
 }
 
 /**
+ * Obtiene el ID del banco padre del listero actual
+ */
+async function obtenerBancoPadre() {
+  if (cachedBancoId) return cachedBancoId;
+  
+  try {
+    const listeroId = auth.currentUser?.uid;
+    if (!listeroId) throw new Error("Usuario no autenticado");
+
+    // Buscar en bancos/{bancoId}/listeros/{listeroId}
+    const bancosSnapshot = await getDocs(collection(db, 'bancos'));
+    for (const bancoDoc of bancosSnapshot.docs) {
+      const bancoId = bancoDoc.id;
+      
+      // 1. Buscar en listeros directos del banco
+      const listeroRef = doc(db, `bancos/${bancoId}/listeros/${listeroId}`);
+      const listeroSnap = await getDoc(listeroRef);
+      if (listeroSnap.exists()) {
+        cachedBancoId = bancoId;
+        return bancoId;
+      }
+
+      // 2. Buscar en bancos/{bancoId}/colectores/{colectorId}/listeros/{listeroId}
+      const colectoresSnapshot = await getDocs(collection(db, `bancos/${bancoId}/colectores`));
+      for (const colectorDoc of colectoresSnapshot.docs) {
+        const colectorId = colectorDoc.id;
+        const listeroRef = doc(db, `bancos/${bancoId}/colectores/${colectorId}/listeros/${listeroId}`);
+        const listeroSnap = await getDoc(listeroRef);
+        if (listeroSnap.exists()) {
+          cachedBancoId = bancoId;
+          return bancoId;
+        }
+      }
+    }
+
+    throw new Error("No se encontró el banco padre para este listero");
+  } catch (error) {
+    console.error("Error obteniendo banco padre:", error);
+    throw error;
+  }
+}
+
+/**
  * Guarda apuestas pendientes en localStorage
  */
 function guardarEnLocal(docAGuardar, esEdicion = false) {
@@ -30,7 +74,6 @@ function guardarEnLocal(docAGuardar, esEdicion = false) {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
     
     if (esEdicion) {
-      // Modo edición: Reemplazar el registro existente
       const index = pendientes.findIndex(p => p.uuid === docAGuardar.uuid);
       if (index !== -1) {
         pendientes[index] = docAGuardar;
@@ -38,7 +81,6 @@ function guardarEnLocal(docAGuardar, esEdicion = false) {
         pendientes.push(docAGuardar);
       }
     } else {
-      // Modo creación: Añadir nuevo registro
       const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
       if (!existe) {
         pendientes.push(docAGuardar);
@@ -98,24 +140,24 @@ function procesarFilas(filas, tipo) {
 export async function guardarDatos() {
   const { hora24, timestamp } = obtenerHoraCuba();
   
-  // Determinar el ID correcto para Firebase y el UUID para identificación única
-  let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
-  let uuid = firebaseId;
-
-  // Si estamos editando online, obtener el UUID original del documento
-  if (modoEdicion.value && navigator.onLine) {
-    try {
-      const docRef = doc(db, 'apuestas', firebaseId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists() && docSnap.data().uuid) {
-        uuid = docSnap.data().uuid;
-      }
-    } catch (error) {
-      console.error('Error obteniendo UUID original:', error);
-    }
-  }
-
   try {
+    const bancoId = await obtenerBancoPadre();
+    let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
+    let uuid = firebaseId;
+
+    // Si estamos editando online, obtener el UUID original
+    if (modoEdicion.value && navigator.onLine) {
+      try {
+        const docRef = doc(db, `bancos/${bancoId}/apuestas`, firebaseId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().uuid) {
+          uuid = docSnap.data().uuid;
+        }
+      } catch (error) {
+        console.error('Error obteniendo UUID original:', error);
+      }
+    }
+
     // 1. Calcular totales
     const { col3, col4, col5 } = calcularTotales(filasFijas, filasExtra);
     const totalGlobal = col3 + col4 + col5;
@@ -146,10 +188,11 @@ export async function guardarDatos() {
       id_listero: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
       horario: horarioSeleccionado.value,
-      uuid, // Usamos el mismo UUID para mantener consistencia
+      uuid,
       horaCuba24: hora24,
       candadoAbierto: true,
-      timestampLocal: timestamp
+      timestampLocal: timestamp,
+      bancoId // Añadimos referencia al banco padre
     };
 
     // 6. Agregar circuloSolo si es válido
@@ -161,32 +204,25 @@ export async function guardarDatos() {
     if (!navigator.onLine) {
       docAGuardar.creadoEn = new Date().toISOString();
       docAGuardar.estado = 'Pendiente';
+      docAGuardar.bancoId = bancoId; // Asegurar que tenemos el bancoId para sincronizar luego
       
       const guardado = guardarEnLocal(docAGuardar, modoEdicion.value);
       
-            // Calcular el totalGlobal sumando todas las apuestas pendientes (incluyendo la recién guardada)
-      let pendientes = [];
-      try {
-        pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-      } catch (e) {
-        pendientes = [];
-      }
-      const totalGlobalPendientes = pendientes.reduce((sum, a) => sum + (Number(a.totalGlobal) || 0), 0);
-
       return { 
         success: guardado, 
         offline: true,
         uuid,
         firebaseId,
         hora: hora24,
-        esEdicion: modoEdicion.value,
-        totalGlobalPendientes,
+        esEdicion: modoEdicion.value
       };
     }
 
     // 7. Lógica diferente para edición vs creación
+    const docPath = `bancos/${bancoId}/apuestas/${firebaseId}`;
+    
     if (modoEdicion.value && idEdicion.value) {
-      await updateDoc(doc(db, 'apuestas', firebaseId), docAGuardar);
+      await updateDoc(doc(db, docPath), docAGuardar);
       
       return { 
         success: true, 
@@ -197,7 +233,7 @@ export async function guardarDatos() {
       };
     } 
     else {
-      const docRef = doc(db, 'apuestas', firebaseId);
+      const docRef = doc(db, docPath);
       docAGuardar.creadoEn = serverTimestamp();
       await setDoc(docRef, docAGuardar);
 
@@ -212,8 +248,8 @@ export async function guardarDatos() {
     }
   } catch (error) {
     console.error('Error al guardar:', error);
-
     const { hora24 } = obtenerHoraCuba();
+    
     return { 
       success: false, 
       message: `Error a las ${hora24}: ${error.message}`,
@@ -237,11 +273,17 @@ export async function sincronizarPendientes() {
 
     for (const apuesta of pendientes) {
       try {
-        const docRef = doc(db, 'apuestas', apuesta.uuid);
+        // Verificar que tenemos bancoId en los datos offline
+        if (!apuesta.bancoId) {
+          console.warn(`[SYNC] Apuesta ${apuesta.uuid} sin bancoId, omitiendo`);
+          continue;
+        }
+
+        const docRef = doc(db, `bancos/${apuesta.bancoId}/apuestas`, apuesta.uuid);
         const snap = await getDoc(docRef);
         
         if (!snap.exists()) {
-          console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid}`);
+          console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid} al banco ${apuesta.bancoId}`);
           
           // Verificar si está fuera de tiempo
           const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, apuesta, serverTime);
@@ -273,6 +315,56 @@ export async function sincronizarPendientes() {
   }
 }
 
+// ================= FUNCIONES AUXILIARES =================
+async function obtenerHoraServidor() {
+  const tempDocRef = doc(db, "temp", "serverTimeCheck");
+  await setDoc(tempDocRef, { timestamp: serverTimestamp() });
+  const docSnap = await getDoc(tempDocRef);
+  await deleteDoc(tempDocRef);
+
+  const rawTimestamp = docSnap.data().timestamp;
+  const date = rawTimestamp.toDate();
+  const fechaAjustada = new Date(date.getTime() + 3600000); // +1 hora
+
+  return {
+    toDate: () => fechaAjustada,
+    toMillis: () => fechaAjustada.getTime()
+  };
+}
+
+async function verificarFueraDeTiempo(horario, apuestaData, serverTime) {
+  try {
+    const horarioRef = doc(db, 'hora', horario.toLowerCase());
+    const horarioSnap = await getDoc(horarioRef);
+    
+    if (!horarioSnap.exists()) return false;
+    
+    const config = horarioSnap.data();
+    const horaCierre = new Date(serverTime.toDate());
+    horaCierre.setHours(
+      parseInt(config.hh) || 0,
+      parseInt(config.mm) || 0,
+      parseInt(config.ss) || 0,
+      0
+    );
+    
+    const horarioYaPaso = serverTime.toMillis() > horaCierre.getTime();
+    if (!horarioYaPaso) return false;
+    
+    if (apuestaData) {
+      const creadoEnBase = apuestaData.creadoEn?.toDate?.() || new Date(apuestaData.creadoEn);
+      const creadoEn = new Date(creadoEnBase.getTime() + 3600000);
+      const creadoAntesDeCierre = creadoEn.getTime() < horaCierre.getTime();
+      return creadoAntesDeCierre;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error verificando horario:', error);
+    return false;
+  }
+}
+
 // ================= LISTENERS DE CONEXIÓN =================
 if (typeof window !== 'undefined') {
   // Sincronizar inmediatamente si hay conexión
@@ -290,70 +382,4 @@ if (typeof window !== 'undefined') {
       setTimeout(sincronizarPendientes, 1000);
     }
   });
-}
-
-// Función para obtener hora del servidor (agregar con las demás funciones)
-async function obtenerHoraServidor() {
-  const tempDocRef = doc(db, "temp", "serverTimeCheck");
-  await setDoc(tempDocRef, { timestamp: serverTimestamp() });
-  const docSnap = await getDoc(tempDocRef);
-  await deleteDoc(tempDocRef);
-
-  const rawTimestamp = docSnap.data().timestamp;
-  const date = rawTimestamp.toDate();
-
-  // Aumentar 1 hora (3600000 ms = 1 hora)
-  const fechaAjustada = new Date(date.getTime() + 3600000);
-
-  console.log('Hora original:', date);
-  console.log('Hora ajustada +1h:', fechaAjustada);
-
-  return {
-    toDate: () => fechaAjustada,
-    toMillis: () => fechaAjustada.getTime()
-  };
-}
-
-
-// Función para verificar si está fuera de tiempo (agregar con las demás funciones)
-async function verificarFueraDeTiempo(horario, apuestaData, serverTime) {
-  try {
-    // 1. Obtener hora del servidor    
-    // 2. Obtener configuración del horario
-    const horarioRef = doc(db, 'hora', horario.toLowerCase());
-    const horarioSnap = await getDoc(horarioRef);
-    
-    if (!horarioSnap.exists()) return false;
-    
-    const config = horarioSnap.data();
-    
-    // 3. Crear fecha límite para comparación
-    const horaCierre = new Date(serverTime.toDate());
-    horaCierre.setHours(
-      parseInt(config.hh) || 0,
-      parseInt(config.mm) || 0,
-      parseInt(config.ss) || 0,
-      0
-    );
-    
-    // 4. Comparación principal: hora del servidor vs hora de cierre
-    const horarioYaPaso = serverTime.toMillis() > horaCierre.getTime();
-    
-        // Si el horario no ha pasado, no está fuera de tiempo
-    if (!horarioYaPaso) return false;
-    
-    // 5. Nueva lógica: Verificar fechas de creación y sincronización
-    if (apuestaData) {
-      const creadoEnBase = apuestaData.creadoEn?.toDate?.() || new Date(apuestaData.creadoEn);
-      const creadoEn = new Date(creadoEnBase.getTime() + 3600000); // Sumar 1 hora (3600000 ms)
-      const creadoAntesDeCierre = creadoEn.getTime() < horaCierre.getTime();
-      console.error('creado en:', creadoEn);
-      return creadoAntesDeCierre;
-    }
-    
-    return false;
-  } catch (error) {
-    console.error('Error verificando horario:', error);
-    return false; // En caso de error, no marcar como fuera de tiempo
-  }
 }

@@ -14,4 +14,4 @@ app.use(router)
 const authStore = useAuthStore()
 authStore.initializeAuthListener().then(() => {
     app.mount('#app')
-})
+})  
