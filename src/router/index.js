@@ -44,15 +44,25 @@ const router = createRouter({
       component: () => import('../views/Listas.vue'),
     },
     {
-      path: '/horario',
+      path: '/horario/:id',
       name: 'horario',
       component: () => import('../views/Horario.vue'),
     },
     {
       path: '/wallet/:id',
       name: 'wallet',
-      component: () => import('../views/wallet.vue'),
+      component: () => import('../views/Wallet.vue'),
     },
+    {
+      path: '/monitoreolisteros/:id',
+      name: 'monitoreolisteros',
+      component: () => import('../views/Monitoreolisteros.vue'),
+    },
+    {
+      path: '/transacciones/:id',
+      name: 'transacciones',
+      component: () => import('../views/Transacciones.vue'),
+    }
     // Ruta opcional para registro directo con tipo + id
     // Puedes comentar esta línea si aún no la usas
     // {

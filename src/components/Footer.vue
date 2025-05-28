@@ -47,7 +47,7 @@
 
 <style scoped>
     .container {
-        max-width: 400px;
+        max-width: 600px;
         border-top: 3px solid #000000;
     }
     .btn-color {
