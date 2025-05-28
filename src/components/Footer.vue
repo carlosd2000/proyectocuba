@@ -1,3 +1,13 @@
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const mostrarJugada = computed(() => route.path.startsWith('/transacciones'))
+const mostrarTransferencias = computed(() => route.path.startsWith('/monitoreolisteros'))
+</script>
+
 <template>  
     <footer class="col-12 m-0 p-0">
         <div class="col-12 px-3 container d-flex justify-content-between align-items-center p-1">
@@ -17,12 +27,20 @@
                     <p>Lista</p>
                 </div>
             </div>
-            <div class="m-0 p-0 btn-color">
+            <div v-if="mostrarJugada" class="m-0 p-0 btn-color">
                 <div class="d-flex justify-content-center align-items-center">
                     <i class="bi bi-plus"></i>
                 </div>
                 <div class="d-flex justify-content-center align-items-center">
                     <p>Jugada</p>
+                </div>
+            </div>
+            <div v-if="mostrarTransferencias" @click="$router.push(`/transferencias/${$route.params.id}`)" class="m-0 p-0 btn-color">
+                <div class="d-flex justify-content-center align-items-center">
+                    <i class="bi bi-plus"></i>
+                </div>
+                <div class="d-flex justify-content-center align-items-center">
+                    <p>Transferir</p>
                 </div>
             </div>
             <div class="m-0 p-0 btn-color">
@@ -53,6 +71,7 @@
     .btn-color {
         background-color: #eeeeee;
         width: 14%;
+        min-width: 40px;
         border-radius: 5px;
     }
     p{
