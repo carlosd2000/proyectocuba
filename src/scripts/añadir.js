@@ -259,6 +259,7 @@ export async function guardarDatos() {
 }
 
 // ================= SINCRONIZACIÓN =================
+// En añadir.js, modificar la función sincronizarPendientes
 export async function sincronizarPendientes() {
   if (!navigator.onLine || syncPending) return;
   
@@ -285,9 +286,32 @@ export async function sincronizarPendientes() {
         if (!snap.exists()) {
           console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid} al banco ${apuesta.bancoId}`);
           
-          // Verificar si está fuera de tiempo
-          const fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, apuesta, serverTime);
-
+          // Obtener configuración del horario específico de esta apuesta
+          const horarioRef = doc(db, 'hora', apuesta.horario.toLowerCase());
+          const horarioSnap = await getDoc(horarioRef);
+          
+          let fueraDeTiempo = false;
+          
+          if (horarioSnap.exists()) {
+            const config = horarioSnap.data();
+            const horaCierre = new Date(serverTime.toDate());
+            horaCierre.setHours(
+              parseInt(config.hh) || 0,
+              parseInt(config.mm) || 0,
+              parseInt(config.ss) || 0,
+              0
+            );
+            
+            // Verificar si el horario de esta apuesta ya pasó
+            fueraDeTiempo = serverTime.toMillis() > horaCierre.getTime();
+            
+            // Si el horario ya pasó, verificar si fue creada antes del cierre
+            if (fueraDeTiempo && apuesta.creadoEn) {
+              const creadoEn = new Date(apuesta.creadoEn);
+              fueraDeTiempo = creadoEn.getTime() < horaCierre.getTime();
+            }
+          }
+          
           await setDoc(docRef, {
             ...apuesta,
             creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
@@ -295,6 +319,7 @@ export async function sincronizarPendientes() {
             estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
             candadoAbierto: !fueraDeTiempo
           });
+          
           pendientesExitosos.push(apuesta.uuid);
         }
       } catch (error) {
