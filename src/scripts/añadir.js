@@ -1,9 +1,10 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { filasFijas, filasExtra, calcularTotales } from './operaciones';
+import { filasFijas, filasExtra, calcularTotales, expandirApuestasIncrementativas } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
+
 
 // Variables reactivas
 export const nombreTemporal = ref('SinNombre');
@@ -126,9 +127,11 @@ export async function guardarDatos() {
     const circuloSolo = filasFijas.value[2]?.circuloSolo;
     const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
 
+    const filasIncrementadas = expandirApuestasIncrementativas(filasFijas.value);
+
     // 3. Procesar filas
     const datosAGuardar = [
-      ...procesarFilas(filasFijas.value, 'fija'),
+      ...procesarFilas(filasIncrementadas, 'fija'),
       ...procesarFilas(filasExtra.value, 'extra')
     ];
 
