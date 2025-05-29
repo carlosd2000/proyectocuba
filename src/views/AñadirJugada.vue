@@ -11,6 +11,13 @@ import { computed, ref, onMounted } from 'vue';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
 import { setModoEdicion } from '../scripts/añadir.js';
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
+
+async function ejemploUso() {
+  const bancoId = await obtenerBancoPadre();
+  console.log("Banco padre:", bancoId);
+}
+
 
 const route = useRoute();
 
@@ -23,7 +30,7 @@ const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
 });
 
-async function obtenerBancoPadre() {
+/*async function obtenerBancoPadre() {
   try {
     const userId = auth.currentUser?.uid;
     if (!userId) throw new Error("Usuario no autenticado");
@@ -57,7 +64,7 @@ async function obtenerBancoPadre() {
     console.error("Error obteniendo banco padre:", error);
     throw error;
   }
-}
+}*/
 
 onMounted(async () => {
   if (idEditar.value) {

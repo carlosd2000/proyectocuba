@@ -9,6 +9,13 @@ import {
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
+import { obtenerBancoPadre } from './FunctionBancoPadre.js';
+
+
+async function ejemploUso() {
+  const bancoId = await obtenerBancoPadre();
+  console.log("Banco padre:", bancoId);
+}
 
 const HORARIOS = ['dia', 'tarde', 'noche'];
 const HORARIOS_CAPITALIZADOS = ['Dia', 'Tarde', 'Noche'];
@@ -18,7 +25,7 @@ let monitorActivo = false;
 let intervalId = null;
 let horariosYaProcesados = new Set();
 
-async function obtenerBancoPadre() {
+/*async function obtenerBancoPadre() {
   if (cachedBancoId) return cachedBancoId;
 
   try {
@@ -59,7 +66,7 @@ async function obtenerBancoPadre() {
     console.error("Error obteniendo banco padre:", error);
     throw error;
   }
-}
+}*/
 
 function obtenerHoraCuba() {
   const ahora = new Date();

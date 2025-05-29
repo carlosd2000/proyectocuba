@@ -104,19 +104,19 @@ export default function useLista(fechaRef, router, route) {
     const updateOnlineStatus = () => {
         isOnline.value = navigator.onLine
         if (isOnline.value) {
-            isSyncing.value = true
-            Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
-                .then(() => {
-                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
-                    unsubscribe = obtenerApuestas();
-                    cargarApuestasLocales();
-                })
-                .finally(() => {
-                    isSyncing.value = false
-                })
+        isSyncing.value = true
+        Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
+            .then(async () => {
+            if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
+            unsubscribe = await obtenerApuestas(); // Ahora es async
+            cargarApuestasLocales();
+            })
+            .finally(() => {
+            isSyncing.value = false
+            })
         }
         else {
-            cargarApuestasLocales();
+        cargarApuestasLocales();
         }
     }
 
@@ -189,9 +189,9 @@ export default function useLista(fechaRef, router, route) {
         mostrarConfirmacionEliminar.value = true
     }
 
-    onMounted(() => {
+    onMounted(async() => {
         isOnline.value = navigator.onLine;
-        unsubscribe = obtenerApuestas()
+        unsubscribe = await obtenerApuestas();
         cargarApuestasLocales()
         window.addEventListener('online', updateOnlineStatus)
         window.addEventListener('offline', updateOnlineStatus)

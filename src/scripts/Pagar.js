@@ -10,6 +10,12 @@ import {
 import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '@/firebase/config';
+import { obtenerBancoPadre } from './FunctionBancoPadre.js';
+
+async function ejemploUso() {
+  const bancoId = await obtenerBancoPadre();
+  console.log("Banco padre:", bancoId);
+}
 
 export function usePagar() {
     const router = useRouter()
@@ -24,7 +30,7 @@ export function usePagar() {
     const bancoId = ref(null) // Nuevo: almacenar bancoId
 
     // Función para obtener el banco padre
-    async function obtenerBancoPadre() {
+    /*async function obtenerBancoPadre() {
       try {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error("Usuario no autenticado");
@@ -58,7 +64,7 @@ export function usePagar() {
         console.error("Error obteniendo banco padre:", error);
         throw error;
       }
-    }
+    }*/
 
     // Obtener apuesta por ID (versión mejorada)
     async function obtenerApuestaPorId(bancoId, idApuesta) {

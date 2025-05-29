@@ -4,6 +4,13 @@ import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection,
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
+import { obtenerBancoPadre } from './FunctionBancoPadre.js';
+
+
+async function ejemploUso() {
+  const bancoId = await obtenerBancoPadre();
+  console.log("Banco padre:", bancoId);
+}
 
 // Variables reactivas
 export const nombreTemporal = ref('SinNombre');
@@ -26,7 +33,7 @@ function generarUUID() {
 /**
  * Obtiene el ID del banco padre del listero actual
  */
-async function obtenerBancoPadre() {
+/*async function obtenerBancoPadre() {
   if (cachedBancoId) return cachedBancoId;
   
   try {
@@ -64,7 +71,7 @@ async function obtenerBancoPadre() {
     console.error("Error obteniendo banco padre:", error);
     throw error;
   }
-}
+}*/
 
 /**
  * Guarda apuestas pendientes en localStorage
@@ -138,10 +145,12 @@ function procesarFilas(filas, tipo) {
 
 // ================= FUNCIÓN PRINCIPAL =================
 export async function guardarDatos() {
-  const { hora24, timestamp } = obtenerHoraCuba();
-  
+  const { hora24, timestamp } = obtenerHoraCuba(); 
   try {
     const bancoId = await obtenerBancoPadre();
+    if (!bancoId) {
+      throw new Error("No se pudo determinar el banco padre");
+    }
     let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
     let uuid = firebaseId;
 
@@ -181,7 +190,7 @@ export async function guardarDatos() {
     }
 
     // 5. Preparar documento final
-    const docAGuardar = {
+      const docAGuardar = {
       nombre: nombreTemporal.value,
       totalGlobal,
       datos: datosAGuardar,
@@ -192,7 +201,7 @@ export async function guardarDatos() {
       horaCuba24: hora24,
       candadoAbierto: true,
       timestampLocal: timestamp,
-      bancoId // Añadimos referencia al banco padre
+      bancoId // Aseguramos que siempre tenga valor
     };
 
     // 6. Agregar circuloSolo si es válido
