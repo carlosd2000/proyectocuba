@@ -11,6 +11,8 @@ const logout = async () => {
     try {
         await AuthService.logout();
         localStorage.removeItem('userProfile');
+        localStorage.removeItem('bancoId');
+        localStorage.removeItem('cachedBancoId');
         router.push('/');
     } catch (error) {
         console.error('Error al cerrar sesión:', error);
