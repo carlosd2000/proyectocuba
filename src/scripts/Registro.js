@@ -102,7 +102,7 @@ export function useRegistro() {
             Swal.fire("Error", "Por favor llena todos los campos", "error")
             return
         }
-        if (tipoCuenta.value === 'listeros' && !padreSeleccionado.value) {
+        if (tipoCuenta.value === 'listeros' && !padreSeleccionado.value && authStore.profile?.tipo === 'bancos') {
             Swal.fire("Error", "Por favor selecciona un padre", "error")
             return
         }
@@ -114,16 +114,25 @@ export function useRegistro() {
             isLoading.value = true
 
             let padreData = {}
-            if (tipoCuenta.value === 'listeros' && padreSeleccionado.value) {
+            if (authStore.profile?.tipo === 'bancos' && tipoCuenta.value === 'listeros') {
+                if (!padreSeleccionado.value) {
+                    Swal.fire("Error", "Por favor selecciona un padre para el listero", "error")
+                    return
+                }
+                
                 const [tipoPadre, idPadre] = padreSeleccionado.value.split('_')
                 padreData = {
                     padreTipo: tipoPadre,
-                    padreId: idPadre
+                    padreId: idPadre,
+                    ...(tipoPadre === 'colector' && { bancoId: authStore.user?.uid })
                 }
-                
-                // Si el padre es un colector, también guardamos el ID del banco
-                if (tipoPadre === 'colector') {
-                    padreData.bancoId = authStore.user?.uid
+            }
+            // Si es colector creando listero, asignar automáticamente
+            else if (authStore.profile?.tipo === 'colectores' && tipoCuenta.value === 'listeros') {
+                padreData = {
+                    padreTipo: 'colector',
+                    padreId: authStore.user?.uid,
+                    bancoId: authStore.profile?.creadorId // Asume que el perfil tiene creadorId del banco
                 }
             }
 
@@ -154,6 +163,7 @@ export function useRegistro() {
             isLoading.value = false
         }
     }
+
 
     const limpiarCampos = () => {
         nombre.value = ''

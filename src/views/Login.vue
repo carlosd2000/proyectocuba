@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
+import { obtenerBancoPadre } from '@/scripts/FunctionBancoPadre.js';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -48,6 +49,17 @@ const handleSubmit = async () => {
     const result = await authStore.login(formData.email, formData.password);
     
     if (result.success) {
+      // Suponiendo que authStore.userProfile tiene el bancoId o puedes obtenerlo así:
+      const bancoId = result.profile?.bancoId || result.profile?.banco_id || null;
+      if (bancoId) {
+        localStorage.setItem('bancoId', bancoId);
+      } else {
+        // Si no está en el perfil, intenta obtenerlo con tu función obtenerBancoPadre
+        const bancoPadre = await obtenerBancoPadre();
+        if (bancoPadre) {
+          localStorage.setItem('bancoId', bancoPadre);
+        }
+      }
       // Redirección basada en el tipo de usuario
       const redirectPath = authStore.userType === 'admin' 
         ? `/adminview/${authStore.userId}`

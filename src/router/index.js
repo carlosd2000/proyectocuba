@@ -8,7 +8,7 @@ const router = createRouter({
       path: '/adminview/:id',      
       name: 'AdminView',      
       component: () => import('../views/AdminView.vue'),
-      meta: { requiresAuth: true }   
+      meta: { requiresAuth: true },
     },
     {
       path: '/',
@@ -19,43 +19,43 @@ const router = createRouter({
       path: '/listeros/:id',
       name: 'listeros',
       component: () => import('../views/Listeros.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/admin/:id',
       name: 'admin',
       component: () => import('../views/Registros.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/bancos/:id',
       name: 'bancos',
       component: () => import('../views/Registros.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/colectores/:id',
       name: 'colectores',
       component: () => import('../views/Registros.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/anadirjugada/:id',
       name: 'anadirjugada',
       component: () => import('../views/AñadirJugada.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/listas/:id',
       name: 'listas',
       component: () => import('../views/Listas.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/horario/:id',
       name: 'horario',
       component: () => import('../views/Horario.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/wallet/:id',
@@ -67,7 +67,7 @@ const router = createRouter({
       path: '/monitoreolisteros/:id',
       name: 'monitoreolisteros',
       component: () => import('../views/Monitoreolisteros.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/transacciones/:id',
@@ -79,7 +79,7 @@ const router = createRouter({
       path: '/transferencias/:id',
       name: 'transferencias',
       component: () => import('../views/Transferencias.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     }
   ],
 })

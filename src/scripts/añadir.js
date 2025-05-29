@@ -5,7 +5,7 @@ import { filasFijas, filasExtra, calcularTotales, expandirApuestasIncrementativa
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
-
+import { expandirApuestasIncrementativas } from './operaciones.js'
 
 
 async function ejemploUso() {
@@ -271,13 +271,16 @@ export async function sincronizarPendientes() {
             );
             
             // Verificar si el horario de esta apuesta ya pasó
-            fueraDeTiempo = serverTime.toMillis() > horaCierre.getTime();
+            // fueraDeTiempo = serverTime.toMillis() > horaCierre.getTime();
             
             // Si el horario ya pasó, verificar si fue creada antes del cierre
-            if (fueraDeTiempo && apuesta.creadoEn) {
-              const creadoEn = new Date(apuesta.creadoEn);
-              fueraDeTiempo = creadoEn.getTime() < horaCierre.getTime();
-            }
+            // if (fueraDeTiempo && apuesta.creadoEn) {
+            //   const creadoEn = new Date(apuesta.creadoEn);
+            //   fueraDeTiempo = creadoEn.getTime() < horaCierre.getTime();
+            // }
+
+            fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, snap.data(), serverTime);
+            
           }
           
           await setDoc(docRef, {
