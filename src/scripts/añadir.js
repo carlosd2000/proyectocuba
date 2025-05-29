@@ -1,12 +1,7 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
-<<<<<<< HEAD
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
-=======
-import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { filasFijas, filasExtra, calcularTotales, expandirApuestasIncrementativas } from './operaciones';
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
@@ -16,7 +11,6 @@ async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
   console.log("Banco padre:", bancoId);
 }
-
 
 // Variables reactivas
 export const nombreTemporal = ref('SinNombre');
@@ -29,59 +23,13 @@ let syncPending = false;
 let cachedBancoId = null; // Cache para el ID del banco
 
 /**
- * Genera un UUID único para cada apuesta
+Genera un UUID único para cada apuesta
  */
 function generarUUID() {
   return window.crypto?.randomUUID?.() || 
          Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-/**
- * Obtiene el ID del banco padre del listero actual
- */
-/*async function obtenerBancoPadre() {
-  if (cachedBancoId) return cachedBancoId;
-  
-  try {
-    const listeroId = auth.currentUser?.uid;
-    if (!listeroId) throw new Error("Usuario no autenticado");
-
-    // Buscar en bancos/{bancoId}/listeros/{listeroId}
-    const bancosSnapshot = await getDocs(collection(db, 'bancos'));
-    for (const bancoDoc of bancosSnapshot.docs) {
-      const bancoId = bancoDoc.id;
-      
-      // 1. Buscar en listeros directos del banco
-      const listeroRef = doc(db, `bancos/${bancoId}/listeros/${listeroId}`);
-      const listeroSnap = await getDoc(listeroRef);
-      if (listeroSnap.exists()) {
-        cachedBancoId = bancoId;
-        return bancoId;
-      }
-
-      // 2. Buscar en bancos/{bancoId}/colectores/{colectorId}/listeros/{listeroId}
-      const colectoresSnapshot = await getDocs(collection(db, `bancos/${bancoId}/colectores`));
-      for (const colectorDoc of colectoresSnapshot.docs) {
-        const colectorId = colectorDoc.id;
-        const listeroRef = doc(db, `bancos/${bancoId}/colectores/${colectorId}/listeros/${listeroId}`);
-        const listeroSnap = await getDoc(listeroRef);
-        if (listeroSnap.exists()) {
-          cachedBancoId = bancoId;
-          return bancoId;
-        }
-      }
-    }
-
-    throw new Error("No se encontró el banco padre para este listero");
-  } catch (error) {
-    console.error("Error obteniendo banco padre:", error);
-    throw error;
-  }
-}*/
-
-/**
- * Guarda apuestas pendientes en localStorage
- */
 function guardarEnLocal(docAGuardar, esEdicion = false) {
   try {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
