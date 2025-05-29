@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/authStore';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -52,6 +53,7 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/horario/:id',
       path: '/horario/:id',
       name: 'horario',
       component: () => import('../views/Horario.vue'),

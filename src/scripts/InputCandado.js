@@ -1,4 +1,3 @@
-    
     import { ref, watch, onMounted, onUnmounted } from 'vue'
     import {
     filasFijas,
@@ -8,7 +7,8 @@
     nombreUsuario
     } from './operaciones.js'
     import { setNombre, setTipoOrigen, setModoEdicion } from './añadir.js'
-    import { soloEnteros, cargarDatosEdicion as cargarDatosEdicionCompartida } from './inputsFunction.js'
+    import { soloEnteros, 
+        cargarDatosEdicion as cargarDatosEdicionCompartida } from './inputsFunction.js'
 
     export function useInputCandado(props) {
     setTipoOrigen('candado')

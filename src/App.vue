@@ -1,17 +1,34 @@
 <script setup>
 import { useAuthStore } from '@/stores/authStore'
-import { watch, ref, onMounted } from 'vue'
+import { watch, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { iniciarMonitorHorarios } from '@/scripts/monitorHorarios.js';
 
 const router = useRouter()
 const authStore = useAuthStore()
 const isAppReady = ref(false)
+let unsubscribeMonitor = ref(null);
 
 onMounted(async () => {
-  // Inicializar listener de autenticación
-  await authStore.initializeAuthListener()
-  isAppReady.value = true
-})
+  await authStore.initializeAuthListener();
+  isAppReady.value = true;
+  
+  // Solo iniciar el monitor si hay usuario autenticado
+  watch(() => authStore.user, (user) => {
+    if (user) {
+      unsubscribeMonitor.value = iniciarMonitorHorarios();
+    } else if (unsubscribeMonitor.value) {
+      unsubscribeMonitor.value();
+      unsubscribeMonitor.value = null;
+    }
+  }, { immediate: true });
+});
+
+onUnmounted(() => {
+  if (unsubscribeMonitor.value) {
+    unsubscribeMonitor();
+  }
+});
 
 // Redirección basada en autenticación
 watch(() => authStore.user, (user) => {
