@@ -8,11 +8,7 @@ const router = createRouter({
       path: '/adminview/:id',      
       name: 'AdminView',      
       component: () => import('../views/AdminView.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }   
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/',
@@ -23,79 +19,47 @@ const router = createRouter({
       path: '/listeros/:id',
       name: 'listeros',
       component: () => import('../views/Listeros.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/admin/:id',
       name: 'admin',
       component: () => import('../views/Registros.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/bancos/:id',
       name: 'bancos',
       component: () => import('../views/Registros.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/colectores/:id',
       name: 'colectores',
       component: () => import('../views/Registros.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/anadirjugada/:id',
       name: 'anadirjugada',
       component: () => import('../views/AñadirJugada.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/listas/:id',
       name: 'listas',
       component: () => import('../views/Listas.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/horario/:id',
       name: 'horario',
       component: () => import('../views/Horario.vue'),
-<<<<<<< HEAD
-      meta: { requiresAuth: true }
-=======
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     },
     {
       path: '/wallet/:id',
       name: 'wallet',
-<<<<<<< HEAD
-      component: () => import('../views/wallet.vue'),
-      meta: { requiresAuth: true }
-=======
       component: () => import('../views/Wallet.vue'),
       meta: { requiresAuth: true },
     },
@@ -116,7 +80,6 @@ const router = createRouter({
       name: 'transferencias',
       component: () => import('../views/Transferencias.vue'),
       meta: { requiresAuth: true },
->>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
     }
   ],
 })
