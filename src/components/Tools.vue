@@ -40,13 +40,13 @@ watch(desplegado2, (newValue) => {
         <div v-if="desplegado2" class="col-12">
             <div class="col-12 row p-0 m-0">
                 <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push('/horario')">
+                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/horario/${$route.params.id}`)">
                         <i class="bi bi-clock-history m-0 p-0"></i>
                         <span>Horario</span>
                     </button>
                 </div>
                 <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
+                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/transacciones/${$route.params.id}`)">
                         <i class="bi bi-cash-coin m-0 p-0"></i>
                         <span>Pagos</span>
                     </button>
@@ -83,7 +83,7 @@ watch(desplegado2, (newValue) => {
                 </div>
             </div>
             <div class="col-12 row p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
-                <button class="col-12 row p-2 d-flex justify-content-center btn-colab">
+                <button class="col-12 row p-2 d-flex justify-content-center btn-colab" @click="$router.push(`/monitoreolisteros/${$route.params.id}`)">
                     <p>Colaboradores</p>
                     <i class="bi bi-people-fill"></i>
                 </button>

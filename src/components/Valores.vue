@@ -1,122 +1,122 @@
 <template>
-  <div class="funds-container">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="card-title mb-0">Fondo recaudado</h5>
-          <span class="amount">{{ formattedMainAmount }}</span>
+  <div class="col-12 m-0 p-0">
+    <div @click="toggleDetails" class="col-12 container card-body p-0 d-flex flex-column justify-content-center align-items-center">
+      <div class="col-11 m-0 my-2 p-0 d-flex flex-column justify-content-center align-items-center">
+        <div class="col-12 m-0 p-0 d-flex flex-column justify-content-between align-items-center">
+          <div class="d-flex justify-content-center align-items-center">
+            <h5 class="card-title m-0 p-0">Fondo recaudado</h5>
+          </div>
+          <div class="d-flex justify-content-center align-items-center">
+            <h5 class="dollar">$<span class="amount">{{ formattedMainAmount }}</span></h5>
+          </div>
         </div>
-        
-        <button 
-          class="btn btn-link p-0 mt-2 d-flex align-items-center" 
-          @click="toggleDetails"
-          aria-expanded="false" 
-          :aria-controls="'details-' + _uid"
-        >
-          <span>Detalles</span>
-          <i class="ml-1" :class="showDetails ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
-        </button>
-        
-        <div v-if="showDetails" :id="'details-' + _uid" class="mt-3 details-section">
-          <div class="d-flex justify-content-between mb-2">
-            <span>Recaudación pendiente</span>
-            <span class="text-muted">{{ formattedPending }}</span>
+        <div v-if="!mostrarDespliegue" class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
+          <div v-if="showDetails" :id="'details-' + _uid" class="col-12 details-section my-2 p-0">
+            <div class="">
+              <div class="recaudacion d-flex justify-content-between mb-2">
+                <span class="text-span">Recaudación pendiente</span>
+                <span class="text-span">{{ formattedPending }}</span>
+              </div>
+              <div class="contable">
+                <div class="m-0 p-0 d-flex justify-content-between">
+                  <span class="text-span">Fondo</span>
+                  <span class="text-span">{{ formattedFund }}</span>
+                </div>
+                <div class="m-0 p-0 d-flex justify-content-between">
+                  <span class="text-span">Ganancia</span>
+                  <span class="text-span">{{ formattedProfit }}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="d-flex justify-content-between mb-2">
-            <span>Fondo</span>
-            <span class="text-muted">{{ formattedFund }}</span>
-          </div>
-          <div class="d-flex justify-content-between">
-            <span>Ganancia</span>
-            <span class="text-muted">{{ formattedProfit }}</span>
-          </div>
+          <i class="detalles" :class="showDetails ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'FundsCollected',
-  data() {
-    return {
-      showDetails: false,
-      mainAmount: 20000000.00,
-      pending: 16500.00,
-      fund: 15000.00,
-      profit: 1500.00
-    }
-  },
-  computed: {
-    formattedMainAmount() {
-      return new Intl.NumberFormat('es-MX', { 
-        style: 'currency', 
-        currency: 'MXN' 
-      }).format(this.mainAmount)
-    },
-    formattedPending() {
-      return new Intl.NumberFormat('es-MX', { 
-        style: 'currency', 
-        currency: 'MXN' 
-      }).format(this.pending)
-    },
-    formattedFund() {
-      return new Intl.NumberFormat('es-MX', { 
-        style: 'currency', 
-        currency: 'MXN' 
-      }).format(this.fund)
-    },
-    formattedProfit() {
-      return new Intl.NumberFormat('es-MX', { 
-        style: 'currency', 
-        currency: 'MXN' 
-      }).format(this.profit)
-    }
-  },
-  methods: {
-    toggleDetails() {
-      this.showDetails = !this.showDetails
-    }
-  }
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const mostrarDespliegue = computed(() =>
+  route.path.startsWith('/transacciones')
+)
+
+import { ref } from 'vue'
+
+const showDetails = ref(false)
+
+const toggleDetails = () => {
+  showDetails.value = !showDetails.value
 }
+
+// Supongamos que estos valores los defines aquí también:
+const mainAmount = ref(2000000000.00)
+const pending = ref(16500.00)
+const fund = ref(15000.00)
+const profit = ref(1500.00)
+
+const formattedMainAmount = computed(() =>
+  new Intl.NumberFormat('es-MX', { style: 'decimal' }).format(mainAmount.value)
+)
+const formattedPending = computed(() =>
+  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(pending.value)
+)
+const formattedFund = computed(() =>
+  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(fund.value)
+)
+const formattedProfit = computed(() =>
+  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(profit.value)
+)
 </script>
 
 <style scoped>
-.funds-container {
-  max-width: 400px;
-  margin: 0 auto;
-}
 
-.card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+.card-body {
+  border-bottom: 3px solid hsl(0, 0%, 0%);
+  border-left: 3px solid hsl(0, 0%, 0%);
+  border-right: 3px solid hsl(0, 0%, 0%);
+  border-radius: 0px 0px 10px 10px;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.716);
+  background-color: #ffbf00;
+  max-width: 600px;
 }
 
 .card-title {
-  font-size: 1.1rem;
-  color: #333;
+  font-size: 0.9rem;
+}
+
+h5.dollar {
+  font-size: 0.9rem;
+  font-weight: bold;
+
+}
+
+.text-span {
+  font-size: 0.9rem;
+}
+
+.detalles {
+  color: #000; 
+  text-shadow: 0 0 1.5px #000;
 }
 
 .amount {
-  font-size: 1.3rem;
+  font-size: 1.8rem;
   font-weight: bold;
-  color: #2c3e50;
+  color: #000000;
 }
 
-.btn-link {
-  color: #6c757d;
-  text-decoration: none;
-}
-
-.btn-link:hover {
-  color: #0056b3;
-  text-decoration: none;
+.recaudacion{
+  border-bottom: 2px dotted #000000;
 }
 
 .details-section {
-  border-top: 1px solid #eee;
-  padding-top: 12px;
+  border-top: 2px solid hsl(0, 0%, 0%);
+  border-bottom: 2px solid hsl(0, 0%, 0%);
 }
 </style>

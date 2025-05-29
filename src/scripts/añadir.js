@@ -1,7 +1,12 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
+<<<<<<< HEAD
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { filasFijas, filasExtra, calcularTotales } from './operaciones';
+=======
+import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
+import { filasFijas, filasExtra, calcularTotales, expandirApuestasIncrementativas } from './operaciones';
+>>>>>>> 63472598e549e15401c3b3246ad2fe9a77e05fc3
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
@@ -11,6 +16,7 @@ async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
   console.log("Banco padre:", bancoId);
 }
+
 
 // Variables reactivas
 export const nombreTemporal = ref('SinNombre');
@@ -95,6 +101,8 @@ function guardarEnLocal(docAGuardar, esEdicion = false) {
     }
     
     localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
+    // 🔽 Notifica a los listeners que cambió el localStorage
+    window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
     return true;
   } catch (error) {
     console.error('Error guardando en localStorage:', error);
@@ -175,9 +183,11 @@ export async function guardarDatos() {
     const circuloSolo = filasFijas.value[2]?.circuloSolo;
     const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
 
+    const filasIncrementadas = expandirApuestasIncrementativas(filasFijas.value);
+
     // 3. Procesar filas
     const datosAGuardar = [
-      ...procesarFilas(filasFijas.value, 'fija'),
+      ...procesarFilas(filasIncrementadas, 'fija'),
       ...procesarFilas(filasExtra.value, 'extra')
     ];
 
@@ -339,13 +349,16 @@ export async function sincronizarPendientes() {
     
     if (pendientesExitosos.length > 0) {
       const nuevosPendientes = pendientes.filter(p => !pendientesExitosos.includes(p.uuid));
-      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes));
+      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes))
+      window.dispatchEvent(new Event('apuestas-locales-actualizadas'))
       console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas`);
     }
   } catch (error) {
     console.error('[SYNC] Error general:', error);
   } finally {
     syncPending = false;
+    // Notifica a DailyPlay que debe recalcular el total local
+    window.dispatchEvent(new Event('apuestas-sincronizadas'));
   }
 }
 

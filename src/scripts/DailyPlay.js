@@ -35,9 +35,19 @@ import { setHorario } from '../scripts/añadir.js'
     }
     // Mostrar total con formato (incluye local si offline)
     const totalFormateado = computed(() => {
-        let total = totalGlobal.value
-        if (!isOnline.value) {
-            total = calcularTotalLocal()
+        // Total de apuestas online guardado
+        const totalesOnline = JSON.parse(localStorage.getItem('totalesOnline') || '{}')
+        const totalOnlineGuardado = totalesOnline[turnoSeleccionado.value] || 0
+        // Total de apuestas offline
+        const totalOffline = calcularTotalLocal()
+
+        let total = 0
+        if (isOnline.value) {
+            // Mientras se sincroniza, muestra la suma de ambos
+            total = totalGlobal.value + totalOffline
+        } else {
+            // Si está offline, muestra el total guardado online + offline
+            total = totalOnlineGuardado + totalOffline
         }
         return `$${total.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`
     })
@@ -51,10 +61,15 @@ import { setHorario } from '../scripts/añadir.js'
 
         const q = query(apuestasRef, where('horario', '==', turnoSeleccionado.value))
         unsubscribe = onSnapshot(q, (snapshot) => {
-            totalGlobal.value = snapshot.docs.reduce((sum, doc) => {
+            const total = snapshot.docs.reduce((sum, doc) => {
                 const data = doc.data()
                 return sum + (typeof data.totalGlobal === 'number' ? data.totalGlobal : 0)
             }, 0)
+            totalGlobal.value = total
+            // Guarda el total online por horario en localStorage
+            const totalesOnline = JSON.parse(localStorage.getItem('totalesOnline') || '{}')
+            totalesOnline[turnoSeleccionado.value] = total
+            localStorage.setItem('totalesOnline', JSON.stringify(totalesOnline))
         }, (error) => {
             console.error("Error en listener de Firebase:", error)
         })
@@ -65,6 +80,9 @@ import { setHorario } from '../scripts/añadir.js'
         setHorario(nuevoHorario)
         if (isOnline.value) {
             escucharCambios()
+        } else {
+            // Forzar recalculo del total local al cambiar de horario offline
+            totalGlobal.value = 0
         }
     })
 
@@ -84,7 +102,10 @@ import { setHorario } from '../scripts/añadir.js'
         }
         window.addEventListener('online', updateOnlineStatus)
         window.addEventListener('offline', updateOnlineStatus)
-
+        window.addEventListener('apuestas-sincronizadas', () => {
+            // Forzar recalculo del total offline
+            totalGlobal.value = 0; // Esto fuerza el computed a recalcular
+        });
      // Carga estado de desplegado
         const savedDesplegado1 = localStorage.getItem('desplegado1')
         if (savedDesplegado1 !== null) {
@@ -100,6 +121,9 @@ import { setHorario } from '../scripts/añadir.js'
         if (unsubscribe) unsubscribe()
         window.removeEventListener('online', updateOnlineStatus)
         window.removeEventListener('offline', updateOnlineStatus)
+        window.removeEventListener('apuestas-sincronizadas', () => {
+            totalGlobal.value = 0;
+        });
     })
 
     return {

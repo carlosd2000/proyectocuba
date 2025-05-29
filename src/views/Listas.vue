@@ -9,11 +9,11 @@ const fechaSeleccionada = ref(new Date())
 </script>
 
 <template>
-  <div class="m-0 p-0 h-100">
+  <div class="layout m-0 p-0">
     <header>
       <Header />
     </header>
-    <div class="header-main">
+    <div class="header-main m-0 p-0">
       <div>
         <Calendario @cambiar-fecha="fechaSeleccionada = $event" />
       </div>
@@ -21,7 +21,7 @@ const fechaSeleccionada = ref(new Date())
         <Results/>
       </div>
     </div>
-    <div class="footer-main">
+    <div class="footer-main m-0 p-0">
       <Pestañas :fecha="fechaSeleccionada" />
     </div>
   </div>
@@ -35,9 +35,13 @@ header{
   height: 7%;
   width: 100%;
 }
+.layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Toma el 100% de la altura de la ventana */
+    overflow: hidden;
+}
 .header-main {
-  padding: 0px;
-  margin: 0px;
   width: 100%;
   height: 20%;
   min-height: 140px;
@@ -46,10 +50,8 @@ header{
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0px;
-  margin: 0px;
   width: 100%;
-  height: 73%;
-  max-height:70%;
+  flex-grow: 1; /* Aquí ocurre la magia: ocupa el espacio restante */
+  overflow-y: auto;
 }
 </style>
