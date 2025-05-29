@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Swal from 'sweetalert2'
-import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/CRUDlistas.js'
+import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from './crudListas.js'
 import { sincronizarPendientes } from '../scripts/añadir.js'
 
 export default function useLista(fechaRef, router, route) {
