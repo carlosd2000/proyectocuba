@@ -5,6 +5,7 @@ import { filasFijas, filasExtra, calcularTotales } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
+import { expandirApuestasIncrementativas } from './operaciones.js'
 
 
 async function ejemploUso() {
