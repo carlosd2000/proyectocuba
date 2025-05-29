@@ -1,31 +1,38 @@
-import { collection, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore'
+import { collection, onSnapshot, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { ref } from 'vue'
+import { obtenerBancoPadre } from './FunctionBancoPadre.js'
 
 // Estado reactivo para apuestas
 export const apuestas = ref([])
 
 // Obtener apuestas en tiempo real
-export const obtenerApuestas = () => {
-  const unsubscribe = onSnapshot(
-    collection(db, 'apuestas'), 
-    (querySnapshot) => {
-      apuestas.value = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        candadoAbierto: doc.data().candadoAbierto ?? false,
-      }))
-      .sort((a, b) => {
-        const fechaA = a.creadoEn?.toDate?.()?.getTime() || 0
-        const fechaB = b.creadoEn?.toDate?.()?.getTime() || 0
-        return fechaB - fechaA
-      })
-    },
-    (error) => {
-      console.error('Error en la suscripción a apuestas:', error)
-    }
-  )
-  return unsubscribe
+export const obtenerApuestas = async () => {
+  try {
+    const bancoId = await obtenerBancoPadre();
+    const unsubscribe = onSnapshot(
+      collection(db, `bancos/${bancoId}/apuestas`), 
+      (querySnapshot) => {
+        apuestas.value = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          candadoAbierto: doc.data().candadoAbierto ?? false,
+        }))
+        .sort((a, b) => {
+          const fechaA = a.creadoEn?.toDate?.()?.getTime() || 0
+          const fechaB = b.creadoEn?.toDate?.()?.getTime() || 0
+          return fechaB - fechaA
+        })
+      },
+      (error) => {
+        console.error('Error en la suscripción a apuestas:', error)
+      }
+    )
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error obteniendo banco padre:', error);
+    return () => {}; // Retorna función vacía si hay error
+  }
 }
 
 // Función para manejar el almacenamiento local de forma segura
