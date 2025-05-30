@@ -122,15 +122,24 @@ export async function guardarDatos() {
       }
     }
 
-    // 1. Calcular totales
-    const { col3, col4, col5 } = calcularTotales(filasFijas, filasExtra);
-    const totalGlobal = col3 + col4 + col5;
-
-    // 2. Verificar círculo solo
-    const circuloSolo = filasFijas.value[2]?.circuloSolo;
-    const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
 
     const filasIncrementadas = expandirApuestasIncrementativas(filasFijas.value);
+
+    // Calcular el total sumando los valores de los círculos de cada apuesta expandida
+    let totalGlobal = 0;
+    for (const fila of filasIncrementadas) {
+      if (fila.circulo1) totalGlobal += Number(fila.circulo1);
+      if (fila.circulo2) totalGlobal += Number(fila.circulo2);
+    }
+    // Si tienes filasExtra, súmalas también:
+    for (const fila of filasExtra.value) {
+      if (fila.circulo1) totalGlobal += Number(fila.circulo1);
+      if (fila.circulo2) totalGlobal += Number(fila.circulo2);
+    }
+    // Si hay circuloSolo válido, súmalo:
+    const circuloSolo = filasFijas.value[2]?.circuloSolo;
+    const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
+    if (circuloSoloValido) totalGlobal += Number(circuloSolo);
 
     // 3. Procesar filas
     const datosAGuardar = [
