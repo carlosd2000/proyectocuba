@@ -42,9 +42,6 @@ const handleInput = (value, type) => {
 // Agrega una variable reactiva para el banco padre
 const bancoPadreId = ref(null)
 
-// Agrega una variable reactiva para el banco padre
-const bancoPadreId = ref(null)
-
 // Modifica cargarDatos para usar la subcolección
 const cargarDatos = async () => {
     try {
