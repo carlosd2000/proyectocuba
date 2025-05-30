@@ -31,19 +31,19 @@ const fechaSeleccionada = ref(new Date())
 </template>
 
 <style scoped>
-header{
-  height: 7%;
-  width: 100%;
-}
 .layout {
     display: flex;
     flex-direction: column;
     height: 100vh; /* Toma el 100% de la altura de la ventana */
     overflow: hidden;
 }
+header{
+  height: 7%;
+  width: 100%;
+}
 .header-main {
   width: 100%;
-  height: 20%;
+
   min-height: 140px;
 }
 .footer-main {

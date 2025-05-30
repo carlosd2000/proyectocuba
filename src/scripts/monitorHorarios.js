@@ -123,7 +123,7 @@ async function cerrarCandadosHorario(horario) {
     
     console.log(`[CANDADOS] Procesando horario: ${horarioCapitalizado}`);
     
-    const horarioRef = doc(db, 'hora', horario);
+    const horarioRef = doc(db, `bancos/${bancoId}/hora`, horario);
     const horarioSnap = await getDoc(horarioRef);
     
     if (!horarioSnap.exists()) {
@@ -200,9 +200,11 @@ async function verificarYCerrarHorarios() {
     const horaActual = obtenerHoraCuba();
     console.log(`[CANDADOS] Verificando horarios - Hora actual: ${horaActual.toLocaleTimeString()}`);
 
+    const bancoId = await obtenerBancoPadre();
+    
     for (const horario of HORARIOS) {
       try {
-        const horarioRef = doc(db, 'hora', horario);
+        const horarioRef = doc(db, `bancos/${bancoId}/hora`, horario);
         const horarioSnap = await getDoc(horarioRef);
         
         if (!horarioSnap.exists()) {

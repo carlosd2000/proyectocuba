@@ -56,7 +56,8 @@ export const eliminarApuesta = async (id, esPendiente = false) => {
 
     // Para apuestas normales (Firebase)
     if (navigator.onLine) {
-      await deleteDoc(doc(db, 'apuestas', id));
+      const bancoId = await obtenerBancoPadre();
+      await deleteDoc(doc(db, `bancos/${bancoId}/apuestas`, id));
       return { success: true };
     } else {
       // Guardar para sincronización posterior

@@ -6,6 +6,7 @@ import { db } from '../firebase/config.js';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc para leer datos
 
 import mostrarhora from '../components/mostrarhora.vue';
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
 
 const turno = ref('Dia');
 const horas = ref('');
@@ -38,32 +39,41 @@ const handleInput = (value, type) => {
   else if (type === 'segundo') segundos.value = numericValue;
 };
 
+// Agrega una variable reactiva para el banco padre
+const bancoPadreId = ref(null)
+
 // FUNCIÓN PARA CARGAR LOS DATOS DE FIRESTORE
 const cargarDatos = async () => {
     try {
-        const docRef = doc(db, 'hora', turno.value.toLowerCase());
-        const docSnap = await getDoc(docRef);
+        if (!bancoPadreId.value) {
+            bancoPadreId.value = await obtenerBancoPadre()
+        }
+        if (!bancoPadreId.value) return
+
+        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno.value.toLowerCase())
+        const docSnap = await getDoc(docRef)
         
         if (docSnap.exists()) {
-            const data = docSnap.data();
-            // Convertimos los números a strings para mostrarlos en los placeholders
-            dbHoras.value = data.hh !== undefined ? data.hh.toString() : '';
-            dbMinutos.value = data.mm !== undefined ? data.mm.toString() : '';
-            dbSegundos.value = data.ss !== undefined ? data.ss.toString() : '';
+            const data = docSnap.data()
+            dbHoras.value = data.hh !== undefined ? data.hh.toString() : ''
+            dbMinutos.value = data.mm !== undefined ? data.mm.toString() : ''
+            dbSegundos.value = data.ss !== undefined ? data.ss.toString() : ''
         } else {
-            // Si no existe el documento, limpiamos los placeholders
-            dbHoras.value = '';
-            dbMinutos.value = '';
-            dbSegundos.value = '';
+            dbHoras.value = ''
+            dbMinutos.value = ''
+            dbSegundos.value = ''
         }
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+        console.error('Error al cargar datos:', error)
     }
 };
 
 // Cargar datos cuando cambie el turno
-onMounted(cargarDatos); // Cargar al inicio
-watch(turno, cargarDatos); // Cargar cuando cambie el turno
+onMounted(async () => {
+    bancoPadreId.value = await obtenerBancoPadre()
+    await cargarDatos()
+})
+watch(turno, cargarDatos)
 
 // FUNCIÓN PARA MOSTRAR EL TOAST
 const lanzarToast = () => {
@@ -77,52 +87,43 @@ const lanzarToast = () => {
 
 const guardarHora = async () => {
     try {
-        // Validaciones básicas
         if (!horas.value || !minutos.value || !segundos.value) {
-            mostrarToastComplete.value = true;
-            lanzarToast();
-            return;
+            mostrarToastComplete.value = true
+            lanzarToast()
+            return
         }
-        
-        // Validar que sean números válidos (incluyendo '00')
         if (isNaN(horas.value) || isNaN(minutos.value) || isNaN(segundos.value)) {
-            mostrarToastError.value = true;
-            lanzarToast();
-            return;
+            mostrarToastError.value = true
+            lanzarToast()
+            return
         }
+        if (!bancoPadreId.value) {
+            bancoPadreId.value = await obtenerBancoPadre()
+        }
+        if (!bancoPadreId.value) return
 
-        // Crear el objeto con los datos
         const horaData = {
-            hh: horas.value.padStart(2, '0'), // Asegura 2 dígitos
+            hh: horas.value.padStart(2, '0'),
             mm: minutos.value.padStart(2, '0'),
             ss: segundos.value.padStart(2, '0'),
             timestamp: new Date().toISOString()
-        };
+        }
 
-        // Referencia al documento según el turno seleccionado
-        const docRef = doc(db, 'hora', turno.value.toLowerCase()); // Convierte a minúsculas para coincidir con los nombres de documento
-        
-        // Guardar o sobrescribir los datos en Firestore
-        await setDoc(docRef, horaData, { merge: false }); // merge: false para sobrescribir completamente
+        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno.value.toLowerCase())
+        await setDoc(docRef, horaData, { merge: false })
 
-        console.log('Hora guardada correctamente para el turno:', turno.value);
-        mostrarToastSave.value = true;
-        lanzarToast();
-        
-        // Actualizar placeholders
-        dbHoras.value = horaData.hh;
-        dbMinutos.value = horaData.mm;
-        dbSegundos.value = horaData.ss;
-
-        // Limpiar los campos
-        horas.value = '';
-        minutos.value = '';
-        segundos.value = '';
-        
+        mostrarToastSave.value = true
+        lanzarToast()
+        dbHoras.value = horaData.hh
+        dbMinutos.value = horaData.mm
+        dbSegundos.value = horaData.ss
+        horas.value = ''
+        minutos.value = ''
+        segundos.value = ''
     } catch (error) {
-        console.error('Error al guardar la hora:', error);
-        mostrarToastError.value = true;
-        lanzarToast();
+        console.error('Error al guardar la hora:', error)
+        mostrarToastError.value = true
+        lanzarToast()
     }
 };
 </script>

@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { db } from '../firebase/config'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { useAuthStore } from '@/stores/authStore'
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
 
 export function useHeader() {
     const route = useRoute()
@@ -15,6 +16,7 @@ export function useHeader() {
     const horaActual = ref('--:--:--')
     const horasTurno = ref({})
     const horariosCerrados = ref(new Set()) // Nuevo: Track de horarios ya cerrados
+    const bancoPadreId = ref(null)
 
     const back = computed(() => route.path.startsWith('/listeros'))
     const bell = computed(() => route.path.startsWith('/listeros'))
@@ -120,9 +122,15 @@ export function useHeader() {
         }
     }
 
-    const suscribirHorasTurnos = () => {
+    // Cambia la suscripción para usar la subcolección
+    const suscribirHorasTurnos = async () => {
+        if (!bancoPadreId.value) {
+            bancoPadreId.value = await obtenerBancoPadre()
+        }
+        if (!bancoPadreId.value) return
+
         for (const turno of turnos) {
-            const docRef = doc(db, 'hora', turno)
+            const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno)
             onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data()
@@ -131,7 +139,6 @@ export function useHeader() {
                         mm: parseInt(data.mm) || 0,
                         ss: parseInt(data.ss) || 0
                     }
-                    // Resetear el track de horarios cerrados cuando cambia la configuración
                     horariosCerrados.value.delete(turno)
                 }
             })
@@ -151,7 +158,6 @@ export function useHeader() {
         cargarDesdeCache()
         const ahora = getFechaHoraCuba()
         calcularTiempoRestante(ahora)
-        suscribirHorasTurnos()
         limpiarHorariosCerrados()
 
         const intervalo = setInterval(() => {
@@ -159,7 +165,11 @@ export function useHeader() {
             calcularTiempoRestante(getFechaHoraCuba())
         }, 1000)
 
+        // Registrar limpieza primero
         onUnmounted(() => clearInterval(intervalo))
+
+        // Luego ejecutar async sin await
+        suscribirHorasTurnos().catch(console.error)
     })
 
     return {
