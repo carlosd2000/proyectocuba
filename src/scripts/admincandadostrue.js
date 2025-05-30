@@ -15,13 +15,13 @@ const db = getFirestore(app);
 
 const desbloquearApuestas = async () => {
   try {
-    const apuestasRef = collection(db, "bancos/vj2Ady2beCMwsbZJe9h4EiXXJBg2/apuestas");
+    const apuestasRef = collection(db, "bancos/n3Ds1BZPmMMR1dyMAyGLNdjiAUG3/apuestas");
     const snapshot = await getDocs(apuestasRef);
     const batch = writeBatch(db);
     let contador = 0;
 
     snapshot.forEach((d) => {
-      const docRef = doc(db, "bancos/vj2Ady2beCMwsbZJe9h4EiXXJBg2/apuestas", d.id);
+      const docRef = doc(db, "bancos/n3Ds1BZPmMMR1dyMAyGLNdjiAUG3/apuestas", d.id);
       batch.set(docRef, { candadoAbierto: true }, { merge: true }); // usar set con merge
       contador++;
     });

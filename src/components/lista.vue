@@ -39,7 +39,9 @@ const {
   <div class="m-0 p-0">
     <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
       <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
+      
     </div>
+    
     <div v-for="persona in apuestasCombinadas" 
          :key="persona.id" 
          class="col-12 m-0 mb-2 p-0 pt-2 pb-2 persona" 
@@ -47,7 +49,7 @@ const {
          style="cursor: pointer;"
          :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
          
-      <header class="col-12 row m-0 px-1 py-2">
+      <header class="col-12 row m-0 px-1 py-3">
         <div class="col-10 -flex justify-content-start align-items-center">
           <p class="name">{{ persona.nombre }}</p>
         </div>
@@ -117,7 +119,7 @@ const {
         <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
           <div class="mx-2 d-flex justify-content-center align-items-center">
             <p class="hora-text">{{ mostrarHora(persona) }}</p>
-            <i :class="obtenerIconoEstado(persona)"></i>
+            <i class="icon-estado" :class="obtenerIconoEstado(persona)"></i>
             <span v-if="!isOnline && persona.estado !== 'Pendiente'" class="ms-1 badge bg-warning text-dark">Offline</span>
           </div>
         </div>
@@ -165,6 +167,9 @@ p.name{
 i.bi{
   font-size: 1.3rem;
 }
+i.icon-estado {
+  font-size: 1.0rem;
+}
 .offline-banner{
   font-size: 0.8rem;
 }
@@ -196,7 +201,7 @@ i.bi{
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 }
 .hora-text {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 }
 
 .custom-modal-backdrop {
