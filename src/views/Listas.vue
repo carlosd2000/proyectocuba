@@ -13,37 +13,41 @@ const fechaSeleccionada = ref(new Date())
     <header>
       <Header />
     </header>
-    <div class="header-main m-0 p-0">
-      <div>
-        <Calendario @cambiar-fecha="fechaSeleccionada = $event" />
+    <main class="main-content m-0 p-0">
+      <div class="header-main m-0 p-0">
+        <div>
+          <Calendario @cambiar-fecha="fechaSeleccionada = $event" />
+        </div>
+        <div>
+          <Results/>
+        </div>
       </div>
-      <div>
-        <Results/>
+      <div class="footer-main m-0 p-0">
+        <Pestañas :fecha="fechaSeleccionada" />
       </div>
-    </div>
-    <div class="footer-main m-0 p-0">
-      <Pestañas :fecha="fechaSeleccionada" />
-    </div>
+    </main>
   </div>
-
-
-
 </template>
 
 <style scoped>
 .layout {
-    display: flex;
-    flex-direction: column;
-    height: 100vh; /* Toma el 100% de la altura de la ventana */
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
-header{
+header {
   height: 7%;
   width: 100%;
 }
+.main-content {
+  height: 93%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
 .header-main {
   width: 100%;
-
   min-height: 140px;
 }
 .footer-main {
@@ -51,7 +55,7 @@ header{
   justify-content: center;
   align-items: center;
   width: 100%;
-  flex-grow: 1; /* Aquí ocurre la magia: ocupa el espacio restante */
+  flex-grow: 1; /* Ocupa el espacio restante dentro de main-content */
   overflow-y: auto;
 }
 </style>
