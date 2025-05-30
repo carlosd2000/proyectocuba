@@ -67,6 +67,12 @@ export function validarFilas(fijas, extras) {
     return tieneCirculosNormales && sinCuadrado;
   });
 
+  const cuadradosInvalidos = !tieneCirculoSolo && todasFilas.some(fila => {
+    const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
+    const sinCirculos = !(fila.circulo1 !== '' || fila.circulo2 !== '');
+    return tieneCuadrado && sinCirculos;
+  });
+
   // 2. Validar que circuloSolo tenga al menos 1 cuadrado
   const circuloSoloInvalido = tieneCirculoSolo && 
     !todasFilas.some(fila => fila.cuadrado !== '' && fila.cuadrado !== null);
@@ -80,8 +86,42 @@ export function validarFilas(fijas, extras) {
   }) || (tieneCirculoSolo && !circuloSoloInvalido);
 
   return {
-    esValido: hayDatosValidos && !circulosInvalidos && !circuloSoloInvalido,
+    esValido: hayDatosValidos && !circulosInvalidos && !cuadradosInvalidos && !circuloSoloInvalido,
     circulosInvalidos,
+    cuadradosInvalidos,
     circuloSoloInvalido
   };
+}
+
+/**
+ * Detecta si hay una apuesta incrementativa y la expande.
+ * @param {Array} filas Array de filas (fijas o extra)
+ * @returns {Array} Array de filas procesadas (expandidas si aplica)
+ */
+export function expandirApuestasIncrementativas(filas) {
+  // Busca los índices y valores de los cuadrados no vacíos
+  const indices = filas
+    .map((fila, idx) => ({ idx, val: fila.cuadrado }))
+    .filter(f => f.val !== '' && f.val !== null && !isNaN(f.val));
+
+  // Solo aplica si hay al menos dos cuadrados llenos y hay vacíos entre ellos
+  if (indices.length >= 2) {
+    for (let i = 0; i < indices.length - 1; i++) {
+      const actual = parseInt(indices[i].val, 10);
+      const siguiente = parseInt(indices[i + 1].val, 10);
+      // Solo si la diferencia es múltiplo de 10 y hay vacíos entre ellos
+      if (siguiente > actual && (siguiente - actual) % 10 === 0 && indices[i + 1].idx - indices[i].idx > 1) {
+        // Generar todos los números intermedios
+        const apuestas = [];
+        for (let n = actual; n <= siguiente; n += 10) {
+          // Copia la fila base (puedes ajustar qué campos copiar)
+          const base = { ...filas[indices[i].idx], cuadrado: n.toString().padStart(2, '0') };
+          apuestas.push(base);
+        }
+        return apuestas;
+      }
+    }
+  }
+  // Si no hay incrementativa, retorna las filas originales no vacías
+  return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
 }

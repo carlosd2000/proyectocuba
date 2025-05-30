@@ -1,184 +1,62 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue'
-import Swal from 'sweetalert2'
-import { apuestas, obtenerApuestas, eliminarApuesta } from '../scripts/CRUDlistas.js'
-import { useRouter, useRoute} from 'vue-router' 
-import { sincronizarPendientes } from '../scripts/añadir.js'
-import { formatearHoraCuba, parsearFechaFirebase } from '../scripts/horacuba.js' 
+import { toRef } from 'vue'
+import useLista from '../scripts/Lista.js' // ajusta la ruta si es diferente
+import { useRouter, useRoute } from 'vue-router'
+
+  const props = defineProps({
+    fecha: {
+      type: Date,
+      required: true
+    }
+  })
+
 const router = useRouter()
 const route = useRoute()
 
-// Variables reactivas
-const mostrarModal = ref(false)
-const mostrarConfirmacionEliminar = ref(false)
-const personaSeleccionada = ref(null)
-const isOnline = ref(navigator.onLine)
-const isSyncing = ref(false)
+const fechaRef = toRef(props, 'fecha')
 
-// Apuestas locales (offline)
-const apuestasLocales = ref([])
-
-// Función para obtener icono de estado
-const obtenerIconoEstado = (persona) => {
-  if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
-  
-  switch(persona.estado) {
-    default: case 'Cargado': return 'bi bi-cloud-check text-success'
-    case 'Pendiente': return 'bi bi-cloud-slash text-danger'
-    case 'EnTiempo': return 'bi bi-stopwatch text-success'
-    case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
-  
-  }
-}
-
-// Cargar apuestas locales desde localStorage
-function cargarApuestasLocales() {
-  const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
-  apuestasLocales.value = pendientes.map(a => ({
-    ...a,
-    estado: 'Pendiente',
-    id: a.uuid
-  }))
-}
-// Función para mostrar la hora (CORREGIDA)
-const mostrarHora = (persona) => {
-  if (!persona) return "--:-- --";
-  
-  // Prioridad 1: Hora preformateada (12h)
-  if (persona.horaCuba12) return persona.horaCuba12;
-  
-  // Prioridad 2: Hora en 24h (convertir a 12h)
-  if (persona.horaCuba24) return formatearHoraCuba(persona.horaCuba24);
-  
-  // Prioridad 3: Timestamp (Firebase o string)
-  if (persona.creadoEn) {
-    const fecha = parsearFechaFirebase(persona.creadoEn);
-    return fecha.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: true 
-    });
-  }
-  
-  return "--:-- --";
-};
-
-// Combina y ordena apuestas
-const apuestasCombinadas = computed(() => {
-  const firebaseUuids = new Set(apuestas.value.map(a => a.uuid))
-  const localesFiltradas = apuestasLocales.value.filter(local => 
-    !firebaseUuids.has(local.uuid)
-  )
-  
-  return [...apuestas.value, ...localesFiltradas].sort((a, b) => {
-    if (a.estado === 'Pendiente') return -1
-    if (b.estado === 'Pendiente') return 1
-    return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) - 
-           (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
-  })
-})
-
-// Actualizar estado de conexión
-const updateOnlineStatus = () => {
-  isOnline.value = navigator.onLine
-  if (isOnline.value && !isSyncing.value) {
-    isSyncing.value = true
-    sincronizarPendientes().finally(() => {
-      isSyncing.value = false
-      cargarApuestasLocales()
-    })
-  }
-}
-// Resto de funciones del componente
-const cuadroClick = (persona) => {
-  if (!persona.candadoAbierto) return
-  personaSeleccionada.value = persona
-  mostrarModal.value = true
-}
-
-const cerrarModal = () => {
-  mostrarModal.value = false
-}
-
-const editarPersona = async () => {
-  const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal';
-  router.push({
-    path: `/anadirjugada/${route.params.id}`,
-    query: {
-      tipo: tipoJugada,
-      editar: personaSeleccionada.value.id
-    }
-  });
-  cerrarModal();
-};
-
-const eliminarPersona = async () => {
-  await eliminarApuesta(personaSeleccionada.value.id)
-  mostrarConfirmacionEliminar.value = false
-  mostrarModal.value = false
-}
-
-const confirmarEliminar = () => {
-  mostrarConfirmacionEliminar.value = true
-}
-
-const toggleCandado = async (persona) => {
-  if (persona.candadoAbierto) {
-    const result = await Swal.fire({
-      title: '¿Deseas cerrar la apuesta?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí',
-      cancelButtonText: 'Cancelar'
-    })
-    if (!result.isConfirmed) return
-  }
-  persona.candadoAbierto = !persona.candadoAbierto
-}
-
-// Suscripción a datos
-let unsubscribe = null
-onMounted(() => {
-  unsubscribe = obtenerApuestas()
-  cargarApuestasLocales()
-  window.addEventListener('online', updateOnlineStatus)
-  window.addEventListener('offline', updateOnlineStatus)
-  window.addEventListener('storage', cargarApuestasLocales)
-  
-  if (navigator.onLine) {
-    isSyncing.value = true
-    sincronizarPendientes().finally(() => {
-      isSyncing.value = false
-    })
-  }
-})
-
-onUnmounted(() => {
-  if (unsubscribe) unsubscribe()
-  window.removeEventListener('online', updateOnlineStatus)
-  window.removeEventListener('offline', updateOnlineStatus)
-  window.removeEventListener('storage', cargarApuestasLocales)
-})
+const {
+  mostrarModal,
+  mostrarConfirmacionEliminar,
+  personaSeleccionada,
+  isOnline,
+  isSyncing,
+  apuestasLocales,
+  apuestasCombinadas,
+  apuestasFiltradas,
+  cuadroClick,
+  cerrarModal,
+  editarPersona,
+  eliminarPersona,
+  confirmarEliminar,
+  mostrarHora,
+  obtenerIconoEstado
+} = useLista(fechaRef, router, route)
 </script>
+
 
 <template>
   <div class="m-0 p-0">
+    <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
+      <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
+      
+    </div>
+    
     <div v-for="persona in apuestasCombinadas" 
          :key="persona.id" 
-         class="col-12 m-0 mb-2 p-0 pt-3 pb-2 persona" 
+         class="col-12 m-0 mb-2 p-0 pt-2 pb-2 persona" 
          @click="cuadroClick(persona)" 
          style="cursor: pointer;"
          :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
          
-      <header class="col-12 row m-0 p-0">
+      <header class="col-12 row m-0 px-1 py-3">
         <div class="col-10 -flex justify-content-start align-items-center">
-          <p>{{ persona.nombre }}</p>
+          <p class="name">{{ persona.nombre }}</p>
         </div>
-        <div class="col-2 d-flex justify-content-end align-items-center" @click.stop>
+        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center" @click.stop>
           <i :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
              class="fs-4"
-             style="cursor: pointer;"
-             @click="toggleCandado(persona)"></i>
+             style="cursor: pointer;"></i>
         </div>
       </header>
       
@@ -220,7 +98,7 @@ onUnmounted(() => {
                 <i class="bi bi-coin m-1"></i>
               </div>
               <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                <p class="m-1">{{ persona.totalGlobal }}</p>
+                <p class="m-1">{{ Number(persona.totalGlobal) || 0 }}</p>
               </div>
             </div>
             <div class="col-12 m-0 p-0 flex d-flex flex-column justify-content-center align-items-center">
@@ -241,7 +119,7 @@ onUnmounted(() => {
         <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
           <div class="mx-2 d-flex justify-content-center align-items-center">
             <p class="hora-text">{{ mostrarHora(persona) }}</p>
-            <i :class="obtenerIconoEstado(persona)"></i>
+            <i class="icon-estado" :class="obtenerIconoEstado(persona)"></i>
             <span v-if="!isOnline && persona.estado !== 'Pendiente'" class="ms-1 badge bg-warning text-dark">Offline</span>
           </div>
         </div>
@@ -283,15 +161,27 @@ p {
   padding: 0px;
   font-size: 0.9rem;
 }
+p.name{
+  font-size: 1.1rem;
+}
+i.bi{
+  font-size: 1.3rem;
+}
+i.icon-estado {
+  font-size: 1.0rem;
+}
+.offline-banner{
+  font-size: 0.8rem;
+}
 .container-number-cuadrado {
-  width: 42px;
-  height: 30px;
+  width: 37px;
+  height: 25px;
   font-size: 1.1rem;
   background-color: #f1f1f1;
 }
 .container-number {
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
   background-color: #f1f1f1;
 }
 .persona {
@@ -304,13 +194,14 @@ p {
 .apuesta-pendiente {
   background-color: #fff8e1;
   border: 2px dashed #ffc107;
+  transition: all 0.3s ease;
 }
 .apuestas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 }
 .hora-text {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 }
 
 .custom-modal-backdrop {
@@ -378,5 +269,24 @@ p {
 .btn:hover {
   opacity: 0.8;
   font-weight: bold;
+}
+
+.persona {
+  transition: all 0.3s ease;
+}
+.persona.eliminando {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+.eliminando {
+  transform: scale(0.8);
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 </style>

@@ -1,13 +1,13 @@
 <template>
   <div class="container vh-100 d-flex justify-content-center align-items-center container-register">
     <div class="container col-12 col-sm-8 py-3 my-3 box-shadow">
-      <header class="col-12 m-1 p-1 d-flex justify-content-center align-items-center">
+      <header class="col-12 m-0 p-0 d-flex justify-content-center align-items-center">
         <h2 class="text-center m-0 p-0">Crear Cuenta</h2>
       </header>
       <main class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
-        <div class="col-12 m-3 d-flex justify-content-center">
+        <div class="col-12 m-2 d-flex justify-content-center">
           <form @submit.prevent="registrarUsuario" class="col-12 col-md-10">
-            <div class="mb-3">
+            <div class="mb-1">
               <label for="nombre" class="form-label">Nombre completo</label>
               <input
                 v-model="nombre"
@@ -21,12 +21,12 @@
               <p class="text-success mt-1" v-if="isValidNombre">{{ mensajeNombre }}</p>
             </div>
 
-            <div class="mb-3">
+            <div class="mb-1">
               <label for="email" class="form-label">Correo electrónico</label>
               <input v-model="email" type="email" class="form-control" id="email" placeholder="correo@ejemplo.com" />
             </div>
 
-            <div class="mb-3">
+            <div class="mb-1">
               <label for="password" class="form-label">Contraseña</label>
               <input
                 v-model="password"
@@ -40,20 +40,41 @@
               <p class="text-success mt-1" v-if="isValidPassword">{{ mensajePassword }}</p>
             </div>
 
-            <div class="mb-3" v-if="showSelect">
-              <label for="opciones" class="form-label">Tipo de cuenta</label>
-                <select v-model="tipoCuenta" class="form-select" id="opciones">
-                  <option disabled value="">Seleccionar</option>
-                  <option v-if="authStore.profile?.tipo === 'admin'" value="bancos">Banco</option>
-                  <option v-if="authStore.profile?.tipo === 'bancos'" value="colectores">Colector</option>
-                  <option v-if="['bancos', 'colectores'].includes(authStore.profile?.tipo)" value="listeros">Listero</option>
-                </select>
+            <div class="my-1 col-12 p-0" v-if="showSelect">
+              <label for="opciones" class="col-12 m-0 p-1 form-label">Tipo de cuenta</label>
+              <select v-model="tipoCuenta" class="col-12 m-0 p-1 form-select" id="opciones">
+                <option disabled value="">Seleccionar</option>
+                <option v-if="authStore.profile?.tipo === 'admin'" value="bancos">Banco</option>
+                <option v-if="authStore.profile?.tipo === 'bancos'" value="colectores">Colector</option>
+                <option v-if="['bancos', 'colectores'].includes(authStore.profile?.tipo)" value="listeros">Listero</option>
+              </select>
             </div>
 
+            <div class="my-1 col-12 p-0" v-if="authStore.profile?.tipo === 'bancos' && tipoCuenta === 'listeros'">
+              <label for="padre" class="col-12 m-0 p-1 form-label">Padre al que pertenece</label>
+              <div class="col-12 m-0 p-0 custom-select-wrapper">
+                <select 
+                  v-model="padreSeleccionado" 
+                  class="form-select custom-select" 
+                  id="padre"
+                  size="1"
+                  @focus="expandSelect"
+                  @change="shrinkSelect"
+                >
+                  <option disabled value="">Seleccionar</option>
+                  <option :value="`banco_${authStore.user?.uid}`">
+                    Banco ({{ authStore.profile?.nombre }})
+                  </option>
+                  <option v-for="colector in colectores" :key="colector.id" :value="`colector_${colector.id}`">
+                    Colector: {{ colector.nombre }}
+                  </option>
+                </select>
+              </div>
+            </div>
 
             <button
               type="submit"
-              class="col-12 btn btn-page"
+              class="col-12 my-1 btn btn-page"
               :disabled="!showSelect || isLoading"
             >
               <span v-if="isLoading">
@@ -73,144 +94,36 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { AuthService } from '@/firebase/auth'
-import { useAuthStore } from '@/stores/authStore'
-import Swal from 'sweetalert2'
+import { useRegistro } from '../scripts/Registro.js'
 
-const nombre = ref('')
-const email = ref('')
-const password = ref('')
-const tipoCuenta = ref('')
-const mensajeNombre = ref('')
-const isValidNombre = ref(false)
-const mensajePassword = ref('')
-const isValidPassword = ref(false)
-const isLoading = ref(false)
-const creadorId = ref('')
-const tipoCreador = ref('')
-
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
-
-// Usamos directamente authStore.profile en lugar de userProfile
-const showSelect = computed(() => {
-  const tipo = authStore.profile?.tipo
-  return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectores'
-})
-
-onMounted(() => {
-  // Detectar creadorId y tipoCreador desde la URL
-  creadorId.value = route.params.id || ''
-
-  if (route.path.includes('/bancos')) {
-    tipoCreador.value = 'banco'
-  } else if (route.path.includes('/colectores')) {
-    tipoCreador.value = 'colector'
-  }
-})
-
-const validateNombre = () => {
-  const regex = /^[a-zA-Z0-9]{3,15}$/
-  if (!nombre.value) {
-    mensajeNombre.value = ''
-    isValidNombre.value = false
-    return
-  }
-
-  if (!regex.test(nombre.value)) {
-    mensajeNombre.value = 'El nombre debe tener entre 3 y 15 caracteres, solo letras y números'
-    isValidNombre.value = false
-  } else {
-    mensajeNombre.value = 'Nombre válido'
-    isValidNombre.value = true
-  }
+const expandSelect = (e) => {
+  e.target.size = 5 // Muestra 5 opciones a la vez
 }
 
-const validatePassword = () => {
-  if (!password.value) {
-    mensajePassword.value = ''
-    isValidPassword.value = false
-    return
-  }
-
-  if (password.value.length < 6) {
-    mensajePassword.value = 'La contraseña debe tener al menos 6 caracteres'
-    isValidPassword.value = false
-  } else {
-    mensajePassword.value = 'Contraseña válida'
-    isValidPassword.value = true
-  }
+const shrinkSelect = (e) => {
+  e.target.size = 1
 }
 
-const registrarUsuario = async () => {
-  if (!showSelect.value) {
-    Swal.fire("Error", "No tienes permisos para crear cuentas", "error")
-    return
-  }
-
-  if (!nombre.value || !email.value || !password.value || !tipoCuenta.value) {
-    Swal.fire("Error", "Por favor llena todos los campos", "error")
-    return
-  }
-
-  if (!isValidNombre.value || !isValidPassword.value) {
-    Swal.fire("Error", "Por favor completa los campos correctamente", "error")
-    return
-  }
-
-  try {
-    isLoading.value = true
-
-    const userData = {
-      nombre: nombre.value,
-      tipo: tipoCuenta.value,
-      creadorId: creadorId.value,
-      tipoCreador: tipoCreador.value
-    }
-
-    const result = await AuthService.register({
-      email: email.value,
-      password: password.value,
-      userData
-    })
-
-    if (result.success) {
-      Swal.fire("Creación exitosa", "Usuario creado correctamente", "success")
-      limpiarCampos()
-    } else {
-      Swal.fire("Error", result.error, "error")
-    }
-  } catch (error) {
-    console.error("Error en registro:", error)
-    Swal.fire("Error", "No se pudo crear el usuario", "error")
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const limpiarCampos = () => {
-  nombre.value = ''
-  email.value = ''
-  password.value = ''
-  tipoCuenta.value = ''
-  mensajeNombre.value = ''
-  mensajePassword.value = ''
-  isValidNombre.value = false
-  isValidPassword.value = false
-}
-
-const cerrarSesion = async () => {
-  try {
-    await authStore.logout()
-    router.push('/')
-  } catch (error) {
-    console.error("Error al cerrar sesión", error)
-    Swal.fire("Error", "No se pudo cerrar sesión", "error")
-  }
-}
+const {
+  nombre,
+  email,
+  password,
+  tipoCuenta,
+  padreSeleccionado,
+  colectores,
+  mensajeNombre,
+  isValidNombre,
+  mensajePassword,
+  isValidPassword,
+  isLoading,
+  showSelect,
+  validateNombre,
+  validatePassword,
+  registrarUsuario,
+  limpiarCampos,
+  cerrarSesion,
+  authStore
+} = useRegistro()
 </script>
 
 <style scoped>
@@ -224,5 +137,33 @@ const cerrarSesion = async () => {
 .container-register {
   height: 100vh;
   width: 100%;
+}
+.form-select {
+  background-color: #f4f4f4;
+  border: 2px solid #000000;
+  border-radius: 6px;
+  max-height: 200px; /* Altura máxima antes de mostrar scroll */
+  overflow-y: auto; /* Habilitar scroll vertical */
+}
+
+.custom-select-wrapper {
+  position: relative;
+  min-height: 40px;
+}
+
+.custom-select {
+  height: auto;
+  min-height: 30px;
+  overflow-y: hidden;
+  transition: all 0.3s ease;
+}
+
+.custom-select:focus {
+  position: absolute;
+  z-index: 1000;
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  overflow-y: auto;
 }
 </style>
