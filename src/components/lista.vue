@@ -41,7 +41,11 @@ const {
       <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
       
     </div>
-    
+    <div v-if="!apuestasCombinadas" >
+      <h3>
+        No hay apuestas para el dia de hoy
+      </h3>
+    </div>
     <div v-for="persona in apuestasCombinadas" 
          :key="persona.id" 
          class="col-12 m-0 mb-2 p-0 pt-2 pb-2 persona" 
@@ -54,9 +58,8 @@ const {
           <p class="name">{{ persona.nombre }}</p>
         </div>
         <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center" @click.stop>
-          <i :class="['bi', persona.candadoAbierto ? 'bi-unlock text-success' : 'bi-lock text-danger']"
-             class="fs-4"
-             style="cursor: pointer;"></i>
+          <img v-if="persona.candadoAbierto" src="../assets/Lock open.svg" class="fs-4" alt="" style="cursor: pointer;">
+          <img v-else src="../assets/Lock.svg" class="fs-4" alt="" style="cursor: pointer;">
         </div>
       </header>
       

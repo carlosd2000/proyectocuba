@@ -7,7 +7,7 @@ import prueba from '../components/prueba.vue';
     <div class="col-12 m-0 p-0">
         <Valores/>
     </div>
-    <div>
+    <div class="col-10">
         <prueba/>
     </div>
     <div class="col-12 m-0 p-0 footer">
