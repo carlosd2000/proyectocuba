@@ -7,6 +7,8 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc pa
 
 import mostrarhora from '../components/mostrarhora.vue';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+import toggleon from '../assets/type=Toggle on.svg';
+import toggleoff from '../assets/type=Toggle off.svg';
 
 const turno = ref('Dia');
 const horas = ref('');
@@ -23,20 +25,44 @@ const mostrarToastSave = ref(false);
 const mostrarToastError = ref(false);
 const mostrarToastComplete = ref(false);
 
+const toggleActivo1 = ref(false);
+const toggleActivo2 = ref(false);
+const toggleActivo3 = ref(false);
+
+const cambiarToggle = async (num) => {
+    let estadoNuevo;
+
+    if (num === 1) {
+        toggleActivo1.value = !toggleActivo1.value;
+        estadoNuevo = toggleActivo1.value;
+        await actualizarActivoTurno('dia', estadoNuevo);
+    } else if (num === 2) {
+        toggleActivo2.value = !toggleActivo2.value;
+        estadoNuevo = toggleActivo2.value;
+        await actualizarActivoTurno('tarde', estadoNuevo);
+    } else if (num === 3) {
+        toggleActivo3.value = !toggleActivo3.value;
+        estadoNuevo = toggleActivo3.value;
+        await actualizarActivoTurno('noche', estadoNuevo);
+    }
+};
+
+
+
 // Nueva función para validar y formatear los inputs
 const handleInput = (value, type) => {
-  // Eliminar cualquier caracter que no sea número
-  let numericValue = value.replace(/[^0-9]/g, '');
-  
-  // Limitar a 2 dígitos
-  if (numericValue.length > 2) {
-    numericValue = numericValue.slice(0, 2);
-  }
-  
-  // Asignar el valor formateado
-  if (type === 'hora') horas.value = numericValue;
-  else if (type === 'minuto') minutos.value = numericValue;
-  else if (type === 'segundo') segundos.value = numericValue;
+    // Eliminar cualquier caracter que no sea número
+    let numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Limitar a 2 dígitos
+    if (numericValue.length > 2) {
+        numericValue = numericValue.slice(0, 2);
+    }
+    
+    // Asignar el valor formateado
+    if (type === 'hora') horas.value = numericValue;
+    else if (type === 'minuto') minutos.value = numericValue;
+    else if (type === 'segundo') segundos.value = numericValue;
 };
 
 // Agrega una variable reactiva para el banco padre
@@ -45,6 +71,18 @@ const bancoPadreId = ref(null)
 // FUNCIÓN PARA CARGAR LOS DATOS DE FIRESTORE
 const cargarDatos = async () => {
     try {
+        const docDia = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'dia'));
+        if (docDia.exists()) {
+            toggleActivo1.value = !!docDia.data().activo;
+        }
+        const docTarde = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'tarde'));
+        if (docTarde.exists()) {
+            toggleActivo2.value = !!docTarde.data().activo;
+        }
+        const docNoche = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'noche'));
+        if (docNoche.exists()) {
+            toggleActivo3.value = !!docNoche.data().activo;
+        }
         if (!bancoPadreId.value) {
             bancoPadreId.value = await obtenerBancoPadre()
         }
@@ -126,6 +164,20 @@ const guardarHora = async () => {
         lanzarToast()
     }
 };
+const actualizarActivoTurno = async (turnoNombre, estado) => {
+    try {
+        if (!bancoPadreId.value) {
+            bancoPadreId.value = await obtenerBancoPadre();
+        }
+        if (!bancoPadreId.value) return;
+
+        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turnoNombre);
+        await setDoc(docRef, { activo: estado }, { merge: true }); // merge: true para conservar hora anterior
+    } catch (error) {
+        console.error(`Error actualizando estado activo del turno ${turnoNombre}:`, error);
+    }
+};
+
 </script>
 
 <template>
@@ -136,11 +188,62 @@ const guardarHora = async () => {
         <div class="col-12 m-0 p-2">
             <div class="col-12 m-0 mt-2 p-3 d-flex flex-column align-items-center justify-content-center border-3 box-shadow">
                 <header class="d-flex flex-column align-items-center justify-content-center">
-                    <h1 class="text-center">Horario</h1>
-                    <div class="col-12">
-                        <p class="text-center">Aquí puedes ingresar la cuenta regresiva para dar los resultados de las apuestas.</p>
-                    </div>
+                    <h3 class="text-center border-bottom border-3">Horario de cierre</h3>
                 </header>
+                <div class="col-12">
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            Tiro del dia
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="cambiarToggle(1)">
+                            <img :src="toggleActivo1 ? toggleon : toggleoff" alt="Toggle" width="24" />
+                        </button>
+                    </div>
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            {{ dbHoranoche }}
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="activarHorario">
+                            <img src="../assets/type=Timer.svg" alt="">
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            Tiro de la tarde
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="cambiarToggle(2)">
+                            <img :src="toggleActivo2 ? toggleon : toggleoff" alt="Toggle" width="24" />
+                        </button>
+                    </div>
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            {{ dbHoratarde }}
+                        </h6>
+                        <button class="btn bg-transparent p-1">
+                            <img src="../assets/type=Timer.svg" alt="">
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            Tiro de  la noche
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="cambiarToggle(3)">
+                            <img :src="toggleActivo3 ? toggleon : toggleoff" alt="Toggle" width="24" />
+                        </button>
+                    </div>
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            {{ dbHoranoche }}
+                        </h6>
+                        <button class="btn bg-transparent p-1">
+                            <img src="../assets/type=Timer.svg" alt="">
+                        </button>
+                    </div>
+                </div>
                 <main class="p-0 pb-1">
                     <div class="col-12 row m-0 p-3">
                         <Hora v-model="turno"/>
