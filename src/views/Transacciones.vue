@@ -1,11 +1,10 @@
 <script setup>
 import Header from '../components/Header.vue';
 import Valores from '../components/Valores.vue';
-import listatransacciones from '../components/listatransacciones.vue';
+import listamovimientos from '../components/listamovimientos.vue';
 import Footer from '../components/Footer.vue';
 </script>
 <template>
-    <div class="layout">
         <header>
             <Header/>
         </header>
@@ -23,19 +22,17 @@ import Footer from '../components/Footer.vue';
                 </div>
             </div>
             <div class="continer-lista p-0 px-2">
-                <listatransacciones/>
+                <listamovimientos/>
             </div>
         </main>
         <div class="p-0 footer">
             <Footer/>
         </div>
-    </div>
 </template>
 <style scoped>
     .layout {
         display: flex;
         flex-direction: column;
-        height: 100vh; /* Toma el 100% de la altura de la ventana */
         overflow: hidden;
         margin: 0;
         padding: 0;

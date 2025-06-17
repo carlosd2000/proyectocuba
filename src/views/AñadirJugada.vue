@@ -140,11 +140,6 @@ const componenteActual = computed(() => {
 </template>
 
 <style scoped>
-header {
-  height: 7%;
-  width: 100%;
-}
-
 main {
   min-height: 93%;
   width: 100%;
