@@ -5,6 +5,10 @@ import Valores from '../components/Valores.vue';
 import listalisteros from '../components/listalisteros.vue';
 import Footer from '../components/Footer.vue';
 
+const banco = ref(
+    { id: 1, nombre: 'Banco Central', wallet: 1000000, fondo: 1000000, fondorecaudado: 1000000 }
+);
+
 // Datos simulados
 const listeros = ref([
   { id: 1, nombre: 'Listero A', fondoCobrado: 5000, fondo: 5000 },
@@ -37,7 +41,7 @@ const listeros = ref([
 
         <main class="m-0 p-0">
             <div class="m-0 p-0 header-main">
-                <Valores/>
+                <Valores :fondorecaudado="banco.fondorecaudado" :fondo="banco.fondo"/>
             </div>
             <div class="m-0 p-0">
                 <div class="col-12 row p-0 container-botones">

@@ -7,7 +7,7 @@
             <h5 class="card-title m-0 p-0">Fondo recaudado</h5>
           </div>
           <div class="d-flex justify-content-center align-items-center">
-            <h5 class="dollar">$<span class="amount">{{ formattedMainAmount }}</span></h5>
+            <h5 class="dollar">$<span class="amount">{{ fondorecaudado }}</span></h5>
           </div>
         </div>
         <div v-if="!mostrarDespliegue" class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
@@ -15,7 +15,7 @@
             <div class="">
               <div class="recaudacion d-flex justify-content-between mb-2">
                 <span class="text-span">Recaudación pendiente</span>
-                <span class="text-span">{{ formattedPending }}</span>
+                <span class="text-span">{{ fondo }}</span>
               </div>
               <div class="contable">
                 <div class="m-0 p-0 d-flex justify-content-between">
@@ -40,6 +40,11 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+const props = defineProps({
+  fondorecaudado: Number,
+  fondo: Number,
+})
+
 const route = useRoute()
 
 const mostrarDespliegue = computed(() =>
@@ -55,17 +60,9 @@ const toggleDetails = () => {
 }
 
 // Supongamos que estos valores los defines aquí también:
-const mainAmount = ref(2000000000.00)
-const pending = ref(16500.00)
 const fund = ref(15000.00)
 const profit = ref(1500.00)
 
-const formattedMainAmount = computed(() =>
-  new Intl.NumberFormat('es-MX', { style: 'decimal' }).format(mainAmount.value)
-)
-const formattedPending = computed(() =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(pending.value)
-)
 const formattedFund = computed(() =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(fund.value)
 )
