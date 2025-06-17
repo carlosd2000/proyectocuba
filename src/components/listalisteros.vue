@@ -1,29 +1,14 @@
 <script setup>
 import { ref } from 'vue'
 
-// Datos simulados
-const listeros = ref([
-  { id: 1, nombre: 'Listero A', fondoCobrado: 5000, fondoPorCobrar: 5000 },
-  { id: 2, nombre: 'Listero B', fondoCobrado: 7000, fondoPorCobrar: 8000 },
-  { id: 3, nombre: 'Listero C', fondoCobrado: -10000, fondoPorCobrar: -10000 },
-  { id: 4, nombre: 'Listero D', fondoCobrado: 2000, fondoPorCobrar: 3000 },
-  { id: 5, nombre: 'Listero E', fondoCobrado: -1500, fondoPorCobrar: -1500 },
-  { id: 6, nombre: 'Listero F', fondoCobrado: 6000, fondoPorCobrar: 6000 },
-  { id: 7, nombre: 'Listero G', fondoCobrado: 20000, fondoPorCobrar: 20000 },
-  { id: 8, nombre: 'Listero H', fondoCobrado: 0, fondoPorCobrar: 0 },
-  { id: 9, nombre: 'Listero I', fondoCobrado: -2000, fondoPorCobrar: -2000 },
-  { id: 10, nombre: 'Listero J', fondoCobrado: 10000, fondoPorCobrar: 10000 },
-  { id: 11, nombre: 'Listero K', fondoCobrado: 20000, fondoPorCobrar: 20000 },
-  { id: 12, nombre: 'Listero L', fondoCobrado: -3000, fondoPorCobrar: -3000 },
-  { id: 13, nombre: 'Listero M', fondoCobrado: 4000, fondoPorCobrar: 4000 },
-  { id: 14, nombre: 'Listero N', fondoCobrado: 5000, fondoPorCobrar: 5000 },
-  { id: 15, nombre: 'Listero O', fondoCobrado: 6000, fondoPorCobrar: 6000 },
-  { id: 16, nombre: 'Listero P', fondoCobrado: 7000, fondoPorCobrar: 7000 },
-  { id: 17, nombre: 'Listero Q', fondoCobrado: 8000, fondoPorCobrar: 8000 },
-  { id: 18, nombre: 'Listero R', fondoCobrado: 9000, fondoPorCobrar: 9000 },
-  { id: 19, nombre: 'Listero S', fondoCobrado: 10000, fondoPorCobrar: 10000 },
-  { id: 20, nombre: 'Listero T', fondoCobrado: 11000, fondoPorCobrar: 11000 }
-])
+const props = defineProps({
+  listeros: {
+    type: Array,
+    required: true
+  }
+});
+
+
 
 // Estado reactivo para detalles abiertos por id
 const detallesAbiertos = ref([])
@@ -49,8 +34,8 @@ function toggleDetails(id) {
               <h5 class="ngt">{{ listero.nombre }}</h5>
             </div>
             <div class="col-6 container row m-0 p-0 justify-content-end align-items-center">
-              <h5 class="ngt" :class="(listero.fondoCobrado + listero.fondoPorCobrar) >= 0 ? 'text-success' : 'text-danger'">
-                ${{ (listero.fondoCobrado + listero.fondoPorCobrar).toLocaleString() }}
+              <h5 class="ngt" :class="(listero.fondoCobrado + listero.fondo) >= 0 ? 'text-success' : 'text-danger'">
+                ${{ (listero.fondoCobrado + listero.fondo).toLocaleString() }}
               </h5>
               <i class="detalles mx-2" :class="detallesAbiertos.includes(listero.id) ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
             </div>
@@ -65,8 +50,8 @@ function toggleDetails(id) {
               </div>
               <div class="container row m-0 my-1 p-0 justify-content-between align-items-center">
                 <p>Fondo por cobrar</p>
-                <p :class="listero.fondoPorCobrar >= 0 ? 'text-success2' : 'text-danger2'">
-                  ${{ listero.fondoPorCobrar }}
+                <p :class="listero.fondo >= 0 ? 'text-success2' : 'text-danger2'">
+                  ${{ listero.fondo }}
                 </p>
               </div>
             </div>

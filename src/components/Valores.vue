@@ -11,7 +11,7 @@
           </div>
         </div>
         <div v-if="!mostrarDespliegue" class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
-          <div v-if="showDetails" :id="'details-' + _uid" class="col-12 details-section my-2 p-0">
+          <div v-if="showDetails" class="col-12 details-section my-2 p-0">
             <div class="">
               <div class="recaudacion d-flex justify-content-between mb-2">
                 <span class="text-span">Recaudación pendiente</span>
