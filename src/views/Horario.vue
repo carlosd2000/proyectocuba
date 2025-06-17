@@ -6,6 +6,9 @@ import { db } from '../firebase/config.js';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc para leer datos
 
 import mostrarhora from '../components/mostrarhora.vue';
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+import toggleon from '../assets/type=Toggle on.svg';
+import toggleoff from '../assets/type=Toggle off.svg';
 
 const turno = ref('Dia');
 const horas = ref('');
@@ -22,48 +25,93 @@ const mostrarToastSave = ref(false);
 const mostrarToastError = ref(false);
 const mostrarToastComplete = ref(false);
 
+const toggleActivo1 = ref(false);
+const toggleActivo2 = ref(false);
+const toggleActivo3 = ref(false);
+
+const cambiarToggle = async (num) => {
+    let estadoNuevo;
+
+    if (num === 1) {
+        toggleActivo1.value = !toggleActivo1.value;
+        estadoNuevo = toggleActivo1.value;
+        await actualizarActivoTurno('dia', estadoNuevo);
+    } else if (num === 2) {
+        toggleActivo2.value = !toggleActivo2.value;
+        estadoNuevo = toggleActivo2.value;
+        await actualizarActivoTurno('tarde', estadoNuevo);
+    } else if (num === 3) {
+        toggleActivo3.value = !toggleActivo3.value;
+        estadoNuevo = toggleActivo3.value;
+        await actualizarActivoTurno('noche', estadoNuevo);
+    }
+};
+
+
+
 // Nueva función para validar y formatear los inputs
 const handleInput = (value, type) => {
-  // Eliminar cualquier caracter que no sea número
-  let numericValue = value.replace(/[^0-9]/g, '');
-  
-  // Limitar a 2 dígitos
-  if (numericValue.length > 2) {
-    numericValue = numericValue.slice(0, 2);
-  }
-  
-  // Asignar el valor formateado
-  if (type === 'hora') horas.value = numericValue;
-  else if (type === 'minuto') minutos.value = numericValue;
-  else if (type === 'segundo') segundos.value = numericValue;
+    // Eliminar cualquier caracter que no sea número
+    let numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Limitar a 2 dígitos
+    if (numericValue.length > 2) {
+        numericValue = numericValue.slice(0, 2);
+    }
+    
+    // Asignar el valor formateado
+    if (type === 'hora') horas.value = numericValue;
+    else if (type === 'minuto') minutos.value = numericValue;
+    else if (type === 'segundo') segundos.value = numericValue;
 };
+
+// Agrega una variable reactiva para el banco padre
+const bancoPadreId = ref(null)
 
 // FUNCIÓN PARA CARGAR LOS DATOS DE FIRESTORE
 const cargarDatos = async () => {
     try {
-        const docRef = doc(db, 'hora', turno.value.toLowerCase());
-        const docSnap = await getDoc(docRef);
+        const docDia = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'dia'));
+        if (docDia.exists()) {
+            toggleActivo1.value = !!docDia.data().activo;
+        }
+        const docTarde = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'tarde'));
+        if (docTarde.exists()) {
+            toggleActivo2.value = !!docTarde.data().activo;
+        }
+        const docNoche = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'noche'));
+        if (docNoche.exists()) {
+            toggleActivo3.value = !!docNoche.data().activo;
+        }
+        if (!bancoPadreId.value) {
+            bancoPadreId.value = await obtenerBancoPadre()
+        }
+        if (!bancoPadreId.value) return
+
+        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno.value.toLowerCase())
+        const docSnap = await getDoc(docRef)
         
         if (docSnap.exists()) {
-            const data = docSnap.data();
-            // Convertimos los números a strings para mostrarlos en los placeholders
-            dbHoras.value = data.hh !== undefined ? data.hh.toString() : '';
-            dbMinutos.value = data.mm !== undefined ? data.mm.toString() : '';
-            dbSegundos.value = data.ss !== undefined ? data.ss.toString() : '';
+            const data = docSnap.data()
+            dbHoras.value = data.hh !== undefined ? data.hh.toString() : ''
+            dbMinutos.value = data.mm !== undefined ? data.mm.toString() : ''
+            dbSegundos.value = data.ss !== undefined ? data.ss.toString() : ''
         } else {
-            // Si no existe el documento, limpiamos los placeholders
-            dbHoras.value = '';
-            dbMinutos.value = '';
-            dbSegundos.value = '';
+            dbHoras.value = ''
+            dbMinutos.value = ''
+            dbSegundos.value = ''
         }
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+        console.error('Error al cargar datos:', error)
     }
 };
 
 // Cargar datos cuando cambie el turno
-onMounted(cargarDatos); // Cargar al inicio
-watch(turno, cargarDatos); // Cargar cuando cambie el turno
+onMounted(async () => {
+    bancoPadreId.value = await obtenerBancoPadre()
+    await cargarDatos()
+})
+watch(turno, cargarDatos)
 
 // FUNCIÓN PARA MOSTRAR EL TOAST
 const lanzarToast = () => {
@@ -77,54 +125,59 @@ const lanzarToast = () => {
 
 const guardarHora = async () => {
     try {
-        // Validaciones básicas
         if (!horas.value || !minutos.value || !segundos.value) {
-            mostrarToastComplete.value = true;
-            lanzarToast();
-            return;
+            mostrarToastComplete.value = true
+            lanzarToast()
+            return
         }
-        
-        // Validar que sean números válidos (incluyendo '00')
         if (isNaN(horas.value) || isNaN(minutos.value) || isNaN(segundos.value)) {
-            mostrarToastError.value = true;
-            lanzarToast();
-            return;
+            mostrarToastError.value = true
+            lanzarToast()
+            return
         }
+        if (!bancoPadreId.value) {
+            bancoPadreId.value = await obtenerBancoPadre()
+        }
+        if (!bancoPadreId.value) return
 
-        // Crear el objeto con los datos
         const horaData = {
-            hh: horas.value.padStart(2, '0'), // Asegura 2 dígitos
+            hh: horas.value.padStart(2, '0'),
             mm: minutos.value.padStart(2, '0'),
             ss: segundos.value.padStart(2, '0'),
             timestamp: new Date().toISOString()
-        };
+        }
 
-        // Referencia al documento según el turno seleccionado
-        const docRef = doc(db, 'hora', turno.value.toLowerCase()); // Convierte a minúsculas para coincidir con los nombres de documento
-        
-        // Guardar o sobrescribir los datos en Firestore
-        await setDoc(docRef, horaData, { merge: false }); // merge: false para sobrescribir completamente
+        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno.value.toLowerCase())
+        await setDoc(docRef, horaData, { merge: false })
 
-        console.log('Hora guardada correctamente para el turno:', turno.value);
-        mostrarToastSave.value = true;
-        lanzarToast();
-        
-        // Actualizar placeholders
-        dbHoras.value = horaData.hh;
-        dbMinutos.value = horaData.mm;
-        dbSegundos.value = horaData.ss;
-
-        // Limpiar los campos
-        horas.value = '';
-        minutos.value = '';
-        segundos.value = '';
-        
+        mostrarToastSave.value = true
+        lanzarToast()
+        dbHoras.value = horaData.hh
+        dbMinutos.value = horaData.mm
+        dbSegundos.value = horaData.ss
+        horas.value = ''
+        minutos.value = ''
+        segundos.value = ''
     } catch (error) {
-        console.error('Error al guardar la hora:', error);
-        mostrarToastError.value = true;
-        lanzarToast();
+        console.error('Error al guardar la hora:', error)
+        mostrarToastError.value = true
+        lanzarToast()
     }
 };
+const actualizarActivoTurno = async (turnoNombre, estado) => {
+    try {
+        if (!bancoPadreId.value) {
+            bancoPadreId.value = await obtenerBancoPadre();
+        }
+        if (!bancoPadreId.value) return;
+
+        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turnoNombre);
+        await setDoc(docRef, { activo: estado }, { merge: true }); // merge: true para conservar hora anterior
+    } catch (error) {
+        console.error(`Error actualizando estado activo del turno ${turnoNombre}:`, error);
+    }
+};
+
 </script>
 
 <template>
@@ -135,11 +188,62 @@ const guardarHora = async () => {
         <div class="col-12 m-0 p-2">
             <div class="col-12 m-0 mt-2 p-3 d-flex flex-column align-items-center justify-content-center border-3 box-shadow">
                 <header class="d-flex flex-column align-items-center justify-content-center">
-                    <h1 class="text-center">Horario</h1>
-                    <div class="col-12">
-                        <p class="text-center">Aquí puedes ingresar la cuenta regresiva para dar los resultados de las apuestas.</p>
-                    </div>
+                    <h3 class="text-center border-bottom border-3">Horario de cierre</h3>
                 </header>
+                <div class="col-12">
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            Tiro del dia
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="cambiarToggle(1)">
+                            <img :src="toggleActivo1 ? toggleon : toggleoff" alt="Toggle" width="24" />
+                        </button>
+                    </div>
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            {{ dbHoranoche }}
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="activarHorario">
+                            <img src="../assets/type=Timer.svg" alt="">
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            Tiro de la tarde
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="cambiarToggle(2)">
+                            <img :src="toggleActivo2 ? toggleon : toggleoff" alt="Toggle" width="24" />
+                        </button>
+                    </div>
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            {{ dbHoratarde }}
+                        </h6>
+                        <button class="btn bg-transparent p-1">
+                            <img src="../assets/type=Timer.svg" alt="">
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            Tiro de  la noche
+                        </h6>
+                        <button class="btn bg-transparent p-1" @click="cambiarToggle(3)">
+                            <img :src="toggleActivo3 ? toggleon : toggleoff" alt="Toggle" width="24" />
+                        </button>
+                    </div>
+                    <div class="row d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 p-0">
+                            {{ dbHoranoche }}
+                        </h6>
+                        <button class="btn bg-transparent p-1">
+                            <img src="../assets/type=Timer.svg" alt="">
+                        </button>
+                    </div>
+                </div>
                 <main class="p-0 pb-1">
                     <div class="col-12 row m-0 p-3">
                         <Hora v-model="turno"/>
