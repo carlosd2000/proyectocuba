@@ -1,6 +1,6 @@
 <template>
-    <div class="container col-12 m-0 p-0 d-flex flex-column align-items-start">
-        <div class="col-12 m-0 p-0 d-flex justify-content-between align-items-center">
+    <div class="container m-0 p-0 d-flex flex-column align-items-start">
+        <div class="m-0 p-0 d-flex justify-content-between align-items-center">
             <p class="title">
                 Jugada diaria
             </p>
@@ -10,7 +10,7 @@
                 {{ wallet }}1100
             </p>
         </div>
-        <div class="col-12 row p-0 m-0 d-flex justify-content-between align-items-center">
+        <div class="row p-0 m-0 d-flex justify-content-between w-100">
             <div class="buttons-heith state-blue">
                 <img src="../assets/Jugada.svg" alt="">
                 <p>

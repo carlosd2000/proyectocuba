@@ -32,7 +32,7 @@ onMounted(async () => {
     </header>
     <main class="container h-100">
       <dailyplay />
-      <div class="line"></div>
+      <div class="line w-100"></div>
       <ToolsButton title="Herramientas" />
     </main>
   </div>
@@ -46,7 +46,7 @@ padding: 0px 16px;
 gap: 24px;
 flex: none;
 order: 2;
-align-self: stretch;
+
 flex-grow: 1;
 }
 .line{
