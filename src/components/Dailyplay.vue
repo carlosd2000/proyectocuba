@@ -35,7 +35,7 @@
                     Centena
                 </p>
             </div>
-            <div class="buttons-heith black" @click="$router.push(`/listas/${$route.params.id}`)">
+            <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
                 <img src="../assets/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
                 <p>
                     Lista
