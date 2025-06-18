@@ -12,7 +12,7 @@ import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
 import { setModoEdicion } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
-
+import Nombre from '../components/Nombre.vue';
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
   console.log("Banco padre:", bancoId);
