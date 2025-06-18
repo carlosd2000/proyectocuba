@@ -18,7 +18,7 @@ const router = createRouter({
     {
       path: '/listeros/:id',
       name: 'listeros',
-      component: () => import('../views/Listeros.vue'),
+      component: () => import('../views/Home.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -46,9 +46,9 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/listas/:id',
-      name: 'listas',
-      component: () => import('../views/Listas.vue'),
+      path: '/lista/:id',
+      name: 'lista',
+      component: () => import('../views/Lista.vue'),
       meta: { requiresAuth: true },
     },
     {

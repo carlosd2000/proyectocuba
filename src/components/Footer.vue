@@ -29,22 +29,22 @@ const props = defineProps({
             <p v-if="props.title !== 'Home'">Home</p>
             <div v-else class="punto"></div>
         </div>
-        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/lista/${$route.params.id}`)">
             <img :src="props.title === 'Lista' ? Lista_Active : Lista" alt="">
-            <p v-if="props.title !== 'Lista'">Home</p>
+            <p v-if="props.title !== 'Lista'">Lista</p>
             <div v-else class="punto"></div>
         </div>
         <div class="button-center d-flex justify-content-center align-items-center">
             <img src="../assets/Plus.svg" alt="">
         </div>
-        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/wallet/${$route.params.id}`)">
             <img :src="props.title === 'Fondo' ? Wallet : Wallet" alt="">
-            <p v-if="props.title !== 'Fondo'">Home</p>
+            <p v-if="props.title !== 'Fondo'">Fondo</p>
             <div v-else class="punto"></div>
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
             <img :src="props.title === 'Usuario' ? User : User" alt="">
-            <p v-if="props.title !== 'Usuario'">Home</p>
+            <p v-if="props.title !== 'Usuario'">Usuario</p>
             <div v-else class="punto"></div>
         </div>
     </div>

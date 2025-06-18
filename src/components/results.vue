@@ -1,17 +1,26 @@
 <template>
-    <div class="col-12 mt-3 mb-3 p-0 d-flex flex-column justify-content-center align-items-center">
-        <div class="col-9 tabs-container m-0 p-0 row d-flex justify-content-center align-items-center">
-            <div class="col-4 d-flex flex-column justify-content-center align-items-center">
+    <div class="tabs-container d-flex flex-row justify-content-center align-items-center w-100">
+        <div class="d-flex flex-column justify-content-center align-items-center w-100">
+            <p>999999</p>
+            <div class="d-flex flex-row gap-2">
+                <img src="../assets/Coin.svg" alt="">
                 <p>Bruto</p>
-                <span>999999</span>
             </div>
-            <div class="col-4 d-flex flex-column justify-content-center align-items-center">
+        </div>
+        <div class="line"></div>
+        <div class="d-flex flex-column justify-content-center align-items-center w-100">
+            <p>000</p>
+            <div class="d-flex flex-row gap-2">
+                <img src="../assets/Star.svg" alt="">
                 <p>Premios</p>
-                <span>000</span>
             </div>
-            <div class="col-4 d-flex flex-column justify-content-center align-items-center">
+        </div>
+        <div class="line"></div>
+        <div class="d-flex flex-column justify-content-center align-items-center w-100">
+            <p>000</p>
+            <div class="d-flex flex-row gap-2">
+                <img src="../assets/Ganancia.svg" alt="">
                 <p>Neto</p>
-                <span>000</span>
             </div>
         </div>
     </div>
@@ -22,12 +31,20 @@ p{
     margin: 1px;
     font-size: 0.9rem;
 }
-span {
-    font-size: 0.8rem;
-}
 .tabs-container {
-  max-width: 200px;
-  margin: auto;
-  font-family: Arial, sans-serif;
+    padding: 8px;
+    gap: 12px;
+    width: 343px;
+    flex: none;
+    order: 1;
+    flex-grow: 0;
+}
+.line{
+    width: 36px;
+    height: 2px;
+    border: 1px solid #F0F0FC;
+    transform: rotate(90deg);
+    flex: none;
+    flex-grow: 0;
 }
 </style>    
