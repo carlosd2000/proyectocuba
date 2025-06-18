@@ -61,7 +61,7 @@ const router = createRouter({
       path: '/wallet/:id',
       name: 'wallet',
       component: () => import('../views/Wallet.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true }
     },
     {
       path: '/monitoreolisteros/:id',
@@ -73,7 +73,7 @@ const router = createRouter({
       path: '/transacciones/:id',
       name: 'transacciones',
       component: () => import('../views/Transacciones.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true }
     },
     {
       path: '/transferencias/:id',
