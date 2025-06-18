@@ -1,20 +1,22 @@
 <template>
   <div class="main-container">
-    <!-- Sección de Totales -->
+    <!-- Sección de Totales ajustada al mismo ancho que pagar-button -->
     <div class="totales-container">
       <div class="totales-header">Totales</div>
       <div class="totales-values">
-        <div>${{ formatNumber(totales.col3) }}</div>
-        <div>${{ formatNumber(totales.col4) }}</div>
-        <div>${{ formatNumber(totales.col5) }}</div>
+        <div class="total-item">${{ formatNumber(totales.col3) }}</div>
+        <div class="division-line"></div>
+        <div class="total-item">${{ formatNumber(totales.col4) }}</div>
+        <div class="division-line"></div>
+        <div class="total-item">${{ formatNumber(totales.col5) }}</div>
       </div>
     </div>
     
-    <!-- Botón de Pagar -->
+    <!-- Botón de Pagar (343px de ancho) -->
     <button class="pagar-button" @click="lanzarToast">
       <span class="button-label">Enviar</span>
-      <span class="button-chevron"></span>
       <span class="button-amount">${{ formatNumber(totalGeneral) }}</span>
+      <span class="button-symbol">></span>
     </button>
 
     <!-- Mensaje de error -->
@@ -73,6 +75,7 @@ const {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
 
+/* Contenedor principal */
 .main-container {
   max-width: 343px;
   margin: 0 auto;
@@ -83,14 +86,17 @@ const {
   font-family: 'Manrope', sans-serif;
 }
 
-/* Estilo para la sección de totales */
+/* SECCIÓN DE TOTALES AJUSTADA */
 .totales-container {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-top: 1px solid #000;
-  border-bottom: 1px solid #000;
+  width: 343px;
+  height: 36px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  background: #FFFFFF;
 }
 
 .totales-header {
@@ -98,88 +104,85 @@ const {
   font-size: 14px;
   line-height: 16px;
   color: #000000;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .totales-values {
   display: flex;
-  gap: 16px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-grow: 1;
+  gap: 8px;
+  margin-left: 12px;
 }
 
-.totales-values div {
+.total-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 58px;
+  height: 18px;
   font-weight: 800;
   font-size: 14px;
   line-height: 16px;
   color: #000000;
-  min-width: 50px;
-  text-align: center;
+  white-space: nowrap;
 }
 
-/* Estilo del botón de pagar */
+.division-line {
+  width: 20px;
+  height: 2px;
+  border: 1px solid #F0F0FC;
+  transform: rotate(90deg);
+  flex-shrink: 0;
+}
+
+/* BOTÓN DE PAGAR */
 .pagar-button {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 8px 8px 16px;
-  gap: 10px;
-  width: 100%;
+  width: 343px;
   height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
   background: #6665DD;
   border-radius: 30px;
   border: none;
   cursor: pointer;
-  box-shadow: none;
-  outline: none;
+  font-family: 'Manrope', sans-serif;
 }
 
 .button-label {
-  width: 127px;
-  height: 16px;
-  font-family: 'Manrope', sans-serif;
-  font-style: normal;
   font-weight: 800;
   font-size: 14px;
   line-height: 16px;
-  text-align: center;
   color: #F3F3F3;
-  flex: none;
-  order: 0;
-  flex-grow: 0;
+  flex-grow: 1;
+  text-align: left;
+}
+
+.button-symbol {
+  font-weight: 800;
+  font-size: 16px;
+  color: #F3F3F3;
+  margin-left: 8px;
 }
 
 .button-amount {
-  font-family: 'Manrope', sans-serif;
   font-weight: 800;
   font-size: 14px;
   line-height: 16px;
   color: #F3F3F3;
   text-align: right;
-  flex-grow: 1;
+  min-width: 80px;
 }
 
-.button-chevron {
-  width: 20px;
-  height: 20px;
-  position: relative;
-  flex: none;
-  order: 1;
-  flex-grow: 0;
-}
-
-.button-chevron::after {
-  content: '';
-  position: absolute;
-  left: 38.54%;
-  right: 38.54%;
-  top: 30.21%;
-  bottom: 30.21%;
-  background: #F3F3F3;
-  clip-path: polygon(0% 20%, 60% 20%, 60% 0%, 100% 50%, 60% 100%, 60% 80%, 0% 80%);
-}
-
-/* Estilos para mensajes de error */
+/* MENSAJES DE ERROR */
 .error-message {
-  font-family: 'Manrope', sans-serif;
   font-weight: 800;
   font-size: 14px;
   line-height: 16px;
@@ -188,9 +191,11 @@ const {
   padding: 8px;
   border-radius: 4px;
   background-color: rgba(220, 53, 69, 0.1);
+  width: 343px;
+  box-sizing: border-box;
 }
 
-/* Estilos para toasts */
+/* TOASTS */
 .toast-container {
   position: fixed;
   bottom: 0;
@@ -201,6 +206,7 @@ const {
   border: 1px solid rgba(0, 0, 0, 0.78);
   box-shadow: 1px -2px 1px rgba(0, 0, 0, 0.39);
   border-radius: 8px 8px 0 0;
+  font-family: 'Manrope', sans-serif;
 }
 
 .toast-container.error {
@@ -218,7 +224,6 @@ const {
   justify-content: center;
   align-items: center;
   gap: 8px;
-  font-family: 'Manrope', sans-serif;
   font-weight: 800;
   font-size: 14px;
   line-height: 16px;
