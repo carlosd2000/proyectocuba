@@ -68,7 +68,7 @@ const handleInput = (value, type) => {
 // Agrega una variable reactiva para el banco padre
 const bancoPadreId = ref(null)
 
-// FUNCIÓN PARA CARGAR LOS DATOS DE FIRESTORE
+// Modifica cargarDatos para usar la subcolección
 const cargarDatos = async () => {
     try {
         const docDia = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'dia'));
@@ -111,7 +111,7 @@ onMounted(async () => {
     bancoPadreId.value = await obtenerBancoPadre()
     await cargarDatos()
 })
-watch(turno, cargarDatos)
+watch(turno, cargarDatos); // Cargar cuando cambie el turno
 
 // FUNCIÓN PARA MOSTRAR EL TOAST
 const lanzarToast = () => {
