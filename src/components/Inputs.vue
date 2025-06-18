@@ -15,78 +15,82 @@
       <!-- Botón para agregar filas -->
       <div class="col-2 m-0 p-0 d-flex justify-content-end align-items-end mt-2">
         <button
-          class="btn btn-dark rounded-circle m-1 mb-2 p-0 d-flex justify-content-center align-items-center"
+          class="btn bg-transparent m-1 mb-2 p-0 d-flex justify-content-center align-items-center"
           style="width: 30px; height: 30px;"
           @click="agregarFila"
         >
-          <i class="bi bi-plus-lg text-white"></i>
+          <i class="bi bi-plus-circle text-black" style="font-size: 24px;"></i>
         </button>
       </div>
 
       <div class="col-8 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
         <!-- Scroll vertical para columnas 1-4 -->
         <div class="col-12 p-0 scroll-vertical border-0">
-          <!-- Filas fijas -->
-          <div
-            v-for="fila in 5"
-            :key="'fija-' + fila"
-            class="d-flex justify-content-around align-items-center my-1"
-          >
-            <input
-              type="number"
-              class="form-input cuadrado celda"
-              min="0"
-              step="1"
-              @keypress="soloEnteros($event)"
-              v-model="filasFijas[fila - 1].cuadrado"
-            />
-            <div
-              v-for="col in 2"
-              :key="'fija-circulo-' + fila + '-' + col"
-              class="celda"
-            >
-              <input
-                type="number"
-                placeholder="$"
-                class="form-input circular"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="filasFijas[fila - 1]['circulo' + col]"
-              />
-            </div>
-          </div>
+<!-- Filas fijas -->
+<div
+  v-for="fila in 5"
+  :key="'fija-' + fila"
+  class="d-flex justify-content-around align-items-center my-1"
+>
+  <input
+    type="number"
+    class="form-input cuadrado celda"
+    :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
+    min="0"
+    step="1"
+    @keypress="soloEnteros($event)"
+    v-model="filasFijas[fila - 1].cuadrado"
+  />
+  <div
+    v-for="col in 2"
+    :key="'fija-circulo-' + fila + '-' + col"
+    class="celda"
+  >
+    <input
+      type="number"
+      placeholder="$"
+      class="form-input circular"
+      :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo' + col)"
+      min="0"
+      step="1"
+      @keypress="soloEnteros($event)"
+      v-model="filasFijas[fila - 1]['circulo' + col]"
+    />
+  </div>
+</div>
 
-          <!-- Filas extra -->
-          <div
-            v-for="(fila, index) in filasExtra"
-            :key="'extra-' + index"
-            class="d-flex justify-content-around align-items-center my-1"
-          >
-            <input
-              type="number"
-              class="form-input cuadrado celda"
-              min="0"
-              step="1"
-              @keypress="soloEnteros($event)"
-              v-model="fila.cuadrado"
-            />
-            <div
-              v-for="i in 2"
-              :key="'extra-circulo-' + index + '-' + i"
-              class="celda"
-            >
-              <input
-                type="number"
-                placeholder="$"
-                class="form-input circular"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="fila['circulo' + i]"
-              />
-            </div>
-          </div>
+<!-- Filas extra -->
+<div
+  v-for="(fila, index) in filasExtra"
+  :key="'extra-' + index"
+  class="d-flex justify-content-around align-items-center my-1"
+>
+  <input
+    type="number"
+    class="form-input cuadrado celda"
+    :class="claseImagenSiHayEspacio(index, 'extra')"
+    min="0"
+    step="1"
+    @keypress="soloEnteros($event)"
+    v-model="fila.cuadrado"
+  />
+  <div
+    v-for="i in 2"
+    :key="'extra-circulo-' + index + '-' + i"
+    class="celda"
+  >
+    <input
+      type="number"
+      placeholder="$"
+      class="form-input circular"
+      :class="claseImagenSiHayEspacio(index, 'extra', 'circulo' + i)"
+      min="0"
+      step="1"
+      @keypress="soloEnteros($event)"
+      v-model="fila['circulo' + i]"
+    />
+  </div>
+</div>
         </div>
       </div>
 
@@ -111,6 +115,7 @@
 <script setup>
 import { useInputs } from '../scripts/Inputs.js'
 
+
 const props = defineProps({
   datosEdicion: Object,
   modoEdicion: Boolean,
@@ -123,11 +128,20 @@ const {
   agregarFila,
   limpiarCampos,
   nombreUsuario,
-  soloEnteros
+  soloEnteros,
+  claseImagenSiHayEspacio,
 } = useInputs(props)
 </script>
 
 <style scoped>
+.input-con-imagen {
+  background-image: url('/icons/Arrow.svg');
+  background-size: 24px 24px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+
 .form-input {
   width: 45px;
   height: 45px;

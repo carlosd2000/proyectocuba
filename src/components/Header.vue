@@ -7,7 +7,7 @@
       </div>
       <div class="col-7 row p-0 m-0 d-flex justify-content-end align-items-center">
         <button class=" btn btn-light border-0 mx-1 p-0 bg-transparent" @click="$router.push(`/wallet/${$route.params.id}`)">
-          <p class="m-0 p-0">$20,000,000.00</p>
+          <p class="m-0 p-0">{{ wallet}}</p>
         </button>
 
         <div class="px-1 m-0 mr-2 d-flex justify-content-end align-items-center" v-if="bell">
@@ -19,10 +19,13 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import ButtonBack from '../components/ButtonBack.vue'
 import { useHeader } from '../scripts/Header.js'
 
 const { back, bell, cuentaRegresiva, irwallet } = useHeader()
+
+const wallet = ref(0)
 </script>
 
 <style scoped>

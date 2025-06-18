@@ -1,13 +1,14 @@
 <script setup>
 import Valores from '../components/Valores.vue';
 import Footer from '../components/Footer.vue';
+import prueba from '../components/prueba.vue';
 </script>
 <template>
     <div class="col-12 m-0 p-0">
         <Valores/>
     </div>
-    <div>
-
+    <div class="col-10">
+        <prueba/>
     </div>
     <div class="col-12 m-0 p-0 footer">
         <Footer/>

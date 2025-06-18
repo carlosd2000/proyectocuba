@@ -54,27 +54,28 @@
         return { success: true, offline: true };
         }
 
-        // Para apuestas normales (Firebase)
-        if (navigator.onLine) {
-        await deleteDoc(doc(db, 'apuestas', id));
-        return { success: true };
-        } else {
-        // Guardar para sincronización posterior
-        const eliminaciones = JSON.parse(localStorage.getItem('eliminacionesPendientes') || '[]');
-        if (!eliminaciones.includes(id)) {
-            eliminaciones.push(id);
-            localStorage.setItem('eliminacionesPendientes', JSON.stringify(eliminaciones));
-        }
-        return { success: true, offline: true };
-        }
-    } catch (error) {
-        console.error('Error eliminando apuesta:', error);
-        return { success: false, error };
+    // Para apuestas normales (Firebase)
+    if (navigator.onLine) {
+      const bancoId = await obtenerBancoPadre();
+      await deleteDoc(doc(db, `bancos/${bancoId}/apuestas`, id));
+      return { success: true };
+    } else {
+      // Guardar para sincronización posterior
+      const eliminaciones = JSON.parse(localStorage.getItem('eliminacionesPendientes') || '[]');
+      if (!eliminaciones.includes(id)) {
+        eliminaciones.push(id);
+        localStorage.setItem('eliminacionesPendientes', JSON.stringify(eliminaciones));
+      }
+      return { success: true, offline: true };
     }
-    }
-    // Sincronizar eliminaciones pendientes
-    export const sincronizarEliminaciones = async () => {
-    if (!navigator.onLine) return
+  } catch (error) {
+    console.error('Error eliminando apuesta:', error);
+    return { success: false, error };
+  }
+}
+// Sincronizar eliminaciones pendientes
+export const sincronizarEliminaciones = async () => {
+  if (!navigator.onLine) return
 
     const eliminaciones = getLocalStorageArray('eliminacionesPendientes')
     if (eliminaciones.length === 0) return

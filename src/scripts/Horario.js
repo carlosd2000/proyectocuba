@@ -2,11 +2,13 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore'
 import { useRoute, useRouter } from 'vue-router'
 import { setHorario } from '../scripts/añadir.js'
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
 
 export function useHorario(props) {
     // Firebase
     const db = getFirestore()
-    const apuestasRef = collection(db, 'apuestas')
+    const bancoId = ref(null)
+    const apuestasRef = ref(null)
 
     // Router
     const route = useRoute()
@@ -63,7 +65,9 @@ export function useHorario(props) {
     // Función para escuchar en tiempo real según turno
     const escucharCambios = () => {
         if (unsubscribe) unsubscribe()
-        const q = query(apuestasRef, where('horario', '==', turnoSeleccionado.value))
+        if (!bancoId.value) return
+        apuestasRef.value = collection(db, 'bancos', bancoId.value, 'apuestas')
+        const q = query(apuestasRef.value, where('horario', '==', turnoSeleccionado.value))
         unsubscribe = onSnapshot(q, (snapshot) => {
             let suma = 0
             snapshot.forEach(doc => {
@@ -81,11 +85,12 @@ export function useHorario(props) {
     }
 
     // Iniciar escucha al montar
-    onMounted(() => {
+    onMounted(async () => {
         if (!props.modoEdicion) {
             turnoSeleccionado.value = 'Dia'
             setHorario('Dia')
         }
+        bancoId.value = await obtenerBancoPadre()
         escucharCambios()
         // Reactividad para apuestas locales
         window.addEventListener('apuestas-locales-actualizadas', () => {

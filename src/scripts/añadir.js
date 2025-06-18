@@ -1,7 +1,7 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
-import { filasFijas, filasExtra, calcularTotales, expandirApuestasIncrementativas} from './operaciones.js';
+import { filasFijas, filasExtra, calcularTotales, expandirApuestasIncrementativas } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
@@ -122,15 +122,24 @@ export async function guardarDatos() {
       }
     }
 
-    // 1. Calcular totales
-    const { col3, col4, col5 } = calcularTotales(filasFijas, filasExtra);
-    const totalGlobal = col3 + col4 + col5;
-
-    // 2. Verificar círculo solo
-    const circuloSolo = filasFijas.value[2]?.circuloSolo;
-    const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
 
     const filasIncrementadas = expandirApuestasIncrementativas(filasFijas.value);
+
+    // Calcular el total sumando los valores de los círculos de cada apuesta expandida
+    let totalGlobal = 0;
+    for (const fila of filasIncrementadas) {
+      if (fila.circulo1) totalGlobal += Number(fila.circulo1);
+      if (fila.circulo2) totalGlobal += Number(fila.circulo2);
+    }
+    // Si tienes filasExtra, súmalas también:
+    for (const fila of filasExtra.value) {
+      if (fila.circulo1) totalGlobal += Number(fila.circulo1);
+      if (fila.circulo2) totalGlobal += Number(fila.circulo2);
+    }
+    // Si hay circuloSolo válido, súmalo:
+    const circuloSolo = filasFijas.value[2]?.circuloSolo;
+    const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
+    if (circuloSoloValido) totalGlobal += Number(circuloSolo);
 
     // 3. Procesar filas
     const datosAGuardar = [
@@ -240,20 +249,23 @@ export async function sincronizarPendientes() {
 
     for (const apuesta of pendientes) {
       try {
-        // Verificar que tenemos bancoId en los datos offline
-        if (!apuesta.bancoId) {
-          console.warn(`[SYNC] Apuesta ${apuesta.uuid} sin bancoId, omitiendo`);
-          continue;
+        let bancoId = apuesta.bancoId;
+        if (!bancoId) {
+          bancoId = await obtenerBancoPadre();
+          if (!bancoId) {
+            console.warn(`[SYNC] No se pudo obtener bancoId para ${apuesta.uuid}, omitiendo`);
+            continue;
+          }
         }
-
-        const docRef = doc(db, `bancos/${apuesta.bancoId}/apuestas`, apuesta.uuid);
+        // Usar bancoId en todas las referencias
+        const docRef = doc(db, `bancos/${bancoId}/apuestas`, apuesta.uuid);
         const snap = await getDoc(docRef);
         
         if (!snap.exists()) {
           console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid} al banco ${apuesta.bancoId}`);
           
           // Obtener configuración del horario específico de esta apuesta
-          const horarioRef = doc(db, 'hora', apuesta.horario.toLowerCase());
+          const horarioRef = doc(db, `bancos/${bancoId}/hora`, apuesta.horario.toLowerCase());
           const horarioSnap = await getDoc(horarioRef);
           
           let fueraDeTiempo = false;
@@ -277,7 +289,7 @@ export async function sincronizarPendientes() {
             //   fueraDeTiempo = creadoEn.getTime() < horaCierre.getTime();
             // }
 
-            fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, snap.data(), serverTime);
+            fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, { ...apuesta, bancoId }, serverTime);
             
           }
           
@@ -331,7 +343,13 @@ async function obtenerHoraServidor() {
 
 async function verificarFueraDeTiempo(horario, apuestaData, serverTime) {
   try {
-    const horarioRef = doc(db, 'hora', horario.toLowerCase());
+    let bancoId = apuestaData?.bancoId;
+    if (!bancoId) {
+      bancoId = await obtenerBancoPadre();
+    }
+    if (!bancoId) return false;
+
+    const horarioRef = doc(db, `bancos/${bancoId}/hora`, horario.toLowerCase());
     const horarioSnap = await getDoc(horarioRef);
     
     if (!horarioSnap.exists()) return false;
