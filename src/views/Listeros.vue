@@ -39,8 +39,15 @@ onMounted(async () => {
 </template>
 <style scoped>
 main{
-  gap: 10px;
-
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px 16px;
+gap: 24px;
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 1;
 }
 .line{
   display: flex;
