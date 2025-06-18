@@ -1,55 +1,47 @@
 <template>
-    <div class="col-12 mt-2 mb-2 p-0">
-        <div class="col-12 p-0 mt-2 mb-2 d-flex flex-nowrap justify-content-between align-items-center border-bottom border-1 border-dark">
-            <p class="title pt-1 pb-1 pe-2 text-truncate">Jugada diaria</p>
-            <button class="btn btn-light m-0 p-0 flex-shrink-0 bg-transparent" @click="desplegado1 = !desplegado1">
-                <i class="bi" :class="desplegado1 ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
+    <div class="container col-12 m-0 p-0 d-flex flex-column align-items-start">
+        <div class="col-12 m-0 p-0 d-flex justify-content-between align-items-center">
+            <p class="title">
+                Jugada diaria
+            </p>
         </div>
-        <div v-if="desplegado1" class="col-12">
-            <div class="col-12 p-0 mt-2 d-flex flex-nowrap align-items-center justify-content-between">
-                <div class="col-5 m-0 p-0 d-flex flex-nowrap align-items-center">
-                    <select v-model="turnoSeleccionado" class="form-select form-select-sm text-small border-0 p-0 bg-transparent text-dark fw-semibold" style="width: auto;">
-                        <option v-for="opcion in opciones" :key="opcion" :value="opcion">{{ opcion }}</option>
-                    </select>
-                </div>
-                <div class="col-7 m-0 p-0 d-flex justify-content-end">
-                    <p class="pe-2 text-truncate">{{ totalFormateado }}</p>
-                </div>
-            </div>
-            <div class="col-12 row p-0 m-0 d-flex justify-content-around align-items-center">
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
-                        <i class="bi bi-plus-lg m-0 p-0"></i>
-                        <span class="text-center">Añadir<br>Jugada</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Parlet</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Candado</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Centena</span>
-                    </button>
-                </div>
-            </div>            
-            <div class="col-12 p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
-                <button class="col-12 row p-1 btn-list" @click="$router.push(`/listas/${$route.params.id}`)">
-                    <p class="m-1">Lista</p>
-                    <i class="bi bi-card-list m-1"></i>
-                </button>
-            </div>
+        <div>
+            <p class="title">
+                {{ wallet }}1100
+            </p>
         </div>
+        <div class="col-12 row p-0 m-0 d-flex justify-content-between align-items-center">
+            <div class="buttons-heith state-blue">
+                <img src="../assets/Jugada.svg" alt="">
+                <p>
+                    Jugada
+                </p>
+            </div>
+            <div class="buttons-heith state-blue">
+                <img src="../assets/Parlet.svg" alt="">
+                <p>
+                    Parlet
+                </p>
+            </div>
+            <div class="buttons-heith state-blue">
+                <img src="../assets/Candado.svg" alt="">
+                <p>
+                    Candado
+                </p>
+            </div>
+            <div class="buttons-heith state-blue">
+                <img src="../assets/Centena.svg" alt="">
+                <p>
+                    Centena
+                </p>
+            </div>
+            <div class="buttons-heith black">
+                <img src="../assets/Lista.svg" alt="">
+                <p>
+                    Lista
+                </p>
+            </div>
+        </div>            
     </div>
 </template>
 
@@ -59,7 +51,6 @@ import { useDailyPlay } from '../scripts/DailyPlay.js'
 const {
   opciones,
   turnoSeleccionado,
-  desplegado1,
   totalGlobal,
   totalFormateado,
   route,
@@ -68,49 +59,36 @@ const {
 </script>
 
 <style scoped>
-.title {
-    font-weight: 700;
-    color: #000000;
+p {
+    margin: 0;
+    padding: 0;
+}
+.container{
+    gap: 16px;
+    flex: none;
+    order: 1;
+    flex-grow: 0;
 }
 .buttons-heith {
-    margin: 0px;
-    padding: 0px;
-    height: 100%;
-    width: 100px;
-    transform: scale(0.9);
-}
-.btn-list{
-    border: #000000 solid 2px;
-    box-shadow: #000000 2px 2px 2px;
-    border-radius: 6px;
-    background-color: #ffc107; /* Color original */
-    color: #000000; /* Texto negro */
-}
-.btn-list:hover{
-    background-color: rgb(226, 226, 226);
-}
-.btn:hover{
-    background-color: rgb(226, 226, 226);
-}
-.btn-list:active {
-    background-color: #ffffff; /* Fondo blanco */
-    color: #000000; /* Texto negro */
-}
-p{
-    padding: 0px;
-    margin: 1px;
-}
-span {
-    font-size: 0.7rem;
-}
-i{
-    font-size: 1.5rem;
-}
-button {
-    border: none;
-    cursor: pointer;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-end;
     align-items: center;
+    padding: 10px;
+    gap: 8px;
+    width: 62px;
+    height: 62px;
+    border-radius: 12px;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
 }
+.black{
+    background: #050517;
+    color: #FFFFFF;
+}
+.state-blue{
+    background: #F0F0FC;
+}
+
 </style>

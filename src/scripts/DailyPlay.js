@@ -11,7 +11,6 @@ export function useDailyPlay() {
 
     const opciones = ['Dia', 'Tarde', 'Noche']
     const turnoSeleccionado = ref('Dia')
-    const desplegado1 = ref(true)
     const totalGlobal = ref(0)
     const isOnline = ref(navigator.onLine)
     const route = useRoute()
@@ -92,14 +91,6 @@ export function useDailyPlay() {
         window.addEventListener('apuestas-sincronizadas', () => {
             totalGlobal.value = 0
         })
-        const savedDesplegado1 = localStorage.getItem('desplegado1')
-        if (savedDesplegado1 !== null) {
-            desplegado1.value = JSON.parse(savedDesplegado1)
-        }
-    })
-
-    watch(desplegado1, (newValue) => {
-        localStorage.setItem('desplegado1', JSON.stringify(newValue))
     })
 
     onBeforeUnmount(() => {
@@ -114,7 +105,6 @@ export function useDailyPlay() {
     return {
         opciones,
         turnoSeleccionado,
-        desplegado1,
         totalGlobal,
         totalFormateado,
         route,

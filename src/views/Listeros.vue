@@ -1,7 +1,7 @@
 <script setup>
 import Header from '../components/Header.vue'
 import Dailyplay from '../components/Dailyplay.vue'
-import Tools from '../components/Tools.vue'
+import ToolsButton from '../components/ToolsButton.vue'
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -30,31 +30,30 @@ onMounted(async () => {
     <header class="col-12 m-0 p-0">
       <Header/>
     </header>
-    <main class="m-0 p-0 d-flex flex-column justify-content-center align-items-center">
-      <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center">
-        <div class="col-12 col-sm-8 m-0 p-0 row d-flex justify-content-center align-items-center">
-          <div class="col-11 my-2 d-flex justify-content-center box-shadow">
-            <dailyplay /> 
-          </div>
-        </div>    
-        <div class="col-12 col-sm-8 m-0 p-0 row d-flex justify-content-center align-items-center">
-          <div class="col-11 m-2 d-flex justify-content-center box-shadow">
-            <tools />
-          </div>
-        </div>
-      </div>
+    <main class="container h-100">
+      <dailyplay />
+      <div class="line"></div>
+      <ToolsButton title="Herramientas" />
     </main>
   </div>
 </template>
 <style scoped>
-.box-shadow {
-  border-radius: 6px;
-  border: 2px solid #000000;
-  box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.853);
+main{
+  gap: 10px;
+
+}
+.line{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 10px;
+  height: 4px;
+  flex: none;
+  order: 2;
+  flex-grow: 0;
+  border-top: 1px solid #CDCDD1;
 }
 
-main {
-  min-height: 93%;
-  width: 100%;
-}
 </style>
