@@ -62,10 +62,7 @@ const showBell = computed(() => {
 </script>
 
 <style scoped>
-/*.header-border {
-  border-bottom: 3px solid #000;
-}*/
-.head{
+.head {
   height: 100%;
 }
 p {
@@ -76,7 +73,7 @@ p {
 .ms-2 {
   margin-left: 0.5rem;
 }
-i{
+i {
   color: #000000;
 }
 </style>
