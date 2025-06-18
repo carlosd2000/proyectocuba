@@ -1,86 +1,92 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import Home from '../assets/Home.svg'
+import Home_Active from '../assets/Home_Active.svg'
+import Lista from '../assets/Lista.svg'
+import Lista_Active from '../assets/Lista_Active.svg'
+import Wallet from '../assets/Wallet.svg'
+import User from '../assets/User.svg'
+
 
 const route = useRoute()
 
 const mostrarJugada = computed(() => route.path.startsWith('/transacciones'))
 const mostrarTransferencias = computed(() => route.path.startsWith('/monitoreolisteros'))
+
+const props = defineProps({
+    title: {
+        type: String,
+        default: 'Home'
+    }
+})
 </script>
 
 <template>  
-    <footer class="col-12 m-0 p-0">
-        <div class="col-12 px-3 container d-flex justify-content-between align-items-center p-1">
-            <div class="m-0 p-0 btn-color">
-                <div class="d-flex justify-content-center align-items-center">
-                    <i class="bi bi-house-door"></i>
-                </div>
-                <div class="d-flex justify-content-center align-items-center">
-                    <p>Home</p>
-                </div>
-            </div>
-            <div class="m-0 p-0 btn-color">
-                <div class="d-flex justify-content-center align-items-center">
-                    <i class="bi bi-card-list"></i>
-                </div>
-                <div class="d-flex justify-content-center align-items-center">
-                    <p>Lista</p>
-                </div>
-            </div>
-            <div v-if="mostrarJugada" class="m-0 p-0 btn-color">
-                <div class="d-flex justify-content-center align-items-center">
-                    <i class="bi bi-plus"></i>
-                </div>
-                <div class="d-flex justify-content-center align-items-center">
-                    <p>Jugada</p>
-                </div>
-            </div>
-            <div v-if="mostrarTransferencias" @click="$router.push(`/transferencias/${$route.params.id}`)" class="m-0 p-0 btn-color">
-                <div class="d-flex justify-content-center align-items-center">
-                    <i class="bi bi-plus"></i>
-                </div>
-                <div class="d-flex justify-content-center align-items-center">
-                    <p>Transferir</p>
-                </div>
-            </div>
-            <div class="m-0 p-0 btn-color">
-                <div class="d-flex justify-content-center align-items-center">
-                    <i class="bi bi-wallet"></i>
-                </div>
-                <div class="d-flex justify-content-center align-items-center">
-                    <p>Fondo</p>
-                </div>
-            </div>
-            <div class="m-0 p-0 btn-color">
-                <div class="d-flex justify-content-center align-items-center">
-                    <i class="bi bi-person"></i>
-                </div>
-                <div class="d-flex justify-content-center align-items-center">
-                    <p>Usuario</p>
-                </div>
-            </div>
+    <div class="container d-flex flex-row justify-content-center align-items-center">
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+            <img :src="props.title === 'Home' ? Home_Active : Home" alt="">
+            <p v-if="props.title !== 'Home'">Home</p>
+            <div v-else class="punto"></div>
         </div>
-    </footer>
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+            <img :src="props.title === 'Lista' ? Lista_Active : Lista" alt="">
+            <p v-if="props.title !== 'Lista'">Home</p>
+            <div v-else class="punto"></div>
+        </div>
+        <div class="button-center d-flex justify-content-center align-items-center">
+            <img src="../assets/Plus.svg" alt="">
+        </div>
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+            <img :src="props.title === 'Fondo' ? Wallet : Wallet" alt="">
+            <p v-if="props.title !== 'Fondo'">Home</p>
+            <div v-else class="punto"></div>
+        </div>
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+            <img :src="props.title === 'Usuario' ? User : User" alt="">
+            <p v-if="props.title !== 'Usuario'">Home</p>
+            <div v-else class="punto"></div>
+        </div>
+    </div>
 </template>
 
 <style scoped>
     .container {
-        max-width: 600px;
-        border-top: 3px solid #000000;
+        padding: 8px 40px;
+        gap: 40px;
+        height: 88px;
+        background: #F0F0FC;
+        flex: none;
+        order: 3;
+        flex-grow: 0;
     }
-    .btn-color {
-        background-color: #eeeeee;
-        width: 14%;
-        min-width: 40px;
-        border-radius: 5px;
+    .buttons-heith {
+        padding: 0px 4px;
+        gap: 8px;
+        width: 24px;
+        flex: none;
+        order: 0;
+        flex-grow: 0;
+    }
+    .punto{
+        width: 4px;
+        height: 4px;
+        background: #050517;
+        flex: none;
+        flex-grow: 0;
+    }
+    .button-center {
+        padding: 0px;
+        gap: 10px;
+        width: 30px;
+        height: 40px;
+        background: #6665DD;
+        border-radius: 20px;
+        flex: none;
+        flex-grow: 0;
     }
     p{
         font-size: 0.6rem;
         margin: 0px;
-    }
-    i{
-        color: #000; 
-        text-shadow: 0 0 1.0px #000;
-        font-size: 1.2rem;
     }
 </style>

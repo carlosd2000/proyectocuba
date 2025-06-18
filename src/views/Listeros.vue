@@ -2,6 +2,7 @@
 import Header from '../components/Header.vue'
 import Dailyplay from '../components/Dailyplay.vue'
 import ToolsButton from '../components/ToolsButton.vue'
+import Footer from '../components/Footer.vue'
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -24,19 +25,22 @@ onMounted(async () => {
 })
 </script>
 
-
 <template>
   <div class="container-login">
-    <header class="col-12 m-0 p-0">
+    <header class="">
       <Header/>
     </header>
-    <main class="container h-100">
-      <dailyplay />
+    <main class="container">
+      <dailyplay/>
       <div class="line w-100"></div>
       <ToolsButton title="Herramientas" />
     </main>
+    <footer>
+      <Footer title="Home"/>
+    </footer>
   </div>
 </template>
+
 <style scoped>
 main{
 display: flex;
@@ -46,7 +50,6 @@ padding: 0px 16px;
 gap: 24px;
 flex: none;
 order: 2;
-
 flex-grow: 1;
 }
 .line{
