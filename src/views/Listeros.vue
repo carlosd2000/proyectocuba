@@ -52,10 +52,7 @@ onMounted(async () => {
   border: 2px solid #000000;
   box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.853);
 }
-header{
-  height: 7%;
-  width: 100%;
-}
+
 main {
   min-height: 93%;
   width: 100%;

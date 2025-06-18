@@ -15,11 +15,11 @@
       <!-- Botón para agregar filas -->
       <div class="col-2 m-0 p-0 d-flex justify-content-end align-items-end">
         <button
-          class="btn btn-dark rounded-circle mx-1 my-2 p-0 d-flex justify-content-center align-items-center"
+          class="btn bg-transparent mx-1 my-2 p-0 d-flex justify-content-center align-items-center"
           style="width: 30px; height: 30px;"
           @click="agregarFila"
         >
-          <i class="bi bi-plus-lg text-white"></i>
+          <i class="bi bi-plus-circle text-black" style="font-size: 24px;"></i>
         </button>
       </div>
 

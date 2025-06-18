@@ -181,10 +181,10 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
 </script>
 
 <template>
-    <div class="container-login position-relative">
-        <div>
+    <div class="container-login position-relative h-100">
+        <header>
             <Header/>
-        </div>
+        </header>
         <div class="col-12 m-0 p-2">
             <div class="col-12 m-0 mt-2 p-3 d-flex flex-column align-items-center justify-content-center border-3 box-shadow">
                 <header class="d-flex flex-column align-items-center justify-content-center">

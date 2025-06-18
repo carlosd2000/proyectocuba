@@ -8,8 +8,6 @@ const props = defineProps({
   }
 });
 
-
-
 // Estado reactivo para detalles abiertos por id
 const detallesAbiertos = ref([])
 

@@ -2,12 +2,19 @@
 import { ref } from 'vue';
 import Header from '../components/Header.vue';
 import Valores from '../components/Valores.vue';
-import listalisteros from '../components/listalisteros.vue';
+import listacolaboradores from '../components/listacolaboradores.vue';
+import listamovimientos from '../components/listamovimientos.vue';
 import Footer from '../components/Footer.vue';
+
+const seleccion = ref('colaboradores') 
 
 const banco = ref(
     { id: 1, nombre: 'Banco Central', wallet: 1000000, fondo: 1000000, fondorecaudado: 1000000 }
 );
+
+const seleccionar = (opcion) => {
+    seleccion.value = opcion
+}
 
 // Datos simulados
 const listeros = ref([
@@ -34,22 +41,20 @@ const listeros = ref([
 ])
 </script>
 <template>
-    <div class="layout">
         <header>
             <Header/>
         </header>
-
         <main class="m-0 p-0">
             <div class="m-0 p-0 header-main">
                 <Valores :fondorecaudado="banco.fondorecaudado" :fondo="banco.fondo"/>
             </div>
             <div class="m-0 p-0">
-                <div class="col-12 row p-0 container-botones">
-                    <div class="col-6 row m-0 p-0 border justify-content-center align-items-center">
+                <div class="col-12 row p-0 container-botones bg-white">
+                    <div @click="seleccionar('colaboradores')" :class="{ activo: seleccion === 'colaboradores' }" class="col-6 row m-0 p-0 border justify-content-center align-items-center">
                         <h5 class="text-center">Colaboradores</h5>
                         <i class="bi bi-people-fill mx-2 my-1"></i>
                     </div>
-                    <div class="col-6 row m-0 p-0 border justify-content-center align-items-center">
+                    <div  @click="seleccionar('movimientos')" :class="{ activo: seleccion === 'movimientos' }" class="col-6 row m-0 p-0 border justify-content-center align-items-center">
                         <h5 class="text-center">Movimientos</h5>
                         <i class="bi bi-arrow-left-right mx-2 my-1"></i>
                     </div>
@@ -62,27 +67,21 @@ const listeros = ref([
                 </div>
             </div>
             <div class="continer-lista p-0 px-2">
-                <listalisteros :listeros="listeros"/>
+                <listacolaboradores v-if="seleccion === 'colaboradores'" :listeros="listeros"/>
+                <listamovimientos v-if="seleccion === 'movimientos'"/>
             </div>
         </main>
         <div class="p-0 footer">
             <Footer/>
         </div>
-    </div>
 </template>
 <style scoped>
     .layout {
         display: flex;
         flex-direction: column;
-        height: 100vh; /* Toma el 100% de la altura de la ventana */
         overflow: hidden;
         margin: 0;
         padding: 0;
-    }
-    header{
-        height: 7%;
-        width: 100%;
-        
     }
     main{
         background-color: #f1f1f1;
@@ -122,5 +121,8 @@ const listeros = ref([
         width: 100%;
         background-color: #f8f9fa;
         border-top: 1px solid #dee2e6;
+    }
+    .activo {
+        background-color: #F6F6F6;
     }
 </style>
