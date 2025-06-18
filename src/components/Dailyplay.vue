@@ -11,31 +11,31 @@
             </p>
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
-            <div class="buttons-heith state-blue">
-                <img src="../assets/Jugada.svg" alt="">
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)" >
+                <img src="../assets/Jugada.svg" alt="" >
                 <p>
                     Jugada
                 </p>
             </div>
-            <div class="buttons-heith state-blue">
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
                 <img src="../assets/Parlet.svg" alt="">
                 <p>
                     Parlet
                 </p>
             </div>
-            <div class="buttons-heith state-blue">
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
                 <img src="../assets/Candado.svg" alt="">
                 <p>
                     Candado
                 </p>
             </div>
-            <div class="buttons-heith state-blue">
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
                 <img src="../assets/Centena.svg" alt="">
                 <p>
                     Centena
                 </p>
             </div>
-            <div class="buttons-heith black">
+            <div class="buttons-heith black" @click="$router.push(`/listas/${$route.params.id}`)">
                 <img src="../assets/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
                 <p>
                     Lista
