@@ -34,7 +34,7 @@ const props = defineProps({
             <p v-if="props.title !== 'Lista'">Lista</p>
             <div v-else class="punto"></div>
         </div>
-        <div class="button-center d-flex justify-content-center align-items-center">
+        <div class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
             <img src="../assets/Plus.svg" alt="">
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/wallet/${$route.params.id}`)">

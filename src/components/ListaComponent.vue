@@ -46,13 +46,7 @@ const {
         No hay apuestas para el dia de hoy
       </h3>
     </div>
-    <div v-for="persona in apuestasCombinadas" 
-         :key="persona.id" 
-         class="col-12 m-0 mb-2 p-0 pt-2 pb-2 persona" 
-         @click="cuadroClick(persona)" 
-         style="cursor: pointer;"
-         :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
-         
+    <div v-for="persona in apuestasCombinadas" :key="persona.id" class="m-0 mb-2 p-0 pt-2 pb-2 persona" @click="cuadroClick(persona)" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
       <header class="col-12 row m-0 px-1 py-3">
         <div class="col-10 -flex justify-content-start align-items-center">
           <p class="name">{{ persona.nombre }}</p>
@@ -62,7 +56,6 @@ const {
           <img v-else src="../assets/Lock.svg" class="fs-4" alt="" style="cursor: pointer;">
         </div>
       </header>
-      
       <main class="col-12 row m-0 p-0">
         <div class="col-6 m-0 p-0 apuestas d-flex flex-column justify-content-center align-items-start">
           <div class="col-12 m-0 p-0">
@@ -117,7 +110,6 @@ const {
           </div>
         </div>
       </main>
-      
       <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
         <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
           <div class="mx-2 d-flex justify-content-center align-items-center">

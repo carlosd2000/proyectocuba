@@ -11,7 +11,7 @@
             </p>
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
-            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)" >
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
                 <img src="../assets/Jugada.svg" alt="" >
                 <p>
                     Jugada
@@ -35,7 +35,7 @@
                     Centena
                 </p>
             </div>
-            <div class="buttons-heith black" @click="$router.push(`/listas/${$route.params.id}`)">
+            <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
                 <img src="../assets/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
                 <p>
                     Lista
@@ -49,12 +49,12 @@
 import { useDailyPlay } from '../scripts/DailyPlay.js'
 
 const {
-  opciones,
-  turnoSeleccionado,
-  totalGlobal,
-  totalFormateado,
-  route,
-  router
+    opciones,
+    turnoSeleccionado,
+    totalGlobal,
+    totalFormateado,
+    route,
+    router
 } = useDailyPlay()
 </script>
 

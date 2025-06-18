@@ -36,7 +36,6 @@ p{
     gap: 12px;
     width: 343px;
     flex: none;
-    order: 1;
     flex-grow: 0;
 }
 .line{
