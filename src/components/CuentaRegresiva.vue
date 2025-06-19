@@ -1,6 +1,9 @@
 <template>
   <div class="timer-display">
-    {{ cuentaRegresiva || 'hh:mm:ss' }}
+    <img src="../assets/icons/Tiempo.svg" alt="">
+    <h5 class="small" style="color: #FDFEF2;">
+      {{ cuentaRegresiva || 'hh:mm:ss' }}
+    </h5>
   </div>
 </template>
 
@@ -24,7 +27,6 @@ const { cuentaRegresiva } = useHeader()
   background: #050517;
   border-radius: 30px;
   flex: none;
-  order: 1;
   flex-grow: 0;
   color: white;
   font-family: monospace;

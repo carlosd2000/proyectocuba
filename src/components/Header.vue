@@ -12,7 +12,7 @@
       <div class="col-7 row p-0 m-0 d-flex justify-content-end align-items-center">
         <button class="btn btn-light border-0 mx-1 p-0 bg-transparent" @click="$router.push(`/wallet/${$route.params.id}`)">
         </button>
-        <div class="px-1 m-0 mr-2 d-flex justify-content-end align-items-center" v-if="showBell">
+        <div class="px-1 m-0 mr-2 d-flex justify-content-end align-items-center" v-if="bell">
           <i class="bi bi-bell" style="font-size: 24px; width: 24px; height: 24px;"></i>
         </div>
       </div>

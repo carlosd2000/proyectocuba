@@ -1,5 +1,5 @@
 <script setup>
-import { toRef } from 'vue'
+import { toRef, reactive } from 'vue'
 import useLista from '../scripts/Lista.js' // ajusta la ruta si es diferente
 import { useRouter, useRoute } from 'vue-router'
 
@@ -14,7 +14,15 @@ const router = useRouter()
 const route = useRoute()
 
 const fechaRef = toRef(props, 'fecha')
+const detallesVisibles = reactive(new Set()) // IDs con detalles visibles
 
+const toggleDetalles = (personaId) => {
+  if (detallesVisibles.has(personaId)) {
+    detallesVisibles.delete(personaId)
+  } else {
+    detallesVisibles.add(personaId)
+  }
+}
 const {
   mostrarModal,
   mostrarConfirmacionEliminar,
@@ -46,82 +54,75 @@ const {
         No hay apuestas para el dia de hoy
       </h3>
     </div>
-    <div v-for="persona in apuestasCombinadas" 
-         :key="persona.id" 
-         class="col-12 m-0 mb-2 p-0 pt-2 pb-2 persona" 
-         @click="cuadroClick(persona)" 
-         style="cursor: pointer;"
-         :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
-         
-      <header class="col-12 row m-0 px-1 py-3">
-        <div class="col-10 -flex justify-content-start align-items-center">
+    <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" @click="cuadroClick(persona)" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
+      <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
+        <div class="d-flex justify-content-start align-items-center">
           <p class="name">{{ persona.nombre }}</p>
         </div>
-        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center" @click.stop>
-          <img v-if="persona.candadoAbierto" src="../assets/Lock open.svg" class="fs-4" alt="" style="cursor: pointer;">
-          <img v-else src="../assets/Lock.svg" class="fs-4" alt="" style="cursor: pointer;">
+        <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
+          <img :src="obtenerIconoEstado(persona)" alt="">
+          <p class="hora-text">{{ mostrarHora(persona) }}</p>
+          <img src="../assets/icons/Expand.svg" alt="">
         </div>
       </header>
-      
-      <main class="col-12 row m-0 p-0">
-        <div class="col-6 m-0 p-0 apuestas d-flex flex-column justify-content-center align-items-start">
-          <div class="col-12 m-0 p-0">
-            <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2">
-              <div class="m-0 p-0 d-flex align-items-center flex-wrap">
+      <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100">
+        <div class="col-12 container-apuestas p-0 d-flex flex-row justify-content-center align-items-center">
+          <div class="col-9 apuestas d-flex flex-column justify-content-center align-items-start">
+            <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2 w-100">
+              <div class="d-flex align-items-center flex-wrap">
                 <div v-if="'cuadrado' in mapa" class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p class="m-0 p-0 d-flex justify-content-center align-items-center rounded container-number-cuadrado">
+                  <p class="d-flex justify-content-center align-items-center container-number">
                     {{ mapa['cuadrado'] }}
                   </p>
                 </div>
                 <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p v-if="'circulo1' in mapa" class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                  <p v-if="'circulo1' in mapa" class="d-flex justify-content-center align-items-center container-number">
                     {{ mapa['circulo1'] }}
                   </p>
                 </div>
                 <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p v-if="'circulo2' in mapa" class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
+                  <p v-if="'circulo2' in mapa" class="d-flex justify-content-center align-items-center container-number">
                     {{ mapa['circulo2'] }}
                   </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        
-        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
-          <div v-if="persona.circuloSolo" class="m-0 p-0 d-flex justify-content-center align-items-center rounded-circle container-number">
-            {{ persona.circuloSolo }}
+          
+          <div class="col-3 d-flex justify-content-center align-items-center">
+            <div v-if="persona.circuloSolo" class="d-flex justify-content-center align-items-center container-number">
+              {{ persona.circuloSolo }}
+            </div>
           </div>
         </div>
-        
-        <div class="col-4 m-0 p-0 d-flex justify-content-center align-items-center">
-          <div class="col-12 m-0 p-0 d-flex flex-column justify-content-center align-items-center">
-            <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
-              <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                <i class="bi bi-coin m-1"></i>
-              </div>
-              <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                <p class="m-1">{{ Number(persona.totalGlobal) || 0 }}</p>
-              </div>
+        <div class="p-0 d-flex flex-row justify-content-between align-items-center w-100">
+          <div class="d-flex flex-column justify-content-center align-items-center">
+            <p>{{ Number(persona.totalGlobal) || 0 }}</p>
+            <div class="d-flex flex-row justify-content-center align-items-center gap-1">
+              <img src="../assets/icons/Coin.svg" alt="">
+              <p>Bruto</p>
             </div>
-            <div class="col-12 m-0 p-0 flex d-flex flex-column justify-content-center align-items-center">
-              <div class="col-12 m-0 p-0 d-flex justify-content-around align-items-center">
-                <div class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <i class="bi bi-award-fill"></i>
-                </div>
-                <div class="col-6 m-0 p-0 d-flex justify-content-start align-items-center">
-                  <p class="m-1">-</p>
-                </div>
-              </div>
+          </div>
+          <div class="d-flex flex-column justify-content-center align-items-center">
+            <p>{{ Number(persona.totalGlobal) || 0 }}</p>
+            <div class="d-flex flex-row justify-content-center align-items-center gap-1">
+              <img src="../assets/icons/Star.svg" alt="">
+              <p>Premio</p>
+            </div>
+          </div>
+          <div class="d-flex flex-column justify-content-center align-items-center">
+            <p>{{ Number(persona.totalGlobal) || 0 }}</p>
+            <div class="d-flex flex-row justify-content-center align-items-center gap-1">
+              <img src="../assets/icons/Ganancia.svg" alt="">
+              <p>Neto</p>
             </div>
           </div>
         </div>
       </main>
-      
       <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
         <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
           <div class="mx-2 d-flex justify-content-center align-items-center">
-            <p class="hora-text">{{ mostrarHora(persona) }}</p>
+            
             <i class="icon-estado" :class="obtenerIconoEstado(persona)"></i>
             <span v-if="!isOnline && persona.estado !== 'Pendiente'" class="ms-1 badge bg-warning text-dark">Offline</span>
           </div>
@@ -159,6 +160,33 @@ const {
 </template>
 
 <style scoped>
+.container-cloud{
+  gap: 6px;
+}
+.container-apuestas{
+  gap: 16px;
+  flex: none;
+  flex-grow: 0;
+}
+.container-list {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+  max-width: 343px;
+  border: 1px solid #F3F3F3;
+  border-radius: 12px;
+  flex: none;
+  flex-grow: 0;
+}
+header{
+  padding: 0px;
+  gap: 12px;
+  flex: none;
+  flex-grow: 1;
+}
 p {
   margin: 0px;
   padding: 0px;
@@ -167,33 +195,18 @@ p {
 p.name{
   font-size: 1.1rem;
 }
-i.bi{
-  font-size: 1.3rem;
-}
-i.icon-estado {
-  font-size: 1.0rem;
-}
 .offline-banner{
   font-size: 0.8rem;
 }
-.container-number-cuadrado {
-  width: 37px;
-  height: 25px;
-  font-size: 1.1rem;
-  background-color: #f1f1f1;
-}
 .container-number {
-  width: 25px;
-  height: 25px;
-  background-color: #f1f1f1;
+  padding: 8px 16px;
+  gap: 16px;
+  background: #F3F3F3;
+  border-radius: 30px;
+  flex: none;
+  flex-grow: 0;
 }
-.persona {
-  background: white;
-  border-radius: 8px;
-  border: #000 solid 2px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
-  padding: 10px;
-}
+
 .apuesta-pendiente {
   background-color: #fff8e1;
   border: 2px dashed #ffc107;

@@ -3,7 +3,7 @@
         <div class="d-flex flex-column justify-content-center align-items-center w-100">
             <p>999999</p>
             <div class="d-flex flex-row gap-2">
-                <img src="../assets/Coin.svg" alt="">
+                <img src="../assets/icons/Coin.svg" alt="">
                 <p>Bruto</p>
             </div>
         </div>
@@ -11,7 +11,7 @@
         <div class="d-flex flex-column justify-content-center align-items-center w-100">
             <p>000</p>
             <div class="d-flex flex-row gap-2">
-                <img src="../assets/Star.svg" alt="">
+                <img src="../assets/icons/Star.svg" alt="">
                 <p>Premios</p>
             </div>
         </div>
@@ -19,7 +19,7 @@
         <div class="d-flex flex-column justify-content-center align-items-center w-100">
             <p>000</p>
             <div class="d-flex flex-row gap-2">
-                <img src="../assets/Ganancia.svg" alt="">
+                <img src="../assets/icons/Ganancia.svg" alt="">
                 <p>Neto</p>
             </div>
         </div>
@@ -36,7 +36,6 @@ p{
     gap: 12px;
     width: 343px;
     flex: none;
-    order: 1;
     flex-grow: 0;
 }
 .line{

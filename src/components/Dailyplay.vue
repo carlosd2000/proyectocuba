@@ -1,45 +1,45 @@
 <template>
     <div class="container m-0 p-0 d-flex flex-column align-items-start">
         <div class="m-0 p-0 d-flex justify-content-between align-items-center">
-            <p class="title">
+            <h2>
                 Jugada diaria
-            </p>
+            </h2>
         </div>
         <div>
-            <p class="title">
+            <label>
                 {{ wallet }}1100
-            </p>
+            </label>
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
-            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)" >
-                <img src="../assets/Jugada.svg" alt="" >
-                <p>
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
+                <img src="../assets/icons/Jugada.svg" alt="" >
+                <h5 class="navegation-label">
                     Jugada
-                </p>
+                </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
-                <img src="../assets/Parlet.svg" alt="">
-                <p>
+                <img src="../assets/icons/Parlet.svg" alt="">
+                <h5 class="navegation-label">
                     Parlet
-                </p>
+                </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
-                <img src="../assets/Candado.svg" alt="">
-                <p>
+                <img src="../assets/icons/Candado.svg" alt="">
+                <h5 class="navegation-label">
                     Candado
-                </p>
+                </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
-                <img src="../assets/Centena.svg" alt="">
-                <p>
+                <img src="../assets/icons/Centena.svg" alt="">
+                <h5 class="navegation-label">
                     Centena
-                </p>
+                </h5>
             </div>
-            <div class="buttons-heith black" @click="$router.push(`/listas/${$route.params.id}`)">
-                <img src="../assets/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
-                <p>
+            <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
+                <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
+                <h5 class="navegation-label" style="color: #FDFEF2" >
                     Lista
-                </p>
+                </h5>
             </div>
         </div>            
     </div>
@@ -49,20 +49,16 @@
 import { useDailyPlay } from '../scripts/DailyPlay.js'
 
 const {
-  opciones,
-  turnoSeleccionado,
-  totalGlobal,
-  totalFormateado,
-  route,
-  router
+    opciones,
+    turnoSeleccionado,
+    totalGlobal,
+    totalFormateado,
+    route,
+    router
 } = useDailyPlay()
 </script>
 
 <style scoped>
-p {
-    margin: 0;
-    padding: 0;
-}
 .container{
     gap: 16px;
     flex: none;

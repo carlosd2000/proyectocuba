@@ -28,7 +28,7 @@
 <script setup>
 import { ref, toRef } from 'vue'
 import Calendario from './Calendario.vue'
-import lista from './lista.vue'
+import lista from './ListaComponent.vue'
 
 const props = defineProps({
   fecha: {

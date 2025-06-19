@@ -1,4 +1,5 @@
 #app{
+  background-color: #fdfef2;
   height: 100vh;
   width: 100%;
 }
@@ -25,10 +26,104 @@ footer{
   color: #000;
 }
 h1, h2, h3, h4, h5, h6 {
-  padding: 0;
-  margin: 0;
+  padding: 0 !important;
+  margin: 0 !important;
 }
-p {
+h1{
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 28px !important;
+  letter-spacing: 0% !important;
+  color: #050517 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+h2{
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 20px !important;
+  letter-spacing: 0% !important;
+  color: #050517 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+h3{
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0% !important;
+  color: #050517 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.subtitle{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.body{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.body-bold{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.small{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.label{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #373745;
+}
+.input-label{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #696974;
+}
+.navegation-label{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 8px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #373745;
+}
+p{
   padding: 0px;
   margin: 0px;
 }

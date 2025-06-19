@@ -2,6 +2,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/crudListas.js'
 import { sincronizarPendientes } from '../scripts/añadir.js'
+import Cloud from '../assets/icons/Cloud.svg'
+import CloudFill from '../assets/icons/Cloud_fill.svg'
 
 export default function useLista(fechaRef, router, route) {
     const mostrarModal = ref(false)
@@ -28,8 +30,8 @@ export default function useLista(fechaRef, router, route) {
     const obtenerIconoEstado = (persona) => {
         if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
         switch (persona.estado) {
-        default: case 'Cargado': return 'bi bi-cloud-check text-success'
-        case 'Pendiente': return 'bi bi-cloud-slash text-danger'
+        default: case 'Cargado': return Cloud
+        case 'Pendiente': return CloudFill
         case 'EnTiempo': return 'bi bi-stopwatch text-success'
         case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
         }
