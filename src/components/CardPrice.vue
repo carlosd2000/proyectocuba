@@ -1,7 +1,7 @@
 <template>
-  <div class="card-price">
+  <div class="card-price" :class="{ 'horizontal-layout': !isListerosRoute }">
     <!-- Valor/Precio -->
-    <h1>
+    <h1 class="price-value">
       {{ formattedPrice }}
     </h1>
     
@@ -12,6 +12,8 @@
 
 <script>
 import CuentaRegresiva from './CuentaRegresiva.vue';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 export default {
   components: {
@@ -22,6 +24,14 @@ export default {
       type: Number,
       default: 0
     }
+  },
+  setup() {
+    const route = useRoute();
+    const isListerosRoute = computed(() => route.path.startsWith('/listeros'));
+    
+    return {
+      isListerosRoute
+    };
   },
   computed: {
     formattedPrice() {
@@ -46,7 +56,15 @@ export default {
   flex: none;
   order: 0;
   flex-grow: 0;
-  font-family: 'Inter', sans-serif; /* Ejemplo de fuente */
+  font-family: 'Inter', sans-serif;
+}
+
+.card-price.horizontal-layout {
+  flex-direction: row;
+  justify-content: space-between;
+  width: auto; /* o un valor más pequeño según necesites */
+  height: auto;
+  padding: 15px 20px;
 }
 
 .price-value {
@@ -54,5 +72,11 @@ export default {
   font-weight: 700;
   line-height: 1.2;
   color: #000000;
+}
+
+/* Ajusta estos estilos según necesites para el diseño horizontal */
+.horizontal-layout .price-value {
+  font-size: 24px; /* Tamaño más pequeño para diseño horizontal */
+  margin-right: 15px; /* Espacio entre el precio y el contador */
 }
 </style>
