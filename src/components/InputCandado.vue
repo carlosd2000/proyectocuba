@@ -7,7 +7,7 @@
         <div v-for="fila in 5" :key="'fija-' + fila" class="input-row">
           <input
             type="number"
-            class="cuadrado"
+            class="cuadrado label"
             v-model="filasFijas[fila - 1].cuadrado"
             min="0"
             step="1"
@@ -21,7 +21,7 @@
         <div v-for="(fila, index) in filasExtra" :key="'extra-' + index" class="input-row">
           <input
             type="number"
-            class="cuadrado"
+            class="cuadrado label"
             v-model="fila.cuadrado"
             min="0"
             step="1"
@@ -37,7 +37,7 @@
         <input
           type="number"
           placeholder="$"
-          class="circular-solo"
+          class="circular-solo label"
           v-model="filasFijas[2].circuloSolo"
           min="0"
           step="1"

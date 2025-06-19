@@ -7,7 +7,7 @@
         <div v-for="fila in 5" :key="'fija-' + fila" class="input-row">
           <input
             type="number"
-            class="cuadrado input.label"
+            class="cuadrado label"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
             v-model="filasFijas[fila - 1].cuadrado"
             min="0"
@@ -17,7 +17,7 @@
           <input
             type="number"
             placeholder="$"
-            class="circular"
+            class="circular label"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo1')"
             v-model="filasFijas[fila - 1].circulo1"
             min="0"
@@ -27,7 +27,7 @@
           <input
             type="number"
             placeholder="$"
-            class="circular"
+            class="circular label"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo2')"
             v-model="filasFijas[fila - 1].circulo2"
             min="0"
@@ -40,7 +40,7 @@
         <div v-for="(fila, index) in filasExtra" :key="'extra-' + index" class="input-row">
           <input
             type="number"
-            class="cuadrado"
+            class="cuadrado label"
             :class="claseImagenSiHayEspacio(index, 'extra')"
             v-model="fila.cuadrado"
             min="0"
@@ -75,7 +75,7 @@
         <input
           type="number"
           placeholder="$"
-          class="circular-solo"
+          class="circular-solo label"
           v-model="filasFijas[2].circuloSolo"
           min="0"
           step="1"
