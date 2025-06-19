@@ -24,7 +24,7 @@ const props = defineProps({
 
 <template>  
     <div class="container d-flex flex-row justify-content-center align-items-center">
-        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/listeros/${$route.params.id}`)">
             <img :src="props.title === 'Home' ? Home_Active : Home" alt="">
             <p v-if="props.title !== 'Home'">Home</p>
             <div v-else class="punto"></div>
