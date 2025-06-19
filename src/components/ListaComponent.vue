@@ -44,12 +44,11 @@ const {
 
 
 <template>
-  <div class="m-0 p-0">
+  <div class="m-0 p-0 d-flex align-items-center">
     <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
       <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
-      
     </div>
-    <div v-if="!apuestasCombinadas" >
+    <div v-if="!apuestasCombinadas.length" >
       <h3>
         No hay apuestas para el dia de hoy
       </h3>

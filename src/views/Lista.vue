@@ -47,8 +47,8 @@ const opcionSeleccionada = ref('Lista')
           </div>
         </div>
       </main>
-      <aside class="w-100">
-        <div v-if="opcionSeleccionada === 'Lista'">
+      <aside class="w-100 h-100 overflow-auto">
+        <div v-if="opcionSeleccionada === 'Lista'" class="d-flex justify-content-center align-items-center w-100 h-100">
           <ListaComponent :fecha="fechaSeleccionada" />
         </div>
       </aside>
@@ -66,9 +66,9 @@ const opcionSeleccionada = ref('Lista')
   align-items: center;
   padding: 0px 16px;
   gap: 16px;
-  flex: none;
-  align-self: stretch;
-  flex-grow: 1;
+  width: 100%;
+  height: calc(100vh - 7% - 88px); /* Ajusta 60px según la altura real del footer */
+  overflow-y: auto;
 }
 main{
   display: flex;
