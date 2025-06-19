@@ -1,5 +1,5 @@
 <script setup>
-import { toRef } from 'vue'
+import { toRef, reactive } from 'vue'
 import useLista from '../scripts/Lista.js' // ajusta la ruta si es diferente
 import { useRouter, useRoute } from 'vue-router'
 
@@ -14,7 +14,15 @@ const router = useRouter()
 const route = useRoute()
 
 const fechaRef = toRef(props, 'fecha')
+const detallesVisibles = reactive(new Set()) // IDs con detalles visibles
 
+const toggleDetalles = (personaId) => {
+  if (detallesVisibles.has(personaId)) {
+    detallesVisibles.delete(personaId)
+  } else {
+    detallesVisibles.add(personaId)
+  }
+}
 const {
   mostrarModal,
   mostrarConfirmacionEliminar,
@@ -46,17 +54,17 @@ const {
         No hay apuestas para el dia de hoy
       </h3>
     </div>
-    <div v-for="persona in apuestasCombinadas" :key="persona.id" class="m-0 mb-2 p-0 pt-2 pb-2 persona" @click="cuadroClick(persona)" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
-      <header class="col-12 row m-0 px-1 py-3">
-        <div class="col-10 -flex justify-content-start align-items-center">
+    <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" @click="cuadroClick(persona)" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
+      <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
+        <div class="d-flex justify-content-start align-items-center">
           <p class="name">{{ persona.nombre }}</p>
         </div>
-        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center" @click.stop>
-          <img v-if="persona.candadoAbierto" src="../assets/Lock open.svg" class="fs-4" alt="" style="cursor: pointer;">
-          <img v-else src="../assets/Lock.svg" class="fs-4" alt="" style="cursor: pointer;">
+        <div class="d-flex flex-row justify-content-center align-items-center">
+          <p class="hora-text">{{ mostrarHora(persona) }}</p>
+          <img src="../assets/Expand.svg" alt="">
         </div>
       </header>
-      <main class="col-12 row m-0 p-0">
+      <main v-if="detallesVisibles.has(persona.id)" class="col-12 row m-0 p-0">
         <div class="col-6 m-0 p-0 apuestas d-flex flex-column justify-content-center align-items-start">
           <div class="col-12 m-0 p-0">
             <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2">
@@ -113,7 +121,7 @@ const {
       <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
         <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
           <div class="mx-2 d-flex justify-content-center align-items-center">
-            <p class="hora-text">{{ mostrarHora(persona) }}</p>
+            
             <i class="icon-estado" :class="obtenerIconoEstado(persona)"></i>
             <span v-if="!isOnline && persona.estado !== 'Pendiente'" class="ms-1 badge bg-warning text-dark">Offline</span>
           </div>
@@ -151,6 +159,25 @@ const {
 </template>
 
 <style scoped>
+.container-list {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+  max-width: 343px;
+  border: 1px solid #F3F3F3;
+  border-radius: 12px;
+  flex: none;
+  flex-grow: 0;
+}
+header{
+  padding: 0px;
+  gap: 12px;
+  flex: none;
+  flex-grow: 1;
+}
 p {
   margin: 0px;
   padding: 0px;
@@ -179,13 +206,7 @@ i.icon-estado {
   height: 25px;
   background-color: #f1f1f1;
 }
-.persona {
-  background: white;
-  border-radius: 8px;
-  border: #000 solid 2px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.305);
-  padding: 10px;
-}
+
 .apuesta-pendiente {
   background-color: #fff8e1;
   border: 2px dashed #ffc107;

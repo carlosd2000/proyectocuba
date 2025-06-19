@@ -1,141 +1,92 @@
 <template>
-  <div class="container py-3" style="max-width: 320px; ">
-    <!-- Campo de nombre -->
-    <div class="col-8 ml-4 p-0 mb-2 border-bottom border-dark">
-      <input
-        type="text"
-        class="form-control border-0 border-bottom border-dark"
-        style="background-color: #fdfef2;"
-        placeholder="Nombre (opcional)"
-        v-model="nombreUsuario"
-      />
-    </div>
-
-    <!-- Contenedor principal -->
+  <div class="container py-3" style="max-width: 350px;"> <!-- Aumenté a 350px -->
     <div class="main-container">
-      <!-- Contenedor del contenido principal con altura fija -->
-      <div class="content-wrapper">
-        <!-- Scroll container con altura FIJA -->
-        <div class="scroll-container">
-          <!-- Contenedor de filas (fijas + extra) -->
-          <div class="rows-container">
-            <!-- Filas fijas (siempre visibles) -->
-            <div
-              v-for="fila in 5"
-              :key="'fija-' + fila"
-              class="input-row"
-            >
-              <!-- Input cuadrado -->
-              <input
-                type="number"
-                class="cuadrado"
-                :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="filasFijas[fila - 1].cuadrado"
-              />
-              
-              <!-- Inputs circulares -->
-              <input
-                type="number"
-                placeholder="$"
-                class="circular"
-                :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo1')"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="filasFijas[fila - 1].circulo1"
-              />
-              <input
-                type="number"
-                placeholder="$"
-                class="circular"
-                :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo2')"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="filasFijas[fila - 1].circulo2"
-              />
-            </div>
-
-            <!-- Filas extra -->
-            <div
-              v-for="(fila, index) in filasExtra"
-              :key="'extra-' + index"
-              class="input-row"
-            >
-              <!-- Input cuadrado -->
-              <input
-                type="number"
-                class="cuadrado"
-                :class="claseImagenSiHayEspacio(index, 'extra')"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="fila.cuadrado"
-              />
-              
-              <!-- Inputs circulares -->
-              <input
-                type="number"
-                placeholder="$"
-                class="circular"
-                :class="claseImagenSiHayEspacio(index, 'extra', 'circulo1')"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="fila.circulo1"
-              />
-              <input
-                type="number"
-                placeholder="$"
-                class="circular"
-                :class="claseImagenSiHayEspacio(index, 'extra', 'circulo2')"
-                min="0"
-                step="1"
-                @keypress="soloEnteros($event)"
-                v-model="fila.circulo2"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Botón agregar (POSICIÓN ABSOLUTAMENTE FIJA) -->
-        <button
-          class="btn-agregar-fila"
-          @click="agregarFila"
-        >
-          <img :src="masIcon" alt="Agregar fila" class="icono-mas">
-        </button>
-      </div>
-
-      <!-- Columna del círculo solo -->
-      <div class="right-column">
-        <div
-          v-for="fila in 5"
-          :key="'circulo-solo-' + fila"
-          class="circulo-solo-container"
-        >
+      <!-- Contenedor del scroll (solo filas) - ahora más ancho -->
+      <div class="scroll-container">
+        <!-- Filas fijas -->
+        <div v-for="fila in 5" :key="'fija-' + fila" class="input-row">
           <input
-            v-if="fila === 3"
             type="number"
-            placeholder="$"
-            class="circular-solo"
+            class="cuadrado"
+            :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
+            v-model="filasFijas[fila - 1].cuadrado"
             min="0"
             step="1"
             @keypress="soloEnteros($event)"
-            v-model="filasFijas[2].circuloSolo"
+          />
+          <input
+            type="number"
+            placeholder="$"
+            class="circular"
+            :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo1')"
+            v-model="filasFijas[fila - 1].circulo1"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
+          />
+          <input
+            type="number"
+            placeholder="$"
+            class="circular"
+            :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo2')"
+            v-model="filasFijas[fila - 1].circulo2"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
           />
         </div>
-        
-        <!-- Espacio para filas extra -->
-        <div
-          v-for="(fila, index) in filasExtra"
-          :key="'extra-circulo-solo-' + index"
-          class="circulo-solo-container"
-        ></div>
+
+        <!-- Filas extra -->
+        <div v-for="(fila, index) in filasExtra" :key="'extra-' + index" class="input-row">
+          <input
+            type="number"
+            class="cuadrado"
+            :class="claseImagenSiHayEspacio(index, 'extra')"
+            v-model="fila.cuadrado"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
+          />
+          <input
+            type="number"
+            placeholder="$"
+            class="circular"
+            :class="claseImagenSiHayEspacio(index, 'extra', 'circulo1')"
+            v-model="fila.circulo1"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
+          />
+          <input
+            type="number"
+            placeholder="$"
+            class="circular"
+            :class="claseImagenSiHayEspacio(index, 'extra', 'circulo2')"
+            v-model="fila.circulo2"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
+          />
+        </div>
       </div>
+
+      <!-- Círculo solo - FIJO FUERA DEL SCROLL (posición ajustada) -->
+      <div class="circulo-solo-fixed">
+        <input
+          type="number"
+          placeholder="$"
+          class="circular-solo"
+          v-model="filasFijas[2].circuloSolo"
+          min="0"
+          step="1"
+          @keypress="soloEnteros($event)"
+        />
+      </div>
+
+      <!-- Botón agregar -->
+      <button class="btn-agregar-fila" @click="agregarFila">
+        <img :src="masIcon" alt="Agregar fila" class="icono-mas">
+      </button>
     </div>
   </div>
 </template>
@@ -154,67 +105,55 @@ const {
   filasFijas,
   filasExtra,
   agregarFila,
-  limpiarCampos,
-  nombreUsuario,
   soloEnteros,
-  claseImagenSiHayEspacio,
+  claseImagenSiHayEspacio
 } = useInputs(props)
 </script>
 
 <style scoped>
-/* Layout principal */
 .main-container {
-  display: flex;
+  position: relative;
   background-color: #fdfef2;
-  position: relative;
-  height: 350px; /* Altura fija del contenedor principal */
+  height: 350px;
+  padding-right: 64px; /* Espacio para el círculo solo */
 }
 
-.content-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.right-column {
-  width: 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Scroll container con altura fija */
 .scroll-container {
-  height: 290px; /* Altura fija para el scroll */
+  height: 290px;
   overflow-y: auto;
+  width: calc(100% - 8px); /* Ajuste para mayor ancho */
   padding-right: 8px;
 }
 
-/* Contenedor de filas */
-.rows-container {
-  min-height: 290px; /* Asegura espacio para las 5 filas fijas */
-}
-
-/* Estilos de filas */
 .input-row {
   display: flex;
   margin-bottom: 8px;
-  gap: 8px;
+  gap: 10px; /* Aumenté el gap para mejor espacio */
   padding-left: 8px;
-  height: 48px; /* Altura fija por fila */
+  height: 48px;
+  width: 100%;
 }
 
-.circulo-solo-container {
+/* Aumenté el tamaño de los inputs */
+.cuadrado, .circular, .circular-solo {
+  width: 70px; /* Aumenté de 64px a 70px */
+  height: 48px;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Círculo solo - POSICIÓN FIJA ABSOLUTA (ajustada) */
+.circulo-solo-fixed {
+  position: absolute;
+  right: 0;
+  top: 112px; /* (48px + 8px) * 2 = 112px para tercera fila */
   width: 64px;
   height: 48px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 8px;
+  z-index: 2;
 }
 
-/* Botón agregar (POSICIÓN ABSOLUTA FIJA) */
+/* Mantengo los demás estilos igual */
 .btn-agregar-fila {
   position: absolute;
   bottom: 0;
@@ -242,60 +181,16 @@ const {
   object-fit: contain;
 }
 
-/* Estilos de inputs (mantenidos) */
 .cuadrado {
-  width: 64px;
-  height: 48px;
   border: 1px solid #CDCDD1;
   border-radius: 30px;
   background: #FFFFFF;
-  padding: 8px 12px 8px 16px;
-  text-align: center;
-  font-size: 14px;
-  outline: none;
 }
 
-.circular {
-  width: 64px;
-  height: 48px;
+.circular, .circular-solo {
   background: #F3F3F3;
   border: 1px solid #F3F3F3;
   border-radius: 30px;
-  padding: 8px 12px 8px 16px;
-  text-align: center;
-  font-size: 14px;
-  outline: none;
-}
-
-.circular-solo {
-  width: 64px;
-  height: 48px;
-  background: #F3F3F3;
-  border: 1px solid #F3F3F3;
-  border-radius: 30px;
-  padding: 8px 12px 8px 16px;
-  text-align: center;
-  font-size: 14px;
-  outline: none;
-}
-
-/* Scrollbar styling */
-.scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scroll-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.scroll-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 
 input[type="number"]::-webkit-inner-spin-button,
