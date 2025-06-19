@@ -26,12 +26,12 @@ const props = defineProps({
     <div class="container d-flex flex-row justify-content-center align-items-center">
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/listeros/${$route.params.id}`)">
             <img :src="props.title === 'Home' ? Home_Active : Home" alt="">
-            <p v-if="props.title !== 'Home'">Home</p>
+            <h5 v-if="props.title !== 'Home'" class="navegation-label">Home</h5>
             <div v-else class="punto"></div>
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/lista/${$route.params.id}`)">
             <img :src="props.title === 'Lista' ? Lista_Active : Lista" alt="">
-            <p v-if="props.title !== 'Lista'">Lista</p>
+            <h5 v-if="props.title !== 'Lista'" class="navegation-label">Lista</h5>
             <div v-else class="punto"></div>
         </div>
         <div class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
@@ -39,12 +39,12 @@ const props = defineProps({
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/wallet/${$route.params.id}`)">
             <img :src="props.title === 'Fondo' ? Wallet : Wallet" alt="">
-            <p v-if="props.title !== 'Fondo'">Fondo</p>
+            <h5 v-if="props.title !== 'Fondo'" class="navegation-label">Fondo</h5>
             <div v-else class="punto"></div>
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
             <img :src="props.title === 'Usuario' ? User : User" alt="">
-            <p v-if="props.title !== 'Usuario'">Usuario</p>
+            <h5 v-if="props.title !== 'Usuario'" class="navegation-label">Usuario</h5>
             <div v-else class="punto"></div>
         </div>
     </div>

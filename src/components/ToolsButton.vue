@@ -9,9 +9,9 @@ const props = defineProps({
 <template>
     <div class="container-tools d-flex justify-content-center align-items-center">
         <div class="d-flex justify-content-between align-items-center w-100">
-            <p>
+            <h5 class="small">
                 {{ title }}
-            </p>
+            </h5>
             <img src="../assets/Chevron_right.svg" alt="">
         </div>
     </div>
