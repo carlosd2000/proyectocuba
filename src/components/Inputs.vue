@@ -7,7 +7,7 @@
         <div v-for="fila in 5" :key="'fija-' + fila" class="input-row">
           <input
             type="number"
-            class="cuadrado"
+            class="cuadrado input.label"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
             v-model="filasFijas[fila - 1].cuadrado"
             min="0"
