@@ -95,14 +95,23 @@ label{
   margin: 0px;
   color: #696974;
 }
-input.label{
+.label{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #373745;
+}
+.input-label{
   font-family: 'Manrope', sans-serif;
   font-weight: 400;
   font-size: 14px;
   letter-spacing: 0%;
   padding: 0px;
   margin: 0px;
-  color: #050517;
+  color: #696974;
 }
 .navegation-label{
   font-family: 'Manrope', sans-serif;

@@ -3,7 +3,7 @@
     <span class="alias-prefix">Alias</span>
     <input
       type="text"
-      class="nombre-input"
+      class="nombre-input label"
       v-model="nombreUsuario"
     />
     <div class="icon-container">
@@ -49,10 +49,7 @@ const { nombreUsuario } = useInputs()
   /* Input estilo minimalista */
   flex: 1;
   border: none;
-  outline: none;
   background: transparent;
-  font-size: 14px;
-  color: #333;
   padding-left: 5px;
   min-width: 50px; 
 }

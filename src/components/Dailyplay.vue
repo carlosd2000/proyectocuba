@@ -1,12 +1,12 @@
 <template>
     <div class="container m-0 p-0 d-flex flex-column align-items-start">
         <div class="m-0 p-0 d-flex justify-content-between align-items-center">
-            <p class="title">
+            <h2>
                 Jugada diaria
-            </p>
+            </h2>
         </div>
         <div>
-            <label class="title">
+            <label>
                 {{ wallet }}1100
             </label>
         </div>
