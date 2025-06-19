@@ -28,7 +28,7 @@ onMounted(async () => {
 
 <template>
   <div class="container-login">
-    <header class="">
+    <header class="container">
       <Header/>
     </header>
     <main class="container">

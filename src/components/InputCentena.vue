@@ -1,91 +1,62 @@
 <template>
-    <div class="container py-3" style="max-width: 320px;">
-      <!-- Campo de nombre -->
-      <div class="col-8 ml-4 p-0 mb-2 border-bottom border-dark">
+  <div class="container py-3" style="max-width: 350px;">
+    <div class="main-container">
+      <!-- Contenedor del scroll (filas) -->
+      <div class="scroll-container">
+        <!-- Fila fija -->
+        <div class="input-row">
+          <input
+            type="number"
+            class="cuadrado"
+            placeholder="000"
+            v-model="filasFijas[0].cuadrado"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
+          />
+          <div class="espacio-vacio"></div>
+          <div class="espacio-vacio"></div>
+        </div>
+
+        <!-- Filas extra -->
+        <div v-for="(fila, index) in filasExtra" :key="'extra-' + index" class="input-row">
+          <input
+            type="number"
+            class="cuadrado"
+            placeholder="000"
+            v-model="fila.cuadrado"
+            min="0"
+            step="1"
+            @keypress="soloEnteros($event)"
+          />
+          <div class="espacio-vacio"></div>
+          <div class="espacio-vacio"></div>
+        </div>
+      </div>
+
+      <!-- Círculo solo - FIJO FUERA DEL SCROLL -->
+      <div class="circulo-solo-fixed">
         <input
-          type="text"
-          class="form-control border-0 border-bottom border-dark"
-          placeholder="Nombre (opcional)"
-          v-model="nombreUsuario"
+          type="number"
+          placeholder="$"
+          class="circular-solo"
+          v-model="filasFijas[2].circuloSolo"
+          min="0"
+          step="1"
+          @keypress="soloEnteros($event)"
         />
       </div>
-  
-      <!-- Contenedor con scroll y columna fija -->
-      <div class="container m-0 p-0 d-flex">
-        <!-- Botón para agregar filas -->
-        <div class="col-2 m-0 p-0 d-flex justify-content-end align-items-end">
-          <button
-            class="btn bg-transparent mx-1 my-2 p-0 d-flex justify-content-center align-items-center"
-            style="width: 30px; height: 30px;"
-            @click="agregarFila"
-          >
-            <i class="bi bi-plus-circle text-black" style="font-size: 24px;"></i>
-          </button>
-        </div>
-  
-        <div class="col-8 m-0 p-0 d-flex flex-column align-items-center justify-content-center candado-altura">
-          <!-- Scroll vertical -->
-          <div class="col-12 p-0 scroll-vertical border-0">
-            <!-- Filas fijas -->
-            <div
-              v-for="fila in 1"
-              :key="'fija-' + fila"
-              class="d-flex justify-content-center align-items-center my-1"
-            >
-              <input
-                type="number"
-                class="form-input cuadrado celda"
-                min="0"
-                step="1"
-                placeholder="000"
-                @keypress="soloEnteros($event)"
-                v-model="filasFijas[fila - 1].cuadrado"
-              />
-              <div class="celda"></div>
-              <div class="celda"></div>
-            </div>
-  
-            <!-- Filas extra -->
-            <div
-              v-for="(fila, index) in filasExtra"
-              :key="'extra-' + index"
-              class="d-flex justify-content-center align-items-center my-1"
-            >
-              <input
-                type="number"
-                class="form-input cuadrado celda"
-                min="0"
-                step="1"
-                placeholder="000"
-                @keypress="soloEnteros($event)"
-                v-model="fila.cuadrado"
-              />
-              <div class="celda"></div>
-              <div class="celda"></div>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Columna fija para fila 3 -->
-        <div class="col-2 m-0 p-0 d-flex justify-content-center align-items-center">
-          <div class="espacio-filas"></div>
-          <div class="input-fila-3">
-            <input
-              type="number"
-              placeholder="$"
-              class="form-input circular mx-auto d-block"
-              min="0"
-              step="1"
-              @keypress="soloEnteros($event)"
-              v-model="filasFijas[2].circuloSolo"
-            />
-          </div>
-        </div>
-      </div>
+
+      <!-- Botón agregar -->
+      <button class="btn-agregar-fila" @click="agregarFila">
+        <img :src="masIcon" alt="Agregar fila" class="icono-mas">
+      </button>
     </div>
+  </div>
 </template>
-  
+
 <script setup>
+import masIcon from '@/assets/icons/mas.svg'
 import { useInputCentena } from '../scripts/InputCentena.js'
 
 const props = defineProps({
@@ -99,57 +70,106 @@ const {
   filasExtra,
   agregarFila,
   limpiarCampos,
-  nombreUsuario,
   soloEnteros
 } = useInputCentena(props)
 </script>
-  
-  <style scoped>
-  .form-input {
-    width: 45px;
-    height: 45px;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    outline: none;
-    text-align: center;
-    font-size: 14px;
-    margin: 4px;
-  }
-  
-  .cuadrado {
-    border-radius: 6px;
-  }
-  
-  .circular {
-    border-radius: 50%;
-  }
-  
-  .celda {
-    width: 45px;
-    height: 45px;
-    padding: 0px;
-    margin: 1 6px;
-  }
-  
-  .scroll-vertical {
-    max-height: 290px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    flex: 1;
-  }
-  
-  .candado-altura {
-    height: 290px;
-  }
-  
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
-  </style>
+
+<style scoped>
+.main-container {
+  position: relative;
+  background-color: #fdfef2;
+  height: 350px;
+  padding-right: 64px;
+}
+
+.scroll-container {
+  height: 290px;
+  overflow-y: auto;
+  width: calc(100% - 8px);
+  padding-right: 8px;
+}
+
+.input-row {
+  display: flex;
+  margin-bottom: 8px;
+  gap: 10px;
+  padding-left: 8px;
+  height: 48px;
+  width: 100%;
+}
+
+.cuadrado, .circular-solo {
+  width: 70px;
+  height: 48px;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.espacio-vacio {
+  width: 70px;
+  height: 48px;
+}
+
+/* Círculo solo - POSICIÓN FIJA */
+.circulo-solo-fixed {
+  position: absolute;
+  right: 0;
+  top: 56px; /* (48px + 8px) para primera fila */
+  width: 64px;
+  height: 48px;
+  z-index: 2;
+}
+
+/* Botón agregar */
+.btn-agregar-fila {
+  position: absolute;
+  bottom: 0;
+  left: 8px;
+  width: 64px;
+  height: 48px;
+  background: #E0E0F8;
+  border-radius: 60px;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  z-index: 10;
+}
+
+.btn-agregar-fila:hover {
+  background: #D0D0F0;
+}
+
+.icono-mas {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* Estilos para los inputs */
+.cuadrado {
+  border: 1px solid #CDCDD1;
+  border-radius: 30px;
+  background: #FFFFFF;
+}
+
+.circular-solo {
+  background: #F3F3F3;
+  border: 1px solid #F3F3F3;
+  border-radius: 30px;
+}
+
+/* Quitar flechas de los inputs number */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+</style>
