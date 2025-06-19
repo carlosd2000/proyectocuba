@@ -30,7 +30,6 @@ const { nombreUsuario } = useInputs()
   gap: 10px;
 
   /* Posición y tamaño */
-  position: absolute;
   width: 300px;
   height: 48px;
   left: 25px;

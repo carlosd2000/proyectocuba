@@ -5,6 +5,7 @@ import ToolsButton from '../components/ToolsButton.vue'
 import Footer from '../components/Footer.vue'
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import CardPrice from '../components/CardPrice.vue'
 
 const authStore = useAuthStore()
 const isLoading = ref(true)
@@ -31,6 +32,7 @@ onMounted(async () => {
       <Header/>
     </header>
     <main class="container">
+      <CardPrice/>
       <dailyplay/>
       <div class="line w-100"></div>
       <ToolsButton title="Herramientas" />

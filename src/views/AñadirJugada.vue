@@ -4,7 +4,7 @@ import Inputs from '../components/Inputs.vue';
 import InputsCandado from '../components/InputCandado.vue';
 import InputsCentena from '../components/InputCentena.vue';
 import InputsParlet from '../components/InputParlet.vue';
-import Horario from '../components/Horario.vue';
+import Horario from '../components/SelectorHorario.vue';
 import Pagar from '../components/Pagar.vue';
 import { useRoute } from 'vue-router';
 import { computed, ref, onMounted } from 'vue';
@@ -13,6 +13,7 @@ import { db, auth } from '../firebase/config';
 import { setModoEdicion } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
 import Nombre from '../components/Nombre.vue';
+import CardPrice from '../components/CardPrice.vue';
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
   console.log("Banco padre:", bancoId);
@@ -126,9 +127,11 @@ const componenteActual = computed(() => {
     <header>
         <Header/>
     </header>
-    <div class="col-12 m-0 p-0">
-        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
-    </div>
+    <main class="container">
+      <CardPrice/>
+      <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
+      <Nombre/>
+    
     <component 
       :is="componenteActual" 
       :datosEdicion="datosEdicion" 
@@ -137,6 +140,7 @@ const componenteActual = computed(() => {
       :bancoId="bancoId"
     />
     <Pagar/>
+    </main>
 </template>
 
 <style scoped>
