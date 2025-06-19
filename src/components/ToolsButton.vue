@@ -12,7 +12,7 @@ const props = defineProps({
             <h5 class="small">
                 {{ title }}
             </h5>
-            <img src="../assets/Chevron_right.svg" alt="">
+            <img src="../assets/icons/Chevron_right.svg" alt="">
         </div>
     </div>
 </template>

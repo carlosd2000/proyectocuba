@@ -30,26 +30,37 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 !important;
 }
 h1{
-  font-family: 'Manrope', sans-serif;
-  font-weight: 800;
-  font-size: 28px;
-  letter-spacing: 0%;
-  color: #050517;
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 28px !important;
+  letter-spacing: 0% !important;
+  color: #050517 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 h2{
-  font-family: 'Manrope', sans-serif;
-  font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 0%;
-  color: #050517;
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 20px !important;
+  letter-spacing: 0% !important;
+  color: #050517 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 h3{
-  font-family: 'Manrope', sans-serif;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0%;
-  color: #050517;
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0% !important;
+  color: #050517 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
+}
+
 .subtitle{
   font-family: 'Manrope', sans-serif;
   font-weight: 800;
@@ -85,15 +96,6 @@ h3{
   padding: 0px;
   margin: 0px;
   color: #050517;
-}
-label{
-  font-family: 'Manrope', sans-serif;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0%;
-  padding: 0px;
-  margin: 0px;
-  color: #696974;
 }
 .label{
   font-family: 'Manrope', sans-serif;

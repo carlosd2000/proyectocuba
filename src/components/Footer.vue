@@ -1,12 +1,12 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import Home from '../assets/Home.svg'
-import Home_Active from '../assets/Home_Active.svg'
-import Lista from '../assets/Lista.svg'
-import Lista_Active from '../assets/Lista_Active.svg'
-import Wallet from '../assets/Wallet.svg'
-import User from '../assets/User.svg'
+import Home from '../assets/icons/Home.svg'
+import Home_Active from '../assets/icons/Home_Active.svg'
+import Lista from '../assets/icons/Lista.svg'
+import Lista_Active from '../assets/icons/Lista_Active.svg'
+import Wallet from '../assets/icons/Wallet.svg'
+import User from '../assets/icons/User.svg'
 
 
 const route = useRoute()
@@ -35,7 +35,7 @@ const props = defineProps({
             <div v-else class="punto"></div>
         </div>
         <div class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
-            <img src="../assets/Plus.svg" alt="">
+            <img src="../assets/icons/Plus.svg" alt="">
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/wallet/${$route.params.id}`)">
             <img :src="props.title === 'Fondo' ? Wallet : Wallet" alt="">

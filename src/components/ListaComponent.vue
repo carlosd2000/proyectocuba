@@ -62,7 +62,7 @@ const {
         <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
           <img :src="obtenerIconoEstado(persona)" alt="">
           <p class="hora-text">{{ mostrarHora(persona) }}</p>
-          <img src="../assets/Expand.svg" alt="">
+          <img src="../assets/icons/Expand.svg" alt="">
         </div>
       </header>
       <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100">
@@ -99,21 +99,21 @@ const {
           <div class="d-flex flex-column justify-content-center align-items-center">
             <p>{{ Number(persona.totalGlobal) || 0 }}</p>
             <div class="d-flex flex-row justify-content-center align-items-center gap-1">
-              <img src="../assets/Coin.svg" alt="">
+              <img src="../assets/icons/Coin.svg" alt="">
               <p>Bruto</p>
             </div>
           </div>
           <div class="d-flex flex-column justify-content-center align-items-center">
             <p>{{ Number(persona.totalGlobal) || 0 }}</p>
             <div class="d-flex flex-row justify-content-center align-items-center gap-1">
-              <img src="../assets/Star.svg" alt="">
+              <img src="../assets/icons/Star.svg" alt="">
               <p>Premio</p>
             </div>
           </div>
           <div class="d-flex flex-column justify-content-center align-items-center">
             <p>{{ Number(persona.totalGlobal) || 0 }}</p>
             <div class="d-flex flex-row justify-content-center align-items-center gap-1">
-              <img src="../assets/Ganancia.svg" alt="">
+              <img src="../assets/icons/Ganancia.svg" alt="">
               <p>Neto</p>
             </div>
           </div>
