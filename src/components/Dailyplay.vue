@@ -12,31 +12,31 @@
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
-                <img src="../assets/Jugada.svg" alt="" >
+                <img src="../assets/icons/Jugada.svg" alt="" >
                 <h5 class="navegation-label">
                     Jugada
                 </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
-                <img src="../assets/Parlet.svg" alt="">
+                <img src="../assets/icons/Parlet.svg" alt="">
                 <h5 class="navegation-label">
                     Parlet
                 </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
-                <img src="../assets/Candado.svg" alt="">
+                <img src="../assets/icons/Candado.svg" alt="">
                 <h5 class="navegation-label">
                     Candado
                 </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
-                <img src="../assets/Centena.svg" alt="">
+                <img src="../assets/icons/Centena.svg" alt="">
                 <h5 class="navegation-label">
                     Centena
                 </h5>
             </div>
             <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
-                <img src="../assets/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
+                <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
                 <h5 class="navegation-label" style="color: #FDFEF2" >
                     Lista
                 </h5>

@@ -4,11 +4,11 @@
     style="width: 210px;"
   >
     <button @click="diaAnterior">
-      <img src="../assets/Chevron_left.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
+      <img src="../assets/icons/Chevron_left.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
     </button>
 
     <!-- Imagen personalizada -->
-    <img src="../assets/Calendario.svg" alt="Calendario" @click="abrirCalendario" style="cursor: pointer;" />
+    <img src="../assets/icons/Calendario.svg" alt="Calendario" @click="abrirCalendario" style="cursor: pointer;" />
     <div class="text-center mx-1" style="width: 110px; height: 20px; position: relative;">
       <!-- Visual: Hoy o fecha formateada -->
       <input
@@ -31,7 +31,7 @@
     </div>
 
     <button @click="diaSiguiente" :disabled="esMismoDia(fechaSeleccionada, hoy)" :class="{ 'disabled-button': esMismoDia(fechaSeleccionada, hoy) }">
-      <img src="../assets/Chevron_right.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
+      <img src="../assets/icons/Chevron_right.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
     </button>
   </div>
 </template>

@@ -1,9 +1,9 @@
 <template>
   <div class="card-price">
     <!-- Valor/Precio -->
-    <div class="price-value">
+    <h1>
       {{ formattedPrice }}
-    </div>
+    </h1>
     
     <!-- Cuenta Regresiva -->
     <CuentaRegresiva />

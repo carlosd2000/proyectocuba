@@ -25,22 +25,22 @@ const opcionSeleccionada = ref('Lista')
         <Results/>
         <div class="d-flex flex-row justify-content-between align-items-center w-100">
           <div class="candado">
-            <img src="../assets/Candado open.svg" alt="">
+            <img src="../assets/icons/Candado open.svg" alt="">
           </div>
           <div class="button-list" :class="{ activo: opcionSeleccionada === 'Lista' }" @click="opcionSeleccionada = 'Lista'">
-            <img src="../assets/Lista icon.svg" alt="">
+            <img src="../assets/icons/Lista icon.svg" alt="">
             <p>
               Lista
             </p>
           </div>
           <div class="button-list" :class="{ activo: opcionSeleccionada === 'Bote' }" @click="opcionSeleccionada = 'Bote'">
-            <img src="../assets/Lista icon.svg" alt="">
+            <img src="../assets/icons/Lista icon.svg" alt="">
             <p>
               Bote
             </p>
           </div>
           <div class="button-list" :class="{ activo: opcionSeleccionada === 'Resumen' }" @click="opcionSeleccionada = 'Resumen'">
-            <img src="../assets/Lista icon.svg" alt="">
+            <img src="../assets/icons/Lista icon.svg" alt="">
             <p>
               Resumen
             </p>
