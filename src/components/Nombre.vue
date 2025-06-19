@@ -1,14 +1,13 @@
 <template>
   <div class="nombre-container">
+    <span class="alias-prefix">Alias</span>
     <input
       type="text"
       class="nombre-input"
-      placeholder="Nombre (opcional)"
       v-model="nombreUsuario"
     />
-    <!-- Espacio para icono derecho (opcional) -->
     <div class="icon-container">
-      <!-- Aquí iría tu ícono si lo necesitas -->
+      <img src="@/assets/icons/lapiz.svg" alt="Editar" class="lapiz-icon" />
     </div>
   </div>
 </template>
@@ -26,19 +25,24 @@ const { nombreUsuario } = useInputs()
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 8px 12px 8px 16px;
-  gap: 10px;
+  padding: 8px 8px 8px 16px;
+  gap: 8px;
 
   /* Posición y tamaño */
-  width: 300px;
+  width: 215px;
   height: 48px;
-  left: 25px;
-  top: 20px;
 
   /* Estilos visuales */
   border: 1px solid #CDCDD1;
   border-radius: 30px;
-  background-color: #fdfef2; /* Manteniendo tu color de fondo */
+  background-color: #fdfef2;
+  position: relative;
+}
+
+.alias-prefix {
+  color: #999;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .nombre-input {
@@ -49,18 +53,22 @@ const { nombreUsuario } = useInputs()
   background: transparent;
   font-size: 14px;
   color: #333;
+  padding-left: 5px;
+  min-width: 50px; 
 }
 
-.nombre-input::placeholder {
-  color: #999;
-}
-
-/* Estilos para el contenedor del ícono (opcional) */
+/* Estilos para el contenedor del ícono */
 .icon-container {
   width: 24px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.lapiz-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 </style>
