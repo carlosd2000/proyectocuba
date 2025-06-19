@@ -1,46 +1,32 @@
 <template>
-    <div class="container">
-      <div class="d-flex justify-content-end">
-        <div class="d-flex align-items-center justify-content-between border-0 p-1 bg-white" style="min-width: 200px;">
-          <!-- Selector de Turno con ícono -->
-          <div class="d-flex align-items-center gap-2">
-            <i :class="iconoTurno"></i>
-            <select v-model="turnoSeleccionado" class="form-select form-select-sm border-0 p-0 bg-transparent text-dark fw-semibold" style="width: auto;">
-              <option v-for="opcion in opciones" :key="opcion" :value="opcion">{{ opcion }}</option>
-            </select>
-          </div>
-  
-          <!-- Precio -->
-          <div class="ms-4 fw-bold text-dark">
-            <button class="btn btn-light border-0 p-0 bg-transparent" @click="$router.push(`/listas/${$route.params.id}`)">
-              {{ totalFormateado }}
-            </button>
-          </div>
-  
+  <div class="container">
+    <div class="d-flex justify-content-start">
+      <div class="d-flex align-items-center justify-content-between border-0 p-1 bg-white" style="min-width: 200px;">    
+        <!-- Contenedor del SVG con estilos personalizados -->
+        <div class="svg-turno-container d-flex align-items-center">
+          <img :src="lunaSvg" alt="Luna" style="width: 60px; height: 50px;" />
         </div>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { useHorario } from '../scripts/Horario.js'
+  </div>
+</template>
 
-  const props = defineProps({
-    horarioEdicion: String,
-    modoEdicion: Boolean
-  })
+<script setup>
+import { useHorario } from '../scripts/Horario.js'
+import lunaSvg from '../assets/icons/Luna.svg'
 
-  const {
-    opciones,
-    turnoSeleccionado,
-    totalFormateado,
-    iconoTurno,
-    route,
-    router
-  } = useHorario(props)
-  </script>
-  
-  
+const props = defineProps({
+  horarioEdicion: String,
+  modoEdicion: Boolean
+})
+
+const {
+  totalFormateado,
+  router,
+  route
+} = useHorario(props)
+</script>
+
 <style scoped>
   select:focus {
     box-shadow: none;
@@ -48,4 +34,13 @@
   .bi {
     font-size: 1.2rem;
   }
+
+ .svg-turno-container {
+  width: 64px;
+  height: 48px;
+  border-radius: 60px;
+  padding-left: 8px;
+  padding-right: 4px;
+}
+
 </style>
