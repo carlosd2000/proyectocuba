@@ -6,40 +6,40 @@
             </p>
         </div>
         <div>
-            <p class="title">
+            <label class="title">
                 {{ wallet }}1100
-            </p>
+            </label>
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
                 <img src="../assets/Jugada.svg" alt="" >
-                <p>
+                <h5 class="navegation-label">
                     Jugada
-                </p>
+                </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
                 <img src="../assets/Parlet.svg" alt="">
-                <p>
+                <h5 class="navegation-label">
                     Parlet
-                </p>
+                </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
                 <img src="../assets/Candado.svg" alt="">
-                <p>
+                <h5 class="navegation-label">
                     Candado
-                </p>
+                </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
                 <img src="../assets/Centena.svg" alt="">
-                <p>
+                <h5 class="navegation-label">
                     Centena
-                </p>
+                </h5>
             </div>
             <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
                 <img src="../assets/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
-                <p>
+                <h5 class="navegation-label" style="color: #FDFEF2" >
                     Lista
-                </p>
+                </h5>
             </div>
         </div>            
     </div>
@@ -59,10 +59,6 @@ const {
 </script>
 
 <style scoped>
-p {
-    margin: 0;
-    padding: 0;
-}
 .container{
     gap: 16px;
     flex: none;

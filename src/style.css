@@ -26,10 +26,94 @@ footer{
   color: #000;
 }
 h1, h2, h3, h4, h5, h6 {
-  padding: 0;
-  margin: 0;
+  padding: 0 !important;
+  margin: 0 !important;
 }
-p {
+h1{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 0%;
+  color: #050517;
+}
+h2{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0%;
+  color: #050517;
+}
+h3{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0%;
+  color: #050517;
+}
+.subtitle{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.body{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.body-bold{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.small{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+label{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #696974;
+}
+input.label{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #050517;
+}
+.navegation-label{
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 8px;
+  letter-spacing: 0%;
+  padding: 0px;
+  margin: 0px;
+  color: #373745;
+}
+p{
   padding: 0px;
   margin: 0px;
 }
