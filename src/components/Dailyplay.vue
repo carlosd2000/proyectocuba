@@ -6,7 +6,7 @@
             </h2>
         </div>
         <div>
-            <label>
+            <label class="label">
                 {{ wallet }}1100
             </label>
         </div>
