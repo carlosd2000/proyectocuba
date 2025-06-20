@@ -49,9 +49,9 @@ const {
       <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
     </div>
     <div v-if="!apuestasCombinadas.length" >
-      <h3>
-        No hay apuestas para el dia de hoy
-      </h3>
+      <h5 class="body">
+        Aun no hay usuarios en la lista
+      </h5>
     </div>
     <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" @click="cuadroClick(persona)" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
       <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
@@ -185,14 +185,6 @@ header{
   gap: 12px;
   flex: none;
   flex-grow: 1;
-}
-p {
-  margin: 0px;
-  padding: 0px;
-  font-size: 0.9rem;
-}
-p.name{
-  font-size: 1.1rem;
 }
 .offline-banner{
   font-size: 0.8rem;

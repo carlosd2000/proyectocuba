@@ -1,23 +1,23 @@
 <template>
   <div
     class="bg-light d-flex align-items-center justify-content-between"
-    style="width: 210px;"
   >
     <button @click="diaAnterior">
       <img src="../assets/icons/Chevron_left.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
     </button>
 
     <!-- Imagen personalizada -->
-    <img src="../assets/icons/Calendario.svg" alt="Calendario" @click="abrirCalendario" style="cursor: pointer;" />
-    <div class="text-center mx-1" style="width: 110px; height: 20px; position: relative;">
+    
+    <div class="d-flex flex-row w-100" style="height: 20px; position: relative;">
       <!-- Visual: Hoy o fecha formateada -->
+      <img src="../assets/icons/Calendario.svg" alt="Calendario" @click="abrirCalendario" style="cursor: pointer;" />
       <input
         type="text"
         :value="esMismoDia(fechaSeleccionada, hoy) ? 'Hoy' : fechaFormateadaCorta"
         @click="abrirCalendario"
         readonly
-        class="border-0 bg-transparent text-center"
-        style="width: 100%; font-size: 1rem; height: 100%; cursor: pointer;"
+        class="border-0 bg-transparent text-center body"
+        style="width: 100%; font-size: 1rem; cursor: pointer;"
       />
 
       <!-- Real: input tipo date oculto para usar el selector -->
@@ -84,15 +84,16 @@ const abrirCalendario = () => {
 <style scoped>
 .bg-light {
   padding: 2px 8px;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
+  max-width: 160px;
   height: 36px;
   background: #F3F3F3;
   border-radius: 30px;
   flex: none;
   flex-grow: 0;
 }
-button {
+button{
 display: flex;
 justify-content: center;
 align-items: center;
@@ -117,6 +118,9 @@ img{
 }
 .input-oculto-datepicker {
   position: absolute;
+  margin: 0;
+  padding: 0;
+  border: none;
   top: 0;
   left: 0;
   opacity: 0;

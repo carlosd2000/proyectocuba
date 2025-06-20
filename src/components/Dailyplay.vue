@@ -1,5 +1,31 @@
+<script setup>
+import { useDailyPlay } from '../scripts/DailyPlay.js'
+import SelectorHorario from './SelectorHorario.vue';
+import Calendario from './Calendario.vue';
+
+const {
+    opciones,
+    turnoSeleccionado,
+    totalGlobal,
+    totalFormateado,
+    route,
+    router
+} = useDailyPlay()
+
+defineProps({
+    wallet: {
+        type: String,
+        default: '0'
+    }
+})
+</script>
+
 <template>
     <div class="container m-0 p-0 d-flex flex-column align-items-start">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <SelectorHorario @update:selected="handleSelect"/>
+            <Calendario/>
+        </div>
         <div class="m-0 p-0 d-flex justify-content-between align-items-center">
             <h2>
                 Jugada diaria
@@ -7,7 +33,7 @@
         </div>
         <div>
             <label class="label">
-                {{ wallet }}1100
+                {{ wallet }}
             </label>
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
@@ -44,19 +70,6 @@
         </div>            
     </div>
 </template>
-
-<script setup>
-import { useDailyPlay } from '../scripts/DailyPlay.js'
-
-const {
-    opciones,
-    turnoSeleccionado,
-    totalGlobal,
-    totalFormateado,
-    route,
-    router
-} = useDailyPlay()
-</script>
 
 <style scoped>
 .container{
