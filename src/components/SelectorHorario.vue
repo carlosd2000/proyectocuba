@@ -80,7 +80,7 @@ align-items: center;
 padding: 0px 4px 0px 8px;
 gap: 4px;
 width: 56px;
-height: 32px;
+height: 100%;
 border-radius: 20px;
 transition: background-color 0.2s ease;
 }
