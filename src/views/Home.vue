@@ -33,7 +33,7 @@ onMounted(async () => {
     </header>
     <main class="container">
       <CardPrice/>
-      <dailyplay wallet="20000000"/>
+      <dailyplay moneytime="20000000"/>
       <div class="line w-100"></div>
       <ToolsButton title="Herramientas" />
     </main>

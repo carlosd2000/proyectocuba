@@ -13,7 +13,7 @@ const {
 } = useDailyPlay()
 
 defineProps({
-    wallet: {
+    moneytime: {
         type: String,
         default: '0'
     }
@@ -28,13 +28,13 @@ defineProps({
         </div>
         <div class="m-0 p-0 d-flex justify-content-between align-items-center">
             <h2>
-                Jugada diaria
+                Jugada Diaria
             </h2>
         </div>
         <div>
-            <label class="label">
-                {{ wallet }}
-            </label>
+            <h5 class="label">
+                ${{ moneytime }}
+            </h5>
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
@@ -84,13 +84,16 @@ defineProps({
     justify-content: flex-end;
     align-items: center;
     padding: 10px;
-    gap: 8px;
+    gap: 4px;
     width: 62px;
     height: 62px;
     border-radius: 12px;
     flex: none;
     order: 0;
     flex-grow: 0;
+}
+.label{
+    color: #696974;
 }
 .black{
     background: #050517;
