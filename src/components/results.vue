@@ -1,31 +1,34 @@
 <template>
     <div class="tabs-container d-flex flex-row justify-content-center align-items-center w-100">
         <div class="d-flex flex-column justify-content-center align-items-center w-100">
-            <p>999999</p>
+            <h5 class="label">999999</h5>
             <div class="d-flex flex-row gap-2">
                 <img src="../assets/icons/Coin.svg" alt="">
-                <p>Bruto</p>
+                <h5 class="small">Bruto</h5>
             </div>
         </div>
         <div class="line"></div>
         <div class="d-flex flex-column justify-content-center align-items-center w-100">
-            <p>000</p>
+            <h5 class="label">000</h5>
             <div class="d-flex flex-row gap-2">
                 <img src="../assets/icons/Star.svg" alt="">
-                <p>Premios</p>
+                <h5 class="small">Premios</h5>
             </div>
         </div>
         <div class="line"></div>
         <div class="d-flex flex-column justify-content-center align-items-center w-100">
-            <p>000</p>
+            <h5 class="label">000</h5>
             <div class="d-flex flex-row gap-2">
                 <img src="../assets/icons/Ganancia.svg" alt="">
-                <p>Neto</p>
+                <h5 class="small">Neto</h5>
             </div>
         </div>
     </div>
 </template>
 <style scoped>
+.small{
+    color: #696974;
+}
 p{
     padding: 0px;
     margin: 1px;

@@ -44,7 +44,7 @@ const {
 
 
 <template>
-  <div class="m-0 p-0 d-flex align-items-center">
+  <div class="d-flex flex-column align-items-center h-100 w-100 gap-2">
     <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
       <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
     </div>
@@ -53,67 +53,78 @@ const {
         Aun no hay usuarios en la lista
       </h5>
     </div>
-    <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" @click="cuadroClick(persona)" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
+    <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
       <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
         <div class="d-flex justify-content-start align-items-center">
-          <p class="name">{{ persona.nombre }}</p>
+          <h5 class="body">{{ persona.nombre }}</h5>
         </div>
         <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
           <img :src="obtenerIconoEstado(persona)" alt="">
-          <p class="hora-text">{{ mostrarHora(persona) }}</p>
+          <h5 class="small">{{ mostrarHora(persona) }}</h5>
           <img src="../assets/icons/Expand.svg" alt="">
         </div>
       </header>
-      <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100">
-        <div class="col-12 container-apuestas p-0 d-flex flex-row justify-content-center align-items-center">
-          <div class="col-9 apuestas d-flex flex-column justify-content-center align-items-start">
+      <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100 gap-1">
+        <div class="col-12 container-apuestas p-0 py-1 d-flex flex-row justify-content-center align-items-center">
+          <div class="col-2 d-flex justify-content-center align-items-start h-100">
+            <div class="container-edit-button my-2"  @click="cuadroClick(persona)">
+              <img src="../assets/icons/Editar.svg" alt="">
+            </div>
+          </div>
+          <div class="col-8 apuestas d-flex flex-column justify-content-center align-items-start">
             <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2 w-100">
-              <div class="d-flex align-items-center flex-wrap">
-                <div v-if="'cuadrado' in mapa" class="col-6 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p class="d-flex justify-content-center align-items-center container-number">
-                    {{ mapa['cuadrado'] }}
-                  </p>
+              <div class="d-flex align-items-center flex-wrap justify-content-around">
+                <div class="col-5">
+                  <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number">
+                    <p class="label d-flex justify-content-center align-items-center">
+                      {{ mapa['cuadrado'] }}
+                    </p>
+                  </div>
                 </div>
-                <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p v-if="'circulo1' in mapa" class="d-flex justify-content-center align-items-center container-number">
-                    {{ mapa['circulo1'] }}
-                  </p>
+                <div class="col-3">
+                  <div v-if="'circulo1' in mapa" class="d-flex justify-content-center align-items-center container-number">
+                    <p class="label d-flex justify-content-center align-items-center">
+                      {{ mapa['circulo1'] }}
+                    </p>
+                  </div>
                 </div>
-                <div class="col-3 m-0 p-0 d-flex justify-content-center align-items-center">
-                  <p v-if="'circulo2' in mapa" class="d-flex justify-content-center align-items-center container-number">
-                    {{ mapa['circulo2'] }}
-                  </p>
+                <div class="col-3">
+                  <div v-if="'circulo2' in mapa" class="d-flex justify-content-center align-items-center container-number">
+                    <p class="label d-flex justify-content-center align-items-center">
+                      {{ mapa['circulo2'] }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div class="col-3 d-flex justify-content-center align-items-center">
-            <div v-if="persona.circuloSolo" class="d-flex justify-content-center align-items-center container-number">
+          <div class="col-2 d-flex justify-content-center align-items-center">
+            <div v-if="persona.circuloSolo" class="label d-flex justify-content-center align-items-center container-number">
               {{ persona.circuloSolo }}
             </div>
           </div>
         </div>
-        <div class="p-0 d-flex flex-row justify-content-between align-items-center w-100">
+        <div class="line"></div>
+        <div class="p-2 d-flex flex-row justify-content-between align-items-center w-100">
           <div class="d-flex flex-column justify-content-center align-items-center">
-            <p>{{ Number(persona.totalGlobal) || 0 }}</p>
+            <h5 class="label">{{ Number(persona.totalGlobal) || 0 }}</h5>
             <div class="d-flex flex-row justify-content-center align-items-center gap-1">
               <img src="../assets/icons/Coin.svg" alt="">
-              <p>Bruto</p>
+              <h5 class="body">Bruto</h5>
             </div>
           </div>
           <div class="d-flex flex-column justify-content-center align-items-center">
-            <p>{{ Number(persona.totalGlobal) || 0 }}</p>
+            <h5 class="label">{{ Number(persona.totalGlobal) || 0 }}</h5>
             <div class="d-flex flex-row justify-content-center align-items-center gap-1">
               <img src="../assets/icons/Star.svg" alt="">
-              <p>Premio</p>
+              <h5 class="body">Premio</h5>
             </div>
           </div>
           <div class="d-flex flex-column justify-content-center align-items-center">
-            <p>{{ Number(persona.totalGlobal) || 0 }}</p>
+            <h5 class="label">{{ Number(persona.totalGlobal) || 0 }}</h5>
             <div class="d-flex flex-row justify-content-center align-items-center gap-1">
               <img src="../assets/icons/Ganancia.svg" alt="">
-              <p>Neto</p>
+              <h5 class="body">Neto</h5>
             </div>
           </div>
         </div>
@@ -159,11 +170,21 @@ const {
 </template>
 
 <style scoped>
+.line{
+  width: 343px;
+  height: 2px;
+  border: 1px solid #F0F0FC;
+  flex: none;
+  flex-grow: 0;
+}
+.small, .body{
+  color: #696974;
+}
 .container-cloud{
   gap: 6px;
 }
 .container-apuestas{
-  gap: 16px;
+  gap: 2px;
   flex: none;
   flex-grow: 0;
 }
@@ -174,10 +195,26 @@ const {
   align-items: center;
   padding: 12px 16px;
   gap: 12px;
+  width: 100%;
   max-width: 343px;
   border: 1px solid #F3F3F3;
   border-radius: 12px;
   flex: none;
+  flex-grow: 0;
+}
+.container-edit-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 10px;
+  width: 28px;
+  height: 28px;
+  background: #E0E0F8;
+  border-radius: 30px;
+  flex: none;
+  order: 0;
   flex-grow: 0;
 }
 header{
@@ -192,6 +229,7 @@ header{
 .container-number {
   padding: 8px 16px;
   gap: 16px;
+  width: 55px;
   background: #F3F3F3;
   border-radius: 30px;
   flex: none;
@@ -206,9 +244,6 @@ header{
 .apuestas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-}
-.hora-text {
-  font-size: 0.6rem;
 }
 
 .custom-modal-backdrop {

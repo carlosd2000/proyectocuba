@@ -1,8 +1,6 @@
 <template>
-  <div class="m-0 p-0">
-    <button class="m-0 p-0 btn border-0 bg-transparent" @click="regresar">
-      <img src="../assets/icons/Chevron_left_alt.svg" alt="">
-    </button>
+  <div @click="regresar" class="px-2">
+    <img src="../assets/icons/Chevron_left_alt.svg" alt="">
   </div>
 </template>
 
