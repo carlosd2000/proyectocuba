@@ -19,7 +19,7 @@ export function useHeader() {
     const bancoPadreId = ref(null)
 
     const back = computed(() => route.path.startsWith('/listeros'))
-    const bell = computed(() => route.path.startsWith('/listeros'))
+    const bell = computed(() => route.path.startsWith('/'))
 
     const irwallet = () => {
         if (authStore.isAuthenticated && authStore.userType && authStore.userId) {

@@ -28,7 +28,7 @@ onMounted(async () => {
 
 <template>
   <div class="container-login">
-    <header class="container">
+    <header>
       <Header/>
     </header>
     <main class="container">
@@ -45,14 +45,13 @@ onMounted(async () => {
 
 <style scoped>
 main{
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-padding: 0px 16px;
-gap: 24px;
-flex: none;
-order: 2;
-flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  flex: none;
+  order: 2;
+  flex-grow: 1;
 }
 .line{
   display: flex;

@@ -16,7 +16,7 @@ const opcionSeleccionada = ref('Lista')
 <template>
   <div class="container-login">
     <header>
-      <Header />
+      <Header title="Lista"/>
     </header>
     <div class="container-main">
       <main class="d-flex flex-column align-items-center w-100">
