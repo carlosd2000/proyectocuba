@@ -44,7 +44,7 @@ const {
 
 
 <template>
-  <div class="d-flex flex-column align-items-center h-100 w-100 gap-2">
+  <div class="d-flex flex-column justify-content-center align-items-center h-100 w-100 gap-2">
     <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
       <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
     </div>

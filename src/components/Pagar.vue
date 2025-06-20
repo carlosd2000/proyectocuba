@@ -14,9 +14,9 @@
     
     <!-- Botón de Pagar (343px de ancho) -->
     <button class="pagar-button" @click="lanzarToast">
-      <span class="button-label">Enviar</span>
-      <span class="button-amount">${{ formatNumber(totalGeneral) }}</span>
-      <span class="button-symbol">></span>
+      <h5 class="label">Enviar</h5>
+      <h5 class="label">${{ formatNumber(totalGeneral) }}</h5>
+      <img src="../assets/icons/Chevron_right.svg" alt="">
     </button>
 
     <!-- Mensaje de error -->
@@ -75,14 +75,16 @@ const {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
 
+.label{
+  color: #F3F3F3;
+}
 /* Contenedor principal */
 .main-container {
   max-width: 343px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  gap: 8px;
   font-family: 'Manrope', sans-serif;
 }
 
@@ -143,14 +145,15 @@ const {
 .pagar-button {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  width: 343px;
+  width: 100%;
   height: 48px;
   padding: 8px 16px;
   box-sizing: border-box;
   background: #6665DD;
   border-radius: 30px;
+  gap: 8px;
   border: none;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;

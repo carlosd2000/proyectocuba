@@ -131,6 +131,7 @@ export function usePagar() {
     })
 
     const validarAntesDeEnviar = async () => {
+        mostrarEnviando.value = true
         const apuestaId = route.query.editar;
         const { esValido, circulosInvalidos, cuadradosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra)
 
