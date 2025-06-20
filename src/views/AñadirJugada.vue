@@ -14,14 +14,13 @@ import { setModoEdicion } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
 import Nombre from '../components/Nombre.vue';
 import CardPrice from '../components/CardPrice.vue';
+
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
   console.log("Banco padre:", bancoId);
 }
 
-
 const route = useRoute();
-
 const idEditar = computed(() => route.query.editar || null);
 const datosEdicion = ref(null);
 const horarioEdicion = ref('Dia');
@@ -30,42 +29,6 @@ const bancoId = ref(null);
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
 });
-
-/*async function obtenerBancoPadre() {
-  try {
-    const userId = auth.currentUser?.uid;
-    if (!userId) throw new Error("Usuario no autenticado");
-
-    const bancosSnapshot = await getDocs(collection(db, 'bancos'));
-    
-    for (const bancoDoc of bancosSnapshot.docs) {
-      const currentBancoId = bancoDoc.id;
-      
-      // 1. Buscar en listeros directos del banco
-      const listeroRef = doc(db, `bancos/${currentBancoId}/listeros/${userId}`);
-      const listeroSnap = await getDoc(listeroRef);
-      if (listeroSnap.exists()) {
-        return currentBancoId;
-      }
-
-      // 2. Buscar en listeros de colectores del banco
-      const colectoresSnapshot = await getDocs(collection(db, `bancos/${currentBancoId}/colectores`));
-      
-      for (const colectorDoc of colectoresSnapshot.docs) {
-        const listeroRef = doc(db, `bancos/${currentBancoId}/colectores/${colectorDoc.id}/listeros/${userId}`);
-        const listeroSnap = await getDoc(listeroRef);
-        if (listeroSnap.exists()) {
-          return currentBancoId;
-        }
-      }
-    }
-
-    throw new Error("No se encontró el banco padre para este usuario");
-  } catch (error) {
-    console.error("Error obteniendo banco padre:", error);
-    throw error;
-  }
-}*/
 
 onMounted(async () => {
   if (idEditar.value) {
@@ -129,17 +92,23 @@ const componenteActual = computed(() => {
     </header>
     <main class="container">
       <CardPrice/>
-      <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
-      <Nombre/>
+      <div class="components-container">
+        <div class="horario-wrapper">
+          <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
+        </div>
+        <div class="nombre-wrapper">
+          <Nombre/>
+        </div>
+      </div>
     
-    <component 
-      :is="componenteActual" 
-      :datosEdicion="datosEdicion" 
-      :modoEdicion="!!idEditar"
-      :idEdicion="idEditar"
-      :bancoId="bancoId"
-    />
-    <Pagar/>
+      <component 
+        :is="componenteActual" 
+        :datosEdicion="datosEdicion" 
+        :modoEdicion="!!idEditar"
+        :idEdicion="idEditar"
+        :bancoId="bancoId"
+      />
+      <Pagar/>
     </main>
 </template>
 
@@ -147,5 +116,32 @@ const componenteActual = computed(() => {
 main {
   min-height: 93%;
   width: 100%;
+}
+
+.components-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.horario-wrapper {
+  flex: 0 0 auto; /* No crece, no se encoge, tamaño automático */
+  margin-right: 7px; /* Espacio entre componentes */
+}
+
+.nombre-wrapper {
+  flex: 1; /* Ocupa el espacio restante */
+  min-width: 0; /* Permite que se ajuste correctamente */
+}
+
+/* Estilos específicos para preservar la forma del Horario */
+.horario-wrapper >>> .selector-horario {
+  width: auto !important;
+  display: inline-flex !important;
+}
+
+.horario-wrapper >>> button {
+  width: auto !important;
+  padding: 8px 12px !important; /* Ajusta según necesites */
 }
 </style>
