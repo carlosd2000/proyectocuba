@@ -44,106 +44,103 @@ const {
 
 
 <template>
-  <div class="d-flex flex-column justify-content-center align-items-center h-100 w-100 gap-2">
-    <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
-      <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
-    </div>
-    <div v-if="!apuestasCombinadas.length" >
-      <h5 class="body">
-        Aun no hay usuarios en la lista
-      </h5>
-    </div>
-    <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
-      <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
-        <div class="d-flex justify-content-start align-items-center">
-          <h5 class="body">{{ persona.nombre }}</h5>
-        </div>
-        <div>
-          {{ persona.horario }}
-        </div>
-        <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
-          <img :src="obtenerIconoEstado(persona)" alt="">
-          <h5 class="small">{{ mostrarHora(persona) }}</h5>
-          <img src="../assets/icons/Expand.svg" alt="">
-        </div>
-      </header>
-      <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100 gap-1">
-        <div class="col-12 container-apuestas p-0 py-1 d-flex flex-row justify-content-center align-items-center">
-          <div class="col-2 d-flex justify-content-center align-items-start h-100">
-            <div class="container-edit-button my-2"  @click="cuadroClick(persona)">
-              <img src="../assets/icons/Editar.svg" alt="">
-            </div>
+  <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
+    <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
+  </div>
+  <div v-if="!apuestasCombinadas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
+    <h5 class="body">
+      Aun no hay usuarios en la lista
+    </h5>
+  </div>
+  <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
+    <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
+      <div class="d-flex justify-content-start align-items-center">
+        <h5 class="body">{{ persona.nombre }}</h5>
+      </div>
+      <div>
+        {{ persona.horario }}
+      </div>
+      <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
+        <img :src="obtenerIconoEstado(persona)" alt="">
+        <h5 class="small">{{ mostrarHora(persona) }}</h5>
+        <img src="../assets/icons/Expand.svg" alt="">
+      </div>
+    </header>
+    <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100 gap-1">
+      <div class="col-12 container-apuestas p-0 py-1 d-flex flex-row justify-content-center align-items-center">
+        <div class="col-1 d-flex justify-content-center align-items-start h-100">
+          <div class="container-edit-button my-2"  @click="cuadroClick(persona)">
+            <img src="../assets/icons/Editar.svg" alt="">
           </div>
-          <div class="col-8 apuestas d-flex flex-column justify-content-center align-items-start">
-            <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2 w-100">
-              <div class="d-flex align-items-center flex-wrap justify-content-around">
-                <div class="col-5">
-                  <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number">
-                    <p class="label d-flex justify-content-center align-items-center">
-                      {{ mapa['cuadrado'] }}
-                    </p>
-                  </div>
+        </div>
+        <div class="col-8 apuestas d-flex flex-column justify-content-center align-items-start">
+          <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2 w-100">
+            <div class="d-flex align-items-center flex-wrap justify-content-around container-line">
+              <div class="col-4">
+                <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number">
+                  <p class="label d-flex justify-content-center align-items-center">
+                    {{ mapa['cuadrado'] }}
+                  </p>
                 </div>
-                <div class="col-3">
-                  <div v-if="'circulo1' in mapa" class="d-flex justify-content-center align-items-center container-number">
-                    <p class="label d-flex justify-content-center align-items-center">
-                      {{ mapa['circulo1'] }}
-                    </p>
-                  </div>
+              </div>
+              <div class="col-3">
+                <div v-if="'circulo1' in mapa" class="d-flex justify-content-center align-items-center container-number">
+                  <p class="label d-flex justify-content-center align-items-center">
+                    {{ mapa['circulo1'] }}
+                  </p>
                 </div>
-                <div class="col-3">
-                  <div v-if="'circulo2' in mapa" class="d-flex justify-content-center align-items-center container-number">
-                    <p class="label d-flex justify-content-center align-items-center">
-                      {{ mapa['circulo2'] }}
-                    </p>
-                  </div>
+              </div>
+              <div class="col-3">
+                <div v-if="'circulo2' in mapa" class="d-flex justify-content-center align-items-center container-number">
+                  <p class="label d-flex justify-content-center align-items-center">
+                    {{ mapa['circulo2'] }}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-          <div class="col-2 d-flex justify-content-center align-items-center">
-            <div v-if="persona.circuloSolo" class="label d-flex justify-content-center align-items-center container-number">
-              {{ persona.circuloSolo }}
-            </div>
+        </div>
+        <div class="col-2 d-flex justify-content-center align-items-center">
+          <div v-if="persona.circuloSolo" class="label d-flex justify-content-center align-items-center container-number">
+            {{ persona.circuloSolo }}
           </div>
         </div>
-        <div class="line"></div>
-        <div class="p-2 d-flex flex-row justify-content-between align-items-center w-100">
-          <div class="d-flex flex-column justify-content-center align-items-center">
-            <h5 class="label">{{ Number(persona.totalGlobal) || 0 }}</h5>
-            <div class="d-flex flex-row justify-content-center align-items-center gap-1">
-              <img src="../assets/icons/Coin.svg" alt="">
-              <h5 class="body">Bruto</h5>
-            </div>
-          </div>
-          <div class="d-flex flex-column justify-content-center align-items-center">
-            <h5 class="label">{{ Number(persona.totalGlobal) || 0 }}</h5>
-            <div class="d-flex flex-row justify-content-center align-items-center gap-1">
-              <img src="../assets/icons/Star.svg" alt="">
-              <h5 class="body">Premio</h5>
-            </div>
-          </div>
-          <div class="d-flex flex-column justify-content-center align-items-center">
-            <h5 class="label">{{ Number(persona.totalGlobal) || 0 }}</h5>
-            <div class="d-flex flex-row justify-content-center align-items-center gap-1">
-              <img src="../assets/icons/Ganancia.svg" alt="">
-              <h5 class="body">Neto</h5>
-            </div>
+      </div>
+      <div class="line"></div>
+      <div class="p-2 d-flex flex-row justify-content-between align-items-center w-100">
+        <div class="d-flex flex-column justify-content-center align-items-center gap-1">
+          <h5 class="label">${{ Number(persona.totalGlobal) || 0 }}</h5>
+          <div class="d-flex flex-row justify-content-center align-items-center gap-1">
+            <img src="../assets/icons/Coin.svg" alt="">
+            <h5 class="body">Bruto</h5>
           </div>
         </div>
-      </main>
-      <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
-        <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
-          <div class="mx-2 d-flex justify-content-center align-items-center">
-            
-            <i class="icon-estado" :class="obtenerIconoEstado(persona)"></i>
-            <span v-if="!isOnline && persona.estado !== 'Pendiente'" class="ms-1 badge bg-warning text-dark">Offline</span>
+        <div class="d-flex flex-column justify-content-center align-items-center gap-1">
+          <h5 class="label">${{ Number(persona.totalGlobal) || 0 }}</h5>
+          <div class="d-flex flex-row justify-content-center align-items-center gap-1">
+            <img src="../assets/icons/Star.svg" alt="">
+            <h5 class="body">Premio</h5>
           </div>
         </div>
-      </footer>
-    </div>
+        <div class="d-flex flex-column justify-content-center align-items-center gap-1">
+          <h5 class="label">${{ Number(persona.totalGlobal) - Number(persona.totalGlobal) }}</h5>
+          <div class="d-flex flex-row justify-content-center align-items-center gap-1">
+            <img src="../assets/icons/Ganancia.svg" alt="">
+            <h5 class="body">Neto</h5>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
+      <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
+        <div class="mx-2 d-flex justify-content-center align-items-center">
+          
+          <i class="icon-estado" :class="obtenerIconoEstado(persona)"></i>
+          <span v-if="!isOnline && persona.estado !== 'Pendiente'" class="ms-1 badge bg-warning text-dark">Offline</span>
+        </div>
+      </div>
+    </footer>
   </div>
-
   <!-- Modal personalizado -->
   <div v-if="mostrarModal" class="custom-modal-backdrop" @click="cerrarModal">
     <div class="custom-modal" @click.stop>
@@ -187,7 +184,7 @@ const {
   gap: 6px;
 }
 .container-apuestas{
-  gap: 2px;
+  gap: 12px;
   flex: none;
   flex-grow: 0;
 }
@@ -198,12 +195,16 @@ const {
   align-items: center;
   padding: 12px 16px;
   gap: 12px;
+  height: auto;
   width: 100%;
-  max-width: 343px;
+  max-width: 500px;
   border: 1px solid #F3F3F3;
   border-radius: 12px;
   flex: none;
   flex-grow: 0;
+}
+.container-line{
+  gap: 8px;
 }
 .container-edit-button {
   display: flex;
