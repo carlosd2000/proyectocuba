@@ -45,18 +45,21 @@
               <select v-model="tipoCuenta" class="col-12 m-0 p-1 form-select" id="opciones">
                 <option disabled value="">Seleccionar</option>
                 <option v-if="authStore.profile?.tipo === 'admin'" value="bancos">Banco</option>
-                <option v-if="authStore.profile?.tipo === 'bancos'" value="colectores">Colector</option>
-                <option v-if="['bancos', 'colectores'].includes(authStore.profile?.tipo)" value="listeros">Listero</option>
+                <option v-if="authStore.profile?.tipo === 'bancos'" value="colectorPrincipal">Colector Principal</option>
+                <option v-if="['bancos', 'colectorPrincipal'].includes(authStore.profile?.tipo)" value="colectores">Colector</option>
+                <option v-if="['bancos', 'colectorPrincipal', 'colectores'].includes(authStore.profile?.tipo)" 
+                        value="listeros">Listero</option>
               </select>
             </div>
 
-            <div class="my-1 col-12 p-0" v-if="authStore.profile?.tipo === 'bancos' && tipoCuenta === 'listeros'">
-              <label for="padre" class="col-12 m-0 p-1 form-label">Padre al que pertenece</label>
+            <!-- Selector de padre para colectores (banco) -->
+            <div class="my-1 col-12 p-0" v-if="authStore.profile?.tipo === 'bancos' && tipoCuenta === 'colectores'">
+              <label for="padreColector" class="col-12 m-0 p-1 form-label">Padre al que pertenece</label>
               <div class="col-12 m-0 p-0 custom-select-wrapper">
                 <select 
                   v-model="padreSeleccionado" 
                   class="form-select custom-select" 
-                  id="padre"
+                  id="padreColector"
                   size="1"
                   @focus="expandSelect"
                   @change="shrinkSelect"
@@ -65,7 +68,39 @@
                   <option :value="`banco_${authStore.user?.uid}`">
                     Banco ({{ authStore.profile?.nombre }})
                   </option>
-                  <option v-for="colector in colectores" :key="colector.id" :value="`colector_${colector.id}`">
+                  <option v-for="colectorPrincipal in colectoresPrincipales" 
+                          :key="colectorPrincipal.id" 
+                          :value="`colectorPrincipal_${colectorPrincipal.id}`">
+                    Colector Principal: {{ colectorPrincipal.nombre }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Selector de padre para listeros (banco) -->
+            <div class="my-1 col-12 p-0" v-if="authStore.profile?.tipo === 'bancos' && tipoCuenta === 'listeros'">
+              <label for="padreListero" class="col-12 m-0 p-1 form-label">Padre al que pertenece</label>
+              <div class="col-12 m-0 p-0 custom-select-wrapper">
+                <select 
+                  v-model="padreSeleccionado" 
+                  class="form-select custom-select" 
+                  id="padreListero"
+                  size="1"
+                  @focus="expandSelect"
+                  @change="shrinkSelect"
+                >
+                  <option disabled value="">Seleccionar</option>
+                  <option :value="`banco_${authStore.user?.uid}`">
+                    Banco ({{ authStore.profile?.nombre }})
+                  </option>
+                  <option v-for="colectorPrincipal in colectoresPrincipales" 
+                          :key="colectorPrincipal.id" 
+                          :value="`colectorPrincipal_${colectorPrincipal.id}`">
+                    Colector Principal: {{ colectorPrincipal.nombre }}
+                  </option>
+                  <option v-for="colector in colectores" 
+                          :key="colector.id" 
+                          :value="`colector_${colector.id}`">
                     Colector: {{ colector.nombre }}
                   </option>
                 </select>
@@ -97,7 +132,7 @@
 import { useRegistro } from '../scripts/Registro.js'
 
 const expandSelect = (e) => {
-  e.target.size = 5 // Muestra 5 opciones a la vez
+  e.target.size = 5
 }
 
 const shrinkSelect = (e) => {
@@ -111,6 +146,7 @@ const {
   tipoCuenta,
   padreSeleccionado,
   colectores,
+  colectoresPrincipales,
   mensajeNombre,
   isValidNombre,
   mensajePassword,
@@ -142,8 +178,8 @@ const {
   background-color: #f4f4f4;
   border: 2px solid #000000;
   border-radius: 6px;
-  max-height: 200px; /* Altura máxima antes de mostrar scroll */
-  overflow-y: auto; /* Habilitar scroll vertical */
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .custom-select-wrapper {
@@ -165,5 +201,24 @@ const {
   height: auto;
   max-height: 150px;
   overflow-y: auto;
+}
+
+.btn-page {
+  background-color: #000000;
+  color: white;
+  border-radius: 6px;
+  border: 2px solid #000000;
+  font-weight: bold;
+}
+
+.btn-page:hover {
+  background-color: #333333;
+  color: white;
+}
+
+.btn-page:disabled {
+  background-color: #cccccc;
+  border-color: #cccccc;
+  color: #666666;
 }
 </style>
