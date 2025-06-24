@@ -1,5 +1,5 @@
 <template>
-  <div class="container py-3" style="max-width: 350px;">
+  <div class="container py-2" style="max-width: 350px;">
     <div class="main-container">
       <!-- Contenedor del scroll (filas) -->
       <div class="scroll-container">

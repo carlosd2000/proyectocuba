@@ -14,15 +14,22 @@
     
     <!-- Botón de Pagar (343px de ancho) -->
     <button class="pagar-button" @click="lanzarToast">
-      <span class="button-label">Enviar</span>
-      <span class="button-amount">${{ formatNumber(totalGeneral) }}</span>
-      <span class="button-symbol">></span>
+      <h5 class="label">Enviar</h5>
+      <h5 class="label">${{ formatNumber(totalGeneral) }}</h5>
+      <img src="../assets/icons/Chevron_right.svg" alt="">
     </button>
 
     <!-- Mensaje de error -->
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
     </div>
+    <!-- MODAL DE ENVÍO -->
+<div v-if="mostrarEnviando" class="modal-overlay">
+  <div class="modal-content">
+    <span class="loader"></span>
+    <p>Procesando jugada...</p>
+  </div>
+</div>
 
     <!-- Toast de Guardado -->
     <div v-if="mostrarToastSave" class="toast-container">
@@ -75,14 +82,56 @@ const {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 5, 23, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #ccc;
+  border-top: 4px solid #6665DD;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.label{
+  color: #F3F3F3;
+}
 /* Contenedor principal */
 .main-container {
   max-width: 343px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  gap: 8px;
   font-family: 'Manrope', sans-serif;
 }
 
@@ -143,14 +192,15 @@ const {
 .pagar-button {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  width: 343px;
+  width: 100%;
   height: 48px;
   padding: 8px 16px;
   box-sizing: border-box;
   background: #6665DD;
   border-radius: 30px;
+  gap: 8px;
   border: none;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;

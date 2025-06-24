@@ -1,5 +1,5 @@
 <template>
-  <div class="container py-3" style="max-width: 350px;">
+  <div class="container py-2" style="max-width: 350px;">
     <div class="main-container">
       <!-- Contenedor del scroll (filas) -->
       <div class="scroll-container">
@@ -30,6 +30,11 @@
           <div class="espacio-vacio"></div>
           <div class="espacio-vacio"></div>
         </div>
+        <div class="btn-agregar-container">
+          <button class="btn-agregar-fila" @click="agregarFila">
+            <img :src="masIcon" alt="Agregar fila" class="icono-mas">
+          </button>
+        </div>
       </div>
 
       <!-- Círculo solo - FIJO FUERA DEL SCROLL -->
@@ -44,11 +49,6 @@
           @keypress="soloEnteros($event)"
         />
       </div>
-
-      <!-- Botón agregar -->
-      <button class="btn-agregar-fila" @click="agregarFila">
-        <img :src="masIcon" alt="Agregar fila" class="icono-mas">
-      </button>
     </div>
   </div>
 </template>
@@ -81,17 +81,21 @@ const {
 }
 
 .scroll-container {
+  display: flex;
+  flex-direction: column;
   height: 290px;
   overflow-y: auto;
   width: calc(100% - 8px);
-  padding-right: 8px;
+  gap: 8px;
+}
+.btn-agregar-container {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .input-row {
   display: flex;
-  margin-bottom: 8px;
   gap: 10px;
-  padding-left: 8px;
   height: 48px;
   width: 100%;
 }
@@ -119,12 +123,8 @@ const {
   z-index: 2;
 }
 
-/* Botón agregar */
 .btn-agregar-fila {
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  width: 64px;
+  width: 70px;
   height: 48px;
   background: #E0E0F8;
   border-radius: 60px;
@@ -134,9 +134,7 @@ const {
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s;
-  z-index: 10;
 }
-
 .btn-agregar-fila:hover {
   background: #D0D0F0;
 }

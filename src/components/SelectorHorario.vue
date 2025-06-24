@@ -47,7 +47,7 @@ const isOpenClass = computed(() => dropdownOpen.value ? 'active' : '')
 </script>
 
 <template>
-  <div class="custom-select" :class="[selectClass, isOpenClass]">
+  <div class="custom-select h-100" :class="[selectClass, isOpenClass]">
     <div class="selected-option" @click="toggleDropdown">
       <img :src="selectedIcon" alt="">
       <img src="../assets/icons/Expand.svg" alt="">
@@ -73,16 +73,15 @@ const isOpenClass = computed(() => dropdownOpen.value ? 'active' : '')
 <style scoped>
 .custom-select {
   position: relative;
-display: flex;
-flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 0px 4px 0px 8px;
-gap: 4px;
-width: 56px;
-height: 100%;
-border-radius: 20px;
-transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 4px 4px 8px;
+  gap: 4px;
+  width: 56px;
+  height: 100%;
+  border-radius: 20px;
+  transition: background-color 0.2s ease;
 }
 .selected-option {
   display: flex;
@@ -93,7 +92,7 @@ transition: background-color 0.2s ease;
 
 .selected-option img {
   width: 20px;
-  height: 20px;
+  height: 100%;
 }
 
 .options {

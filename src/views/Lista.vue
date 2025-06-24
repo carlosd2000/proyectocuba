@@ -1,6 +1,7 @@
 <script setup>
-import Header from '../components/Header.vue';
 import { ref } from 'vue'
+import Header from '../components/Header.vue';
+import CardPrice from '../components/CardPrice.vue';
 import SelectorHorario from '../components/SelectorHorario.vue';
 import WinerNumber from '../components/WinerNumber.vue';
 import Calendario from '../components/Calendario.vue';
@@ -19,6 +20,7 @@ const opcionSeleccionada = ref('Lista')
       <Header title="Lista"/>
     </header>
     <div class="container-main">
+      <CardPrice/>
       <main class="d-flex flex-column align-items-center w-100">
         <div class="d-flex flex-row  justify-content-between align-items-center w-100">
           <div class="horario-winner d-flex flex-row align-items-center">
@@ -52,8 +54,8 @@ const opcionSeleccionada = ref('Lista')
           </div>
         </div>
       </main>
-      <aside class="w-100 h-100 overflow-auto">
-        <div v-if="opcionSeleccionada === 'Lista'" class="w-100 h-100 d-flex flex-column align-items-center">
+      <aside class="w-100 overflow-auto">
+        <div v-if="opcionSeleccionada === 'Lista'" class="w-100 d-flex flex-column align-items-center">
           <ListaComponent :fecha="fechaSeleccionada" />
         </div>
       </aside>
