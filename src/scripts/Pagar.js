@@ -28,6 +28,8 @@ export function usePagar() {
     const isOnline = ref(navigator.onLine)
     const verificandoCandado = ref(false)
     const bancoId = ref(null) // Nuevo: almacenar bancoId
+    const mostrarEnviando = ref(false)
+
 
     // Función para obtener el banco padre
     /*async function obtenerBancoPadre() {
@@ -176,14 +178,17 @@ export function usePagar() {
     }
 
     const lanzarToast = async () => {
+        mostrarEnviando.value = true
         if (!(await validarAntesDeEnviar())) {
+            mostrarEnviando.value = false
             mostrarToastError.value = true
             setTimeout(() => mostrarToastError.value = false, 2000)
             return
         }
-
         const resultado = await guardarDatos()
 
+        mostrarEnviando.value = false 
+        
         if (resultado.success) {
             if (modoEdicion.value) {
                 mostrarToastUpdate.value = true
@@ -191,7 +196,7 @@ export function usePagar() {
                   mostrarToastUpdate.value = false
                   limpiarCampos()
                   setNombre('')
-                  router.push(`/listas/${route.params.id}`)
+                  router.push(`/lista/${route.params.id}`)
                 }, 1500)
             } else {
                 limpiarCampos()
@@ -232,6 +237,7 @@ export function usePagar() {
         formatNumber,
         totales,
         totalGeneral,
-        lanzarToast
+        lanzarToast,
+        mostrarEnviando, 
     }
 }

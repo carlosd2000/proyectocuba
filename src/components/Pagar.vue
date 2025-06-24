@@ -23,6 +23,13 @@
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
     </div>
+    <!-- MODAL DE ENVÍO -->
+<div v-if="mostrarEnviando" class="modal-overlay">
+  <div class="modal-content">
+    <span class="loader"></span>
+    <p>Procesando jugada...</p>
+  </div>
+</div>
 
     <!-- Toast de Guardado -->
     <div v-if="mostrarToastSave" class="toast-container">
@@ -74,6 +81,46 @@ const {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 5, 23, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #ccc;
+  border-top: 4px solid #6665DD;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 
 .label{
   color: #F3F3F3;

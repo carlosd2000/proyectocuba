@@ -1,9 +1,13 @@
 <template>
   <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
     <!-- Valor/Precio -->
-    <h1 class="price-value">
+    <h1 v-if="isListerosRoute" class="price-value">
       {{ formattedPrice }}
     </h1>
+    <h3 v-else class="price-value">
+      {{ formattedPrice }}
+    </h3>
+
     
     <!-- Cuenta Regresiva -->
     <CuentaRegresiva />

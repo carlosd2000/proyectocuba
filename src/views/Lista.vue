@@ -54,8 +54,8 @@ const opcionSeleccionada = ref('Lista')
           </div>
         </div>
       </main>
-      <aside class="w-100 h-100 overflow-auto">
-        <div v-if="opcionSeleccionada === 'Lista'" class="w-100 h-100 d-flex flex-column align-items-center">
+      <aside class="w-100 overflow-auto">
+        <div v-if="opcionSeleccionada === 'Lista'" class="w-100 d-flex flex-column align-items-center">
           <ListaComponent :fecha="fechaSeleccionada" />
         </div>
       </aside>
