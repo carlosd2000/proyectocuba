@@ -58,6 +58,9 @@ const {
         <div class="d-flex justify-content-start align-items-center">
           <h5 class="body">{{ persona.nombre }}</h5>
         </div>
+        <div>
+          {{ persona.horario }}
+        </div>
         <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
           <img :src="obtenerIconoEstado(persona)" alt="">
           <h5 class="small">{{ mostrarHora(persona) }}</h5>

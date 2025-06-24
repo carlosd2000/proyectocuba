@@ -4,6 +4,11 @@ import Dia from '../assets/icons/Dia.svg'
 import Atardecer from '../assets/icons/Atardecer.svg'
 import Noche from '../assets/icons/Luna.svg'
 
+const props = defineProps({
+  horarioEdicion: { type: String, default: 'Dia' },
+  modoEdicion: { type: Boolean, default: false }
+})
+
 const emit = defineEmits(['update:selected'])
 
 const dropdownOpen = ref(false)
@@ -16,11 +21,40 @@ const options = [
   { value: '3', icon: Noche }
 ]
 
+// Mapear nombre a valor
+function horarioToValue(nombre) {
+  switch (nombre) {
+    case 'Dia': return '1'
+    case 'Tarde': return '2'
+    case 'Noche': return '3'
+    default: return '1'
+  }
+}
+function valueToIcon(value) {
+  switch (value) {
+    case '1': return Dia
+    case '2': return Atardecer
+    case '3': return Noche
+    default: return Dia
+  }
+}
+watch(
+  () => props.horarioEdicion,
+  (nuevo) => {
+    const val = horarioToValue(nuevo)
+    selectedValue.value = val
+    selectedIcon.value = valueToIcon(val)
+    emit('update:selected', val)
+  },
+  { immediate: true }
+)
 const filteredOptions = computed(() => {
   return options.filter(option => option.value !== selectedValue.value)
 })
 
+
 watch(selectedValue, (newVal) => {
+  selectedIcon.value = valueToIcon(newVal)
   emit('update:selected', newVal)
 })
 

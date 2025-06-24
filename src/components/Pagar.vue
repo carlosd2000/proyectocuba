@@ -1,3 +1,22 @@
+<script setup>
+import { usePagar } from '../scripts/Pagar.js'
+
+const {
+  mostrarEnviando,
+  mostrarToastSave,
+  mostrarToastUpdate,
+  mostrarToastError,
+  errorMessage,
+  isOnline,
+  formatNumber,
+  totales,
+  totalGeneral,
+  lanzarToast
+} = usePagar()
+const props = defineProps({
+  horario: String
+})
+</script>
 <template>
   <div class="main-container">
     <!-- Sección de Totales ajustada al mismo ancho que pagar-button -->
@@ -66,26 +85,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { usePagar } from '../scripts/Pagar.js'
-
-const {
-  mostrarToastSave,
-  mostrarToastUpdate,
-  mostrarToastError,
-  errorMessage,
-  isOnline,
-  formatNumber,
-  totales,
-  totalGeneral,
-  lanzarToast
-} = usePagar()
-const props = defineProps({
-  horario: String
-})
-</script>
-
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
 

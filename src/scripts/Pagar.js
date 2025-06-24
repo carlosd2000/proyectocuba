@@ -21,6 +21,7 @@ export function usePagar() {
     const router = useRouter()
     const route = useRoute()
 
+    const mostrarEnviado = ref(false)
     const mostrarToastSave = ref(false)
     const mostrarToastUpdate = ref(false)
     const mostrarToastError = ref(false)
@@ -228,6 +229,7 @@ export function usePagar() {
     })
 
     return {
+        mostrarEnviado,
         mostrarToastSave,
         mostrarToastUpdate,
         mostrarToastError,

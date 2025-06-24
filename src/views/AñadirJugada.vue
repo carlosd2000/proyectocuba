@@ -20,7 +20,15 @@ async function ejemploUso() {
   console.log("Banco padre:", bancoId);
 }
 const onHorarioSeleccionado = (nuevoHorario) => {
-  setHorario(nuevoHorario)
+  const horarioSeleccionado = (() => {
+    switch (nuevoHorario) {
+      case '1': return 'Dia'
+      case '2': return 'Tarde'
+      case '3': return 'Noche'
+      default: return 'Dia'
+    }
+  })();
+  setHorario(horarioSeleccionado);
 }
 
 const route = useRoute();
@@ -32,18 +40,6 @@ const bancoId = ref(null);
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
 });
-
-const horarioSeleccionado = ref('1') // valor por defecto
-
-const horarioNombre = computed(() => {
-  switch (horarioSeleccionado.value) {
-    case '1': return 'Dia'
-    case '2': return 'Tarde'
-    case '3': return 'Noche'
-    default: return 'Dia'
-  }
-})
-
 onMounted(async () => {
   if (idEditar.value) {
     setModoEdicion(true, idEditar.value);
@@ -107,7 +103,7 @@ const componenteActual = computed(() => {
     <main class="container d-flex flex-column align-items-center w-100">
       <CardPrice/>
       <div class="components-container">
-        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar" @update:selected="horarioSeleccionado = $event"/>
+        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar" @update:selected="onHorarioSeleccionado"/>
         <div class="nombre-wrapper d-flex align-items-center justify-content-center">
           <Nombre/>
         </div>
@@ -125,7 +121,7 @@ const componenteActual = computed(() => {
       />
     </main>
     <footer>
-      <Pagar :horario="horarioNombre"/>
+      <Pagar/>
     </footer>
 </template>
 
