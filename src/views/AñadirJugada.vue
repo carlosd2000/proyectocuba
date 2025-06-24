@@ -10,7 +10,7 @@ import { useRoute } from 'vue-router';
 import { computed, ref, onMounted } from 'vue';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
-import { setModoEdicion } from '../scripts/añadir.js';
+import { setModoEdicion, setHorario } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
 import Nombre from '../components/Nombre.vue';
 import CardPrice from '../components/CardPrice.vue';
@@ -18,6 +18,9 @@ import CardPrice from '../components/CardPrice.vue';
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
   console.log("Banco padre:", bancoId);
+}
+const onHorarioSeleccionado = (nuevoHorario) => {
+  setHorario(nuevoHorario)
 }
 
 const route = useRoute();
@@ -29,6 +32,17 @@ const bancoId = ref(null);
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
 });
+
+const horarioSeleccionado = ref('1') // valor por defecto
+
+const horarioNombre = computed(() => {
+  switch (horarioSeleccionado.value) {
+    case '1': return 'Dia'
+    case '2': return 'Tarde'
+    case '3': return 'Noche'
+    default: return 'Dia'
+  }
+})
 
 onMounted(async () => {
   if (idEditar.value) {
@@ -93,7 +107,7 @@ const componenteActual = computed(() => {
     <main class="container d-flex flex-column align-items-center w-100">
       <CardPrice/>
       <div class="components-container">
-        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
+        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar" @update:selected="horarioSeleccionado = $event"/>
         <div class="nombre-wrapper d-flex align-items-center justify-content-center">
           <Nombre/>
         </div>
@@ -111,7 +125,7 @@ const componenteActual = computed(() => {
       />
     </main>
     <footer>
-      <Pagar/>
+      <Pagar :horario="horarioNombre"/>
     </footer>
 </template>
 
@@ -125,12 +139,9 @@ main {
   overflow-y: auto;
   padding-bottom: 80px; /* Previene que el contenido se oculte detrás del footer */
 }
-
 footer{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 8px;
+  background-color: #fdfef2;
+  border: none;
 }
 .buttons-heith {
   display: flex;
@@ -151,7 +162,7 @@ footer{
   align-items: center;
   width: 100%;
   height: 48px;
-  gap: 4px;
+  gap: 8px;
 }
 .nombre-wrapper {
   flex: 1; /* Ocupa el espacio restante */

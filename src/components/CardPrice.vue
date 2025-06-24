@@ -54,7 +54,7 @@ export default {
   padding: 10px;
   gap: 8px;
   width: 100%;
-  max-width: 343px;
+  max-width: 400px;
   height: 124px;
   background: #EFF779;
   border-radius: 12px;

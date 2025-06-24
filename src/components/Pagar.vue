@@ -1,9 +1,11 @@
 <template>
   <div class="main-container">
     <!-- Sección de Totales ajustada al mismo ancho que pagar-button -->
-    <div class="totales-container">
-      <div class="totales-header">Totales</div>
-      <div class="totales-values">
+    <div class="totales-container bg-transparent">
+      
+      <div class="totales-values px-3">
+        <div class="totales-header">Totales</div>
+        <div class="division-line"></div>
         <div class="total-item">${{ formatNumber(totales.col3) }}</div>
         <div class="division-line"></div>
         <div class="total-item">${{ formatNumber(totales.col4) }}</div>
@@ -13,11 +15,13 @@
     </div>
     
     <!-- Botón de Pagar (343px de ancho) -->
-    <button class="pagar-button" @click="lanzarToast">
-      <h5 class="label">Enviar</h5>
-      <h5 class="label">${{ formatNumber(totalGeneral) }}</h5>
-      <img src="../assets/icons/Chevron_right.svg" alt="">
-    </button>
+    <div class="pagar-button-container">
+      <button class="pagar-button" @click="lanzarToast">
+        <h5 class="label">Enviar</h5>
+        <h5 class="label">${{ formatNumber(totalGeneral) }}</h5>
+        <img src="../assets/icons/Chevron_right.svg" alt="">
+      </button>
+    </div>
 
     <!-- Mensaje de error -->
     <div v-if="errorMessage" class="error-message">
@@ -77,6 +81,9 @@ const {
   totalGeneral,
   lanzarToast
 } = usePagar()
+const props = defineProps({
+  horario: String
+})
 </script>
 
 <style scoped>
@@ -127,11 +134,14 @@ const {
 }
 /* Contenedor principal */
 .main-container {
-  max-width: 343px;
+  border: none;
   width: 100%;
   display: flex;
+  justify-content: center;
+  align-items: center;
   flex-direction: column;
-  gap: 8px;
+  padding: 16px 16px 24px 16px;
+  gap: 16px;
   font-family: 'Manrope', sans-serif;
 }
 
@@ -143,7 +153,6 @@ const {
   align-items: center;
   width: 343px;
   height: 36px;
-  padding: 0 16px;
   box-sizing: border-box;
   background: #FFFFFF;
 }
@@ -163,7 +172,6 @@ const {
   justify-content: flex-end;
   flex-grow: 1;
   gap: 8px;
-  margin-left: 12px;
 }
 
 .total-item {
@@ -187,7 +195,12 @@ const {
   transform: rotate(90deg);
   flex-shrink: 0;
 }
-
+.pagar-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%; /* Ancho fijo para el botón */
+}
 /* BOTÓN DE PAGAR */
 .pagar-button {
   display: flex;

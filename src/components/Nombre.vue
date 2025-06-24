@@ -25,11 +25,11 @@ const { nombreUsuario } = useInputs()
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 8px 8px 8px 16px;
+  padding: 8px 16px 8px 16px;
   gap: 8px;
 
   /* Posición y tamaño */
-  width: 215px;
+  width: 100%;
   height: 48px;
 
   /* Estilos visuales */

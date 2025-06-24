@@ -9,6 +9,7 @@
             type="number"
             class="cuadrado label"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
+            placeholder="-"
             v-model="filasFijas[fila - 1].cuadrado"
             min="0"
             step="1"
@@ -41,6 +42,7 @@
           <input
             type="number"
             class="cuadrado label"
+            placeholder="-"
             :class="claseImagenSiHayEspacio(index, 'extra')"
             v-model="fila.cuadrado"
             min="0"
