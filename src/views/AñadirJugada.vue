@@ -4,23 +4,34 @@ import Inputs from '../components/Inputs.vue';
 import InputsCandado from '../components/InputCandado.vue';
 import InputsCentena from '../components/InputCentena.vue';
 import InputsParlet from '../components/InputParlet.vue';
-import Horario from '../components/Horario.vue';
+import Horario from '../components/SelectorHorario.vue';
 import Pagar from '../components/Pagar.vue';
 import { useRoute } from 'vue-router';
 import { computed, ref, onMounted } from 'vue';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
-import { setModoEdicion } from '../scripts/añadir.js';
+import { setModoEdicion, setHorario } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
+import Nombre from '../components/Nombre.vue';
+import CardPrice from '../components/CardPrice.vue';
 
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
   console.log("Banco padre:", bancoId);
 }
-
+const onHorarioSeleccionado = (nuevoHorario) => {
+  const horarioSeleccionado = (() => {
+    switch (nuevoHorario) {
+      case '1': return 'Dia'
+      case '2': return 'Tarde'
+      case '3': return 'Noche'
+      default: return 'Dia'
+    }
+  })();
+  setHorario(horarioSeleccionado);
+}
 
 const route = useRoute();
-
 const idEditar = computed(() => route.query.editar || null);
 const datosEdicion = ref(null);
 const horarioEdicion = ref('Dia');
@@ -29,43 +40,6 @@ const bancoId = ref(null);
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
 });
-
-/*async function obtenerBancoPadre() {
-  try {
-    const userId = auth.currentUser?.uid;
-    if (!userId) throw new Error("Usuario no autenticado");
-
-    const bancosSnapshot = await getDocs(collection(db, 'bancos'));
-    
-    for (const bancoDoc of bancosSnapshot.docs) {
-      const currentBancoId = bancoDoc.id;
-      
-      // 1. Buscar en listeros directos del banco
-      const listeroRef = doc(db, `bancos/${currentBancoId}/listeros/${userId}`);
-      const listeroSnap = await getDoc(listeroRef);
-      if (listeroSnap.exists()) {
-        return currentBancoId;
-      }
-
-      // 2. Buscar en listeros de colectores del banco
-      const colectoresSnapshot = await getDocs(collection(db, `bancos/${currentBancoId}/colectores`));
-      
-      for (const colectorDoc of colectoresSnapshot.docs) {
-        const listeroRef = doc(db, `bancos/${currentBancoId}/colectores/${colectorDoc.id}/listeros/${userId}`);
-        const listeroSnap = await getDoc(listeroRef);
-        if (listeroSnap.exists()) {
-          return currentBancoId;
-        }
-      }
-    }
-
-    throw new Error("No se encontró el banco padre para este usuario");
-  } catch (error) {
-    console.error("Error obteniendo banco padre:", error);
-    throw error;
-  }
-}*/
-
 onMounted(async () => {
   if (idEditar.value) {
     setModoEdicion(true, idEditar.value);
@@ -124,29 +98,70 @@ const componenteActual = computed(() => {
 
 <template>
     <header>
-        <Header/>
+        <Header title="Jugada"/>
     </header>
-    <div class="col-12 m-0 p-0">
-        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
-    </div>
-    <component 
-      :is="componenteActual" 
-      :datosEdicion="datosEdicion" 
-      :modoEdicion="!!idEditar"
-      :idEdicion="idEditar"
-      :bancoId="bancoId"
-    />
-    <Pagar/>
+    <main class="container d-flex flex-column align-items-center w-100">
+      <CardPrice/>
+      <div class="components-container">
+        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar" @update:selected="onHorarioSeleccionado"/>
+        <div class="nombre-wrapper d-flex align-items-center justify-content-center">
+          <Nombre/>
+        </div>
+        <div class="buttons-heith" @click="$router.push(`/lista/${$route.params.id}`)">
+          <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
+        </div>
+      </div>
+    
+      <component 
+        :is="componenteActual" 
+        :datosEdicion="datosEdicion" 
+        :modoEdicion="!!idEditar"
+        :idEdicion="idEditar"
+        :bancoId="bancoId"
+      />
+    </main>
+    <footer>
+      <Pagar/>
+    </footer>
 </template>
 
 <style scoped>
-header {
-  height: 7%;
-  width: 100%;
-}
-
 main {
-  min-height: 93%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  height: calc(100vh - 64px); /* Asume que el footer mide 64px */
+  overflow-y: auto;
+  padding-bottom: 80px; /* Previene que el contenido se oculte detrás del footer */
+}
+footer{
+  background-color: #fdfef2;
+  border: none;
+}
+.buttons-heith {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px 4px;
+  gap: 4px;
+  width: 48px;
+  height: 48px;
+  background: #050517;
+  border-radius: 60px;
+  flex: none;
+  flex-grow: 0;
+}
+.components-container {
+  display: flex;
+  align-items: center;
   width: 100%;
+  height: 48px;
+  gap: 8px;
+}
+.nombre-wrapper {
+  flex: 1; /* Ocupa el espacio restante */
+  min-width: 0; /* Permite que se ajuste correctamente */
 }
 </style>

@@ -1,116 +1,106 @@
+<script setup>
+import { useDailyPlay } from '../scripts/DailyPlay.js'
+import SelectorHorario from './SelectorHorario.vue';
+import Calendario from './Calendario.vue';
+
+const {
+    opciones,
+    turnoSeleccionado,
+    totalGlobal,
+    totalFormateado,
+    route,
+    router
+} = useDailyPlay()
+
+defineProps({
+    moneytime: {
+        type: String,
+        default: '0'
+    }
+})
+</script>
+
 <template>
-    <div class="col-12 mt-2 mb-2 p-0">
-        <div class="col-12 p-0 mt-2 mb-2 d-flex flex-nowrap justify-content-between align-items-center border-bottom border-1 border-dark">
-            <p class="title pt-1 pb-1 pe-2 text-truncate">Jugada diaria</p>
-            <button class="btn btn-light m-0 p-0 flex-shrink-0 bg-transparent" @click="desplegado1 = !desplegado1">
-                <i class="bi" :class="desplegado1 ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
+    <div class="container m-0 p-0 d-flex flex-column align-items-start">
+        <div class="d-flex justify-content-between align-items-center w-100" style="height: 36px;">
+            <SelectorHorario @update:selected="handleSelect"/>
+            <Calendario/>
         </div>
-        <div v-if="desplegado1" class="col-12">
-            <div class="col-12 p-0 mt-2 d-flex flex-nowrap align-items-center justify-content-between">
-                <div class="col-5 m-0 p-0 d-flex flex-nowrap align-items-center">
-                    <select v-model="turnoSeleccionado" class="form-select form-select-sm text-small border-0 p-0 bg-transparent text-dark fw-semibold" style="width: auto;">
-                        <option v-for="opcion in opciones" :key="opcion" :value="opcion">{{ opcion }}</option>
-                    </select>
-                </div>
-                <div class="col-7 m-0 p-0 d-flex justify-content-end">
-                    <p class="pe-2 text-truncate">{{ totalFormateado }}</p>
-                </div>
-            </div>
-            <div class="col-12 row p-0 m-0 d-flex justify-content-around align-items-center">
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
-                        <i class="bi bi-plus-lg m-0 p-0"></i>
-                        <span class="text-center">Añadir<br>Jugada</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Parlet</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Candado</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
-                        <i class="bi bi-plus-lg"></i>
-                        <span class="text-center">Añadir<br>Centena</span>
-                    </button>
-                </div>
-            </div>            
-            <div class="col-12 p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
-                <button class="col-12 row p-1 btn-list" @click="$router.push(`/listas/${$route.params.id}`)">
-                    <p class="m-1">Lista</p>
-                    <i class="bi bi-card-list m-1"></i>
-                </button>
-            </div>
+        <div class="m-0 p-0 d-flex justify-content-between align-items-center">
+            <h2>
+                Jugada Diaria
+            </h2>
         </div>
+        <div>
+            <h5 class="label">
+                ${{ moneytime }}
+            </h5>
+        </div>
+        <div class="row p-0 m-0 d-flex justify-content-between w-100">
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
+                <img src="../assets/icons/Jugada.svg" alt="" >
+                <h5 class="navegation-label">
+                    Jugada
+                </h5>
+            </div>
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
+                <img src="../assets/icons/Parlet.svg" alt="">
+                <h5 class="navegation-label">
+                    Parlet
+                </h5>
+            </div>
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
+                <img src="../assets/icons/Candado.svg" alt="">
+                <h5 class="navegation-label">
+                    Candado
+                </h5>
+            </div>
+            <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
+                <img src="../assets/icons/Centena.svg" alt="">
+                <h5 class="navegation-label">
+                    Centena
+                </h5>
+            </div>
+            <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
+                <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
+                <h5 class="navegation-label" style="color: #FDFEF2" >
+                    Lista
+                </h5>
+            </div>
+        </div>            
     </div>
 </template>
 
-<script setup>
-import { useDailyPlay } from '../scripts/DailyPlay.js'
-
-const {
-  opciones,
-  turnoSeleccionado,
-  desplegado1,
-  totalGlobal,
-  totalFormateado,
-  route,
-  router
-} = useDailyPlay()
-</script>
-
 <style scoped>
-.title {
-    font-weight: 700;
-    color: #000000;
+.container{
+    gap: 16px;
+    flex: none;
+    order: 1;
+    flex-grow: 0;
 }
 .buttons-heith {
-    margin: 0px;
-    padding: 0px;
-    height: 100%;
-    width: 100px;
-    transform: scale(0.9);
-}
-.btn-list{
-    border: #000000 solid 2px;
-    box-shadow: #000000 2px 2px 2px;
-    border-radius: 6px;
-    background-color: #ffc107; /* Color original */
-    color: #000000; /* Texto negro */
-}
-.btn-list:hover{
-    background-color: rgb(226, 226, 226);
-}
-.btn:hover{
-    background-color: rgb(226, 226, 226);
-}
-.btn-list:active {
-    background-color: #ffffff; /* Fondo blanco */
-    color: #000000; /* Texto negro */
-}
-p{
-    padding: 0px;
-    margin: 1px;
-}
-span {
-    font-size: 0.7rem;
-}
-i{
-    font-size: 1.5rem;
-}
-button {
-    border: none;
-    cursor: pointer;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-end;
     align-items: center;
+    padding: 10px;
+    gap: 4px;
+    width: 62px;
+    height: 62px;
+    border-radius: 12px;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
 }
+.label{
+    color: #696974;
+}
+.black{
+    background: #050517;
+    color: #FFFFFF;
+}
+.state-blue{
+    background: #F0F0FC;
+}
+
 </style>

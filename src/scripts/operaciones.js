@@ -107,16 +107,38 @@ export function expandirApuestasIncrementativas(filas) {
   // Solo aplica si hay al menos dos cuadrados llenos y hay vacíos entre ellos
   if (indices.length >= 2) {
     for (let i = 0; i < indices.length - 1; i++) {
+      const idxInicio = indices[i].idx;
+      const idxFin = indices[i + 1].idx;
       const actual = parseInt(indices[i].val, 10);
       const siguiente = parseInt(indices[i + 1].val, 10);
+
       // Solo si la diferencia es múltiplo de 10 y hay vacíos entre ellos
-      if (siguiente > actual && (siguiente - actual) % 10 === 0 && indices[i + 1].idx - indices[i].idx > 1) {
+      if (
+        siguiente > actual &&
+        (siguiente - actual) % 10 === 0 &&
+        idxFin - idxInicio > 1
+      ) {
+        // Exigir que circulo1 y circulo2 sean iguales en ambos extremos
+        const baseCirculo1 = filas[idxInicio].circulo1;
+        const baseCirculo2 = filas[idxInicio].circulo2;
+        const finCirculo1 = filas[idxFin].circulo1;
+        const finCirculo2 = filas[idxFin].circulo2;
+
+        // Si no son iguales, NO expandir
+        if (baseCirculo1 !== finCirculo1 || baseCirculo2 !== finCirculo2) {
+          // No cumple la condición, retorna las filas originales no vacías
+          return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
+        }
+
         // Generar todos los números intermedios
         const apuestas = [];
         for (let n = actual; n <= siguiente; n += 10) {
-          // Copia la fila base (puedes ajustar qué campos copiar)
-          const base = { ...filas[indices[i].idx], cuadrado: n.toString().padStart(2, '0') };
-          apuestas.push(base);
+          apuestas.push({
+            cuadrado: n.toString().padStart(2, '0'),
+            circulo1: baseCirculo1,
+            circulo2: baseCirculo2
+            // NO copiar circuloSolo
+          });
         }
         return apuestas;
       }
