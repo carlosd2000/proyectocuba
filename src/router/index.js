@@ -34,6 +34,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/colectorprincipal/:id',
+      name: 'colectorprincipal',
+      component: () => import('../views/Registros.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/colectores/:id',
       name: 'colectores',
       component: () => import('../views/Registros.vue'),
