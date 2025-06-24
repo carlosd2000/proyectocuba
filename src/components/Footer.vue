@@ -57,7 +57,6 @@ const props = defineProps({
         height: 88px;
         background: #F0F0FC;
         flex: none;
-        order: 3;
         flex-grow: 0;
     }
     .buttons-heith {

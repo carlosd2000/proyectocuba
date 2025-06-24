@@ -1,9 +1,13 @@
 <template>
-  <div class="card-price" :class="{ 'horizontal-layout': !isListerosRoute }">
+  <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
     <!-- Valor/Precio -->
-    <h1 class="price-value">
+    <h1 v-if="isListerosRoute" class="price-value">
       {{ formattedPrice }}
     </h1>
+    <h3 v-else class="price-value">
+      {{ formattedPrice }}
+    </h3>
+
     
     <!-- Cuenta Regresiva -->
     <CuentaRegresiva />
@@ -61,10 +65,11 @@ export default {
 }
 
 .card-price.horizontal-layout {
+  display: flex;
   flex-direction: row;
   justify-content: space-between;
-  width: auto; /* o un valor más pequeño según necesites */
-  height: auto;
+  width: 100%;
+  height: 56px;
   padding: 15px 20px;
 }
 
@@ -78,6 +83,5 @@ export default {
 /* Ajusta estos estilos según necesites para el diseño horizontal */
 .horizontal-layout .price-value {
   font-size: 24px; /* Tamaño más pequeño para diseño horizontal */
-  margin-right: 15px; /* Espacio entre el precio y el contador */
 }
 </style>

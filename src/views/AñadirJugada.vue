@@ -88,16 +88,17 @@ const componenteActual = computed(() => {
 
 <template>
     <header>
-        <Header/>
+        <Header title="Jugada"/>
     </header>
-    <main class="container">
+    <main class="container d-flex flex-column align-items-center w-100">
       <CardPrice/>
       <div class="components-container">
-        <div class="horario-wrapper">
-          <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
-        </div>
-        <div class="nombre-wrapper">
+        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar"/>
+        <div class="nombre-wrapper d-flex align-items-center justify-content-center">
           <Nombre/>
+        </div>
+        <div class="buttons-heith" @click="$router.push(`/lista/${$route.params.id}`)">
+          <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
         </div>
       </div>
     
@@ -108,40 +109,52 @@ const componenteActual = computed(() => {
         :idEdicion="idEditar"
         :bancoId="bancoId"
       />
-      <Pagar/>
     </main>
+    <footer>
+      <Pagar/>
+    </footer>
 </template>
 
 <style scoped>
 main {
-  min-height: 93%;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  height: calc(100vh - 64px); /* Asume que el footer mide 64px */
+  overflow-y: auto;
+  padding-bottom: 80px; /* Previene que el contenido se oculte detrás del footer */
 }
 
+footer{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+}
+.buttons-heith {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px 4px;
+  gap: 4px;
+  width: 48px;
+  height: 48px;
+  background: #050517;
+  border-radius: 60px;
+  flex: none;
+  flex-grow: 0;
+}
 .components-container {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  width: 100%;
+  height: 48px;
+  gap: 4px;
 }
-
-.horario-wrapper {
-  flex: 0 0 auto; /* No crece, no se encoge, tamaño automático */
-  margin-right: 7px; /* Espacio entre componentes */
-}
-
 .nombre-wrapper {
   flex: 1; /* Ocupa el espacio restante */
   min-width: 0; /* Permite que se ajuste correctamente */
-}
-
-/* Estilos específicos para preservar la forma del Horario */
-.horario-wrapper >>> .selector-horario {
-  width: auto !important;
-  display: inline-flex !important;
-}
-
-.horario-wrapper >>> button {
-  width: auto !important;
-  padding: 8px 12px !important; /* Ajusta según necesites */
 }
 </style>

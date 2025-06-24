@@ -1,6 +1,6 @@
 <template>
-  <div class="container py-3" style="max-width: 350px;"> <!-- Aumenté a 350px -->
-    <div class="main-container">
+  <div class="container-main p-2">
+    <div class="d-flex flex-row justify-content-center gap-1" style="height: 340px;">
       <!-- Contenedor del scroll (solo filas) - ahora más ancho -->
       <div class="scroll-container">
         <!-- Filas fijas -->
@@ -68,6 +68,11 @@
             @keypress="soloEnteros($event)"
           />
         </div>
+        <div class="btn-agregar-container">
+          <button class="btn-agregar-fila" @click="agregarFila">
+            <img :src="masIcon" alt="Agregar fila" class="icono-mas">
+          </button>
+        </div>
       </div>
 
       <!-- Círculo solo - FIJO FUERA DEL SCROLL (posición ajustada) -->
@@ -82,11 +87,6 @@
           @keypress="soloEnteros($event)"
         />
       </div>
-
-      <!-- Botón agregar -->
-      <button class="btn-agregar-fila" @click="agregarFila">
-        <img :src="masIcon" alt="Agregar fila" class="icono-mas">
-      </button>
     </div>
   </div>
 </template>
@@ -111,25 +111,34 @@ const {
 </script>
 
 <style scoped>
-.main-container {
-  position: relative;
-  background-color: #fdfef2;
-  height: 350px;
-  padding-right: 64px; /* Espacio para el círculo solo */
+.container-main{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Line 1 */
+  border-top: 2px solid #F0F0FC;
+  border-bottom: 2px solid #F0F0FC;
+  flex: none;
+  flex-grow: 0;
 }
-
 .scroll-container {
-  height: 290px;
+  display: flex;
+  flex-direction: column;
+  max-height: 330px;
+  gap: 8px;
+  width: 100%;
   overflow-y: auto;
   width: calc(100% - 8px); /* Ajuste para mayor ancho */
-  padding-right: 8px;
+}
+.btn-agregar-container {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .input-row {
   display: flex;
-  margin-bottom: 8px;
+  justify-content: space-between;
   gap: 10px; /* Aumenté el gap para mejor espacio */
-  padding-left: 8px;
   height: 48px;
   width: 100%;
 }
@@ -145,20 +154,14 @@ const {
 
 /* Círculo solo - POSICIÓN FIJA ABSOLUTA (ajustada) */
 .circulo-solo-fixed {
-  position: absolute;
-  right: 0;
-  top: 112px; /* (48px + 8px) * 2 = 112px para tercera fila */
-  width: 64px;
+  margin-top: 113px;
+  width: 70px;
   height: 48px;
-  z-index: 2;
 }
 
 /* Mantengo los demás estilos igual */
 .btn-agregar-fila {
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  width: 64px;
+  width: 70px;
   height: 48px;
   background: #E0E0F8;
   border-radius: 60px;
@@ -168,7 +171,6 @@ const {
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s;
-  z-index: 10;
 }
 
 .btn-agregar-fila:hover {

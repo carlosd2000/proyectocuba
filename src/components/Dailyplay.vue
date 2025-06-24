@@ -22,7 +22,7 @@ defineProps({
 
 <template>
     <div class="container m-0 p-0 d-flex flex-column align-items-start">
-        <div class="d-flex justify-content-between align-items-center w-100">
+        <div class="d-flex justify-content-between align-items-center w-100" style="height: 36px;">
             <SelectorHorario @update:selected="handleSelect"/>
             <Calendario/>
         </div>
