@@ -7,8 +7,8 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc pa
 
 import mostrarhora from '../components/mostrarhora.vue';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
-import toggleon from '../assets/type=Toggle on.svg';
-import toggleoff from '../assets/type=Toggle off.svg';
+import toggleon from '@/assets/icons/Toggleon.svg';
+import toggleoff from '@/assets/icons/Toggleoff.svg';
 
 const turno = ref('Dia');
 const horas = ref('');
@@ -64,9 +64,6 @@ const handleInput = (value, type) => {
     else if (type === 'minuto') minutos.value = numericValue;
     else if (type === 'segundo') segundos.value = numericValue;
 };
-
-// Agrega una variable reactiva para el banco padre
-const bancoPadreId = ref(null)
 
 // Modifica cargarDatos para usar la subcolección
 const cargarDatos = async () => {
@@ -204,7 +201,7 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                             {{ dbHoranoche }}
                         </h6>
                         <button class="btn bg-transparent p-1" @click="activarHorario">
-                            <img src="../assets/type=Timer.svg" alt="">
+                            <img src="@/assets/icons/Timer.svg" alt="">
                         </button>
                     </div>
                 </div>
@@ -222,7 +219,7 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                             {{ dbHoratarde }}
                         </h6>
                         <button class="btn bg-transparent p-1">
-                            <img src="../assets/type=Timer.svg" alt="">
+                            <img src="@/assets/icons/Timer.svg" alt="">
                         </button>
                     </div>
                 </div>
@@ -240,7 +237,7 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                             {{ dbHoranoche }}
                         </h6>
                         <button class="btn bg-transparent p-1">
-                            <img src="../assets/type=Timer.svg" alt="">
+                            <img src="@/assets/icons/Timer.svg" alt="">
                         </button>
                     </div>
                 </div>
