@@ -62,7 +62,7 @@ const {
   </div>
   <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
     <h5 class="body">
-      Aun no hay usuarios en la lista
+      Aun no hay apuestas en la lista
     </h5>
   </div>
   <div v-for="persona in apuestasFiltradas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">

@@ -23,7 +23,7 @@ const props = defineProps({
 </script>
 
 <template>  
-    <div class="container d-flex flex-row justify-content-center align-items-center">
+    <div class="container d-flex flex-row justify-content-around align-items-center">
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/listeros/${$route.params.id}`)">
             <img :src="props.title === 'Home' ? Home_Active : Home" alt="">
             <h5 v-if="props.title !== 'Home'" class="navegation-label">Home</h5>
@@ -53,7 +53,7 @@ const props = defineProps({
 <style scoped>
     .container {
         padding: 8px 40px;
-        gap: 40px;
+        gap: 30px;
         height: 88px;
         background: #F0F0FC;
         flex: none;

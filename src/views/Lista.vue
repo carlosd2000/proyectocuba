@@ -86,7 +86,7 @@ function handleSelect(valor) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 16px 24px 16px;
+  padding: 0px 16px 24px 16px;
   gap: 16px;
   width: 100%;
   height: calc(100vh - 7% - 88px); /* Ajusta 60px según la altura real del footer */
