@@ -18,6 +18,10 @@ defineProps({
         default: '0'
     }
 })
+
+const handleSelect = (selectedValue) => {
+    console.log('Horario seleccionado:', selectedValue);
+}
 </script>
 
 <template>

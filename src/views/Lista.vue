@@ -9,9 +9,24 @@ import Results from '../components/results.vue';
 import ListaComponent from '../components/ListaComponent.vue'
 import Pestañas from '../components/Pestañas.vue';
 import Footer from '../components/Footer.vue';
+import { useCandadoHorario } from '../scripts/useCandadoHorario.js'
+import CandadoAbierto from '../assets/icons/Candado open.svg'
+import CandadoCerrado from '../assets/icons/Candado_locked.svg'
 
 const fechaSeleccionada = ref(new Date())
 const opcionSeleccionada = ref('Lista') 
+const horarioSeleccionado = ref('Dia') 
+
+const { candadoAbierto } = useCandadoHorario(fechaSeleccionada, horarioSeleccionado)
+function handleSelect(valor) {
+  // Mapear valor numérico a texto
+  switch (valor) {
+    case '1': horarioSeleccionado.value = 'Dia'; break;
+    case '2': horarioSeleccionado.value = 'Tarde'; break;
+    case '3': horarioSeleccionado.value = 'Noche'; break;
+    default: horarioSeleccionado.value = 'Dia';
+  }
+}
 </script>
 
 <template>
@@ -24,16 +39,13 @@ const opcionSeleccionada = ref('Lista')
       <main class="d-flex flex-column align-items-center w-100">
         <div class="d-flex flex-row  justify-content-between align-items-center w-100">
           <div class="horario-winner d-flex flex-row align-items-center">
-            <SelectorHorario />
+            <SelectorHorario @update:selected="handleSelect"/>
             <WinerNumber />
           </div>
           <Calendario @cambiar-fecha="fechaSeleccionada = $event" />
         </div>
         <Results/>
         <div class="d-flex flex-row justify-content-between align-items-center w-100">
-          <div class="candado">
-            <img src="../assets/icons/Candado open.svg" alt="">
-          </div>
           <div class="button-list" :class="{ activo: opcionSeleccionada === 'Lista' }" @click="opcionSeleccionada = 'Lista'">
             <img src="../assets/icons/Lista icon.svg" alt="">
             <h5 class="body2">
@@ -52,11 +64,14 @@ const opcionSeleccionada = ref('Lista')
               Resumen
             </h5>
           </div>
+          <div class="candado">
+            <img :src="candadoAbierto ? CandadoAbierto : CandadoCerrado" alt="Candado">
+          </div>
         </div>
       </main>
       <aside class="w-100 h-100 overflow-auto">
         <div v-if="opcionSeleccionada === 'Lista'" class="h-100">
-          <ListaComponent :fecha="fechaSeleccionada" />
+          <ListaComponent :fecha="fechaSeleccionada" :horario="horarioSeleccionado" :candadoAbierto="candadoAbierto"/>
         </div>
       </aside>
     </div>

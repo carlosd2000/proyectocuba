@@ -4,6 +4,7 @@ import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } 
 import { sincronizarPendientes } from '../scripts/añadir.js'
 import Cloud from '../assets/icons/Cloud.svg'
 import CloudFill from '../assets/icons/Cloud_fill.svg'
+import StropWatch from '../assets/icons/stopwatch.svg'
 
 export default function useLista(fechaRef, router, route) {
     const mostrarModal = ref(false)
@@ -28,12 +29,10 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const obtenerIconoEstado = (persona) => {
-        if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
         switch (persona.estado) {
-        default: case 'Cargado': return Cloud
-        case 'Pendiente': return CloudFill
-        case 'EnTiempo': return 'bi bi-stopwatch text-success'
-        case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
+            default: case 'Cargado': return Cloud
+            case 'Pendiente': return CloudFill
+            case 'FueraDeTiempo': return StropWatch
         }
     }
 
@@ -49,7 +48,6 @@ export default function useLista(fechaRef, router, route) {
             id: a.uuid,
             uuid: a.uuid,
             totalGlobal: Number(a.totalGlobal) || 0,
-            candadoAbierto: a.candadoAbierto ?? false,
             }));
         } catch (error) {
         console.error('Error cargando apuestas locales:', error);
@@ -85,7 +83,6 @@ export default function useLista(fechaRef, router, route) {
                 return fechaB - fechaA;
             });
         }
-
         const firebaseUuids = new Set(apuestas.value.map(a => a.uuid))
         const localesFiltradas = apuestasLocales.value.filter(local => !firebaseUuids.has(local.uuid))
         return [...apuestas.value, ...localesFiltradas]
@@ -130,7 +127,6 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const cuadroClick = (persona) => {
-        if (!persona.candadoAbierto) return
         personaSeleccionada.value = persona
         mostrarModal.value = true
     }
@@ -200,21 +196,21 @@ export default function useLista(fechaRef, router, route) {
         window.addEventListener('storage', cargarApuestasLocales)
         window.addEventListener('candados-actualizados', handleCandadosActualizados)
         window.addEventListener('horario-cerrado', () => {
-    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
-    unsubscribe = obtenerApuestas();
-    cargarApuestasLocales();
-});
+        if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
+            unsubscribe = obtenerApuestas();
+            cargarApuestasLocales();
+        });
 
         if (navigator.onLine) {
             isSyncing.value = true
             sincronizarEliminaciones()
-                .then(sincronizarPendientes)
-                .then(() => {
-                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
-                    unsubscribe = obtenerApuestas();
-                    cargarApuestasLocales();
-                })
-                .finally(() => { isSyncing.value = false })
+            .then(sincronizarPendientes)
+            .then(() => {
+                if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
+                unsubscribe = obtenerApuestas();
+                cargarApuestasLocales();
+            })
+            .finally(() => { isSyncing.value = false })
         }
     })
 
