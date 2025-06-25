@@ -165,7 +165,6 @@ export async function guardarDatos() {
       horario: horarioSeleccionado.value,
       uuid,
       horaCuba24: hora24,
-      candadoAbierto: true,
       timestampLocal: timestamp,
       bancoId // Aseguramos que siempre tenga valor
     };
@@ -298,7 +297,6 @@ export async function sincronizarPendientes() {
             creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
             sincronizadoEn: serverTimestamp(),
             estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
-            candadoAbierto: !fueraDeTiempo
           });
           
           pendientesExitosos.push(apuesta.uuid);

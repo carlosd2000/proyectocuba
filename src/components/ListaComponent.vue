@@ -1,20 +1,34 @@
 <script setup>
-import { toRef, reactive } from 'vue'
+import { toRef, reactive, computed } from 'vue'
 import useLista from '../scripts/Lista.js' // ajusta la ruta si es diferente
 import { useRouter, useRoute } from 'vue-router'
 
-  const props = defineProps({
-    fecha: {
-      type: Date,
-      required: true
-    }
-  })
+const props = defineProps({
+  fecha: {
+    type: Date,
+    required: true
+  },
+  horario: {
+    type: String,
+    required: true
+  },
+  candadoAbierto: {
+    type: Boolean,
+    default: true
+  }
+})
 
 const router = useRouter()
 const route = useRoute()
 
 const fechaRef = toRef(props, 'fecha')
 const detallesVisibles = reactive(new Set()) // IDs con detalles visibles
+
+const apuestasFiltradas = computed(() =>
+  apuestasCombinadas.value.filter(a =>
+    (a.horario || '').toLowerCase() === props.horario.toLowerCase()
+  )
+)
 
 const toggleDetalles = (personaId) => {
   if (detallesVisibles.has(personaId)) {
@@ -31,7 +45,6 @@ const {
   isSyncing,
   apuestasLocales,
   apuestasCombinadas,
-  apuestasFiltradas,
   cuadroClick,
   cerrarModal,
   editarPersona,
@@ -47,12 +60,12 @@ const {
   <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
     <i class="bi bi-wifi-off"></i> Modo offline - mostrando solo apuestas locales
   </div>
-  <div v-if="!apuestasCombinadas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
+  <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
     <h5 class="body">
-      Aun no hay usuarios en la lista
+      Aun no hay apuestas en la lista
     </h5>
   </div>
-  <div v-for="persona in apuestasCombinadas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
+  <div v-for="persona in apuestasFiltradas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
     <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
       <div class="d-flex justify-content-start align-items-center">
         <h5 class="body">{{ persona.nombre }}</h5>
@@ -69,7 +82,11 @@ const {
     <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100 gap-1">
       <div class="col-12 container-apuestas p-0 py-1 d-flex flex-row justify-content-center align-items-center">
         <div class="col-1 d-flex justify-content-center align-items-start h-100">
-          <div class="container-edit-button my-2"  @click="cuadroClick(persona)">
+          <div
+            class="container-edit-button my-2"
+            :class="{ 'disabled': !candadoAbierto }"
+            @click="candadoAbierto ? cuadroClick(persona) : null"
+          >
             <img src="../assets/icons/Editar.svg" alt="">
           </div>
         </div>
@@ -220,6 +237,10 @@ const {
   flex: none;
   order: 0;
   flex-grow: 0;
+}
+.container-edit-button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 header{
   padding: 0px;

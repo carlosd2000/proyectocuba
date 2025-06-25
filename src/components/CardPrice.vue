@@ -6,6 +6,9 @@
     <h3 v-else class="price-value">
       {{ formattedPrice }}
     </h3>
+
+    
+    <!-- Cuenta Regresiva -->
     <CuentaRegresiva />
   </div>
 </template>
@@ -48,7 +51,13 @@ export default {
       isListerosRoute,
       formattedPrice
     };
+  },
+  computed: {
+    formattedPrice() {
+      return `$${this.price.toLocaleString()}`;
+    }
   }
+
 }
 </script>
 

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-light d-flex align-items-center justify-content-between"
+    class="light d-flex align-items-center justify-content-between"
   >
     <button @click="diaAnterior">
       <img src="../assets/icons/Chevron_left.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
@@ -82,7 +82,7 @@ const abrirCalendario = () => {
 
 
 <style scoped>
-.bg-light {
+.light {
   padding: 2px 8px;
   gap: 6px;
   margin: 0;

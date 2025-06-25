@@ -6,31 +6,29 @@ import CardPrice from '../components/CardPrice.vue'
 import Dailyplay from '../components/Dailyplay.vue'
 import ToolsButton from '../components/ToolsButton.vue'
 import Footer from '../components/Footer.vue'
-import { obtenerBancoPadre } from '@/scripts/FunctionBancoPadre.js'
+import { onMounted, ref } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+import CardPrice from '../components/CardPrice.vue'
 
 const authStore = useAuthStore()
 const isLoading = ref(true)
 const error = ref(null)
-
-// IDs reactivos
-const idBancoPadre = ref(null)
-const idListero = ref(null)
 
 onMounted(async () => {
   try {
     if (authStore.isAuthenticated && !authStore.profile) {
       await authStore.loadUserProfile()
     }
-    // Obtener el banco padre
-    idBancoPadre.value = await obtenerBancoPadre()
-    // El id del listero es el UID del usuario autenticado
-    idListero.value = authStore.userId
+    // Aquí puedes cargar datos específicos de Listeros si es necesario
   } catch (e) {
     error.value = "Error cargando datos"
     console.error("Error en Home:", e)
   } finally {
     isLoading.value = false
   }
+})
+onUnmounted(() => {
+  if (unsubscribe.value) unsubscribe.value()
 })
 </script>
 
@@ -40,8 +38,7 @@ onMounted(async () => {
       <Header/>
     </header>
     <main class="container">
-      <CardPrice v-if="idBancoPadre && idListero"
-        :id-banco-padre="idBancoPadre" :id-listero="idListero"/>
+      <CardPrice/>
       <dailyplay moneytime="20000000"/>
       <div class="line w-100"></div>
       <ToolsButton title="Herramientas" />
