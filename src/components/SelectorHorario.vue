@@ -1,5 +1,9 @@
 <script setup>
-import { ref, computed, watch, defineEmits } from 'vue'
+import { ref, computed, watch, defineEmits, onMounted } from 'vue'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../firebase/config'
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre'
+
 import Dia from '../assets/icons/Dia.svg'
 import Atardecer from '../assets/icons/Atardecer.svg'
 import Noche from '../assets/icons/Luna.svg'
@@ -15,13 +19,14 @@ const dropdownOpen = ref(false)
 const selectedValue = ref('1')
 const selectedIcon = ref(Dia)
 
-const options = [
-  { value: '1', icon: Dia },
-  { value: '2', icon: Atardecer },
-  { value: '3', icon: Noche }
+const allOptions = [
+  { value: '1', icon: Dia, nombre: 'Dia' },
+  { value: '2', icon: Atardecer, nombre: 'Tarde' },
+  { value: '3', icon: Noche, nombre: 'Noche' }
 ]
 
-// Mapear nombre a valor
+const options = ref([]) // <-- Solo horarios activos
+
 function horarioToValue(nombre) {
   switch (nombre) {
     case 'Dia': return '1'
@@ -30,6 +35,7 @@ function horarioToValue(nombre) {
     default: return '1'
   }
 }
+
 function valueToIcon(value) {
   switch (value) {
     case '1': return Dia
@@ -38,24 +44,46 @@ function valueToIcon(value) {
     default: return Dia
   }
 }
-watch(
-  () => props.horarioEdicion,
-  (nuevo) => {
-    const val = horarioToValue(nuevo)
-    selectedValue.value = val
-    selectedIcon.value = valueToIcon(val)
-    emit('update:selected', val)
-  },
-  { immediate: true }
-)
-const filteredOptions = computed(() => {
-  return options.filter(option => option.value !== selectedValue.value)
-})
 
+onMounted(async () => {
+  const bancoId = await obtenerBancoPadre()
+  if (!bancoId) return
+
+  const horarios = ['dia', 'tarde', 'noche']
+  const activos = []
+
+  for (const h of horarios) {
+    const docRef = doc(db, `bancos/${bancoId}/hora/${h}`)
+    const snap = await getDoc(docRef)
+    if (snap.exists() && snap.data().activo === true) {
+      const nombre = h.charAt(0).toUpperCase() + h.slice(1)
+      const op = allOptions.find(o => o.nombre === nombre)
+      if (op) activos.push(op)
+    }
+  }
+
+  options.value = activos
+
+  // Asegura que el valor inicial también sea válido
+  const val = horarioToValue(props.horarioEdicion)
+  const exists = activos.find(o => o.value === val)
+  if (exists) {
+    selectedValue.value = val
+    selectedIcon.value = exists.icon
+  } else if (activos.length > 0) {
+    selectedValue.value = activos[0].value
+    selectedIcon.value = activos[0].icon
+  }
+  emit('update:selected', selectedValue.value)
+})
 
 watch(selectedValue, (newVal) => {
   selectedIcon.value = valueToIcon(newVal)
   emit('update:selected', newVal)
+})
+
+const filteredOptions = computed(() => {
+  return options.value.filter(option => option.value !== selectedValue.value)
 })
 
 const toggleDropdown = () => {
@@ -67,7 +95,7 @@ const selectOption = (option) => {
   selectedIcon.value = option.icon
   dropdownOpen.value = false
 }
-// Clase dinámica según la selección
+
 const selectClass = computed(() => {
   switch (selectedValue.value) {
     case '1': return 'bg-dia'
@@ -79,6 +107,7 @@ const selectClass = computed(() => {
 
 const isOpenClass = computed(() => dropdownOpen.value ? 'active' : '')
 </script>
+
 
 <template>
   <div class="custom-select h-100" :class="[selectClass, isOpenClass]">
