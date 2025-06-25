@@ -83,10 +83,13 @@ const {
 }
 
 .scroll-container {
-  height: 290px;
+  display: flex;
+  flex-direction: column;
+  max-height: 330px;
+  gap: 8px;
+  width: 100%;
   overflow-y: auto;
-  width: calc(100% - 8px);
-  padding-right: 8px;
+  width: calc(100% - 8px); /* Ajuste para mayor ancho */
 }
 
 .input-row {

@@ -8,6 +8,7 @@
           <input
             type="number"
             class="cuadrado label"
+            placeholder="-"
             v-model="filasFijas[fila - 1].cuadrado"
             min="0"
             step="1"
@@ -22,6 +23,7 @@
           <input
             type="number"
             class="cuadrado label"
+            placeholder="-"
             v-model="fila.cuadrado"
             min="0"
             step="1"
@@ -83,11 +85,11 @@ const {
 .scroll-container {
   display: flex;
   flex-direction: column;
-  height: 330px;
+  max-height: 330px;
   gap: 8px;
+  width: 100%;
   overflow-y: auto;
-  width: calc(100% - 8px);
-  padding-right: 8px;
+  width: calc(100% - 8px); /* Ajuste para mayor ancho */
 }
 .btn-agregar-container {
   display: flex;
