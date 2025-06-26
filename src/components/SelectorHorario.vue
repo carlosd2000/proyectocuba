@@ -82,6 +82,7 @@ watch(selectedValue, (newVal) => {
   emit('update:selected', newVal)
 })
 
+
 const filteredOptions = computed(() => {
   return options.value.filter(option => option.value !== selectedValue.value)
 })

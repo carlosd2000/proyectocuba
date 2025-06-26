@@ -59,6 +59,24 @@ export function validarFilas(fijas, extras) {
   const todasFilas = [...fijas.value, ...extras.value];
   const tieneCirculoSolo = fijas.value[2]?.circuloSolo !== '' && fijas.value[2]?.circuloSolo !== null;
 
+  if (tipoJugada === 'parlet' || tipoJugada === 'candado') {
+    const cuadradosConDatos = todasFilas.filter(fila => 
+      fila.cuadrado !== '' && fila.cuadrado !== null
+    ).length;
+    
+    if (cuadradosConDatos < 2) {
+      return {
+        esValido: false,
+        circulosInvalidos: false,
+        cuadradosInvalidos: true,
+        circuloSoloInvalido: false,
+        mensajeError: tipoJugada === 'parlet' 
+          ? 'Deben haber dos números para un parlet' 
+          : 'Los candados son al menos dos números'
+      };
+    }
+  }
+
   // 1. Validar que los círculos normales tengan su cuadrado
   const circulosInvalidos = todasFilas.some(fila => {
     const tieneCirculosNormales = (fila.circulo1 !== '' && fila.circulo1 !== null) || 

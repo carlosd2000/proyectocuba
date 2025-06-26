@@ -70,7 +70,7 @@ function handleSelect(valor) {
         </div>
       </main>
       <aside class="w-100 h-100 overflow-auto">
-        <div v-if="opcionSeleccionada === 'Lista'" class="h-100">
+        <div v-if="opcionSeleccionada === 'Lista'" class="h-100 d-flex flex-column gap-2">
           <ListaComponent :fecha="fechaSeleccionada" :horario="horarioSeleccionado" :candadoAbierto="candadoAbierto"/>
         </div>
       </aside>

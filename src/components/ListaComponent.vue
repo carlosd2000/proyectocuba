@@ -58,7 +58,7 @@ const {
 
 <template>
     <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
-        <i class="bi bi-wifi-off"></i> Modo offline - mostrando datos cacheados
+        Modo offline - mostrando datos cacheados
     </div>
     <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
         <h5 class="body">
@@ -83,10 +83,10 @@ const {
             <div class="col-12 container-apuestas p-0 py-1 d-flex flex-row justify-content-center align-items-center">
                 <div class="col-1 d-flex justify-content-center align-items-start h-100">
                     <div
-            class="container-edit-button my-2"
-            :class="{ 'disabled': !candadoAbierto }"
-            @click="candadoAbierto ? cuadroClick(persona) : null"
-          >
+                        class="container-edit-button my-2"
+                        :class="{ 'disabled': !candadoAbierto }"
+                        @click="candadoAbierto ? cuadroClick(persona) : null"
+                    >
                         <img src="../assets/icons/Editar.svg" alt="">
                     </div>
                 </div>

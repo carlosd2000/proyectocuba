@@ -11,6 +11,9 @@ import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '@/firebase/config';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
+import { useToastStore } from '../stores/toast'
+import CheckIcon from '../assets/icons/Check.svg'
+import ErrorIcon from '../assets/icons/Error.svg'
 
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
@@ -20,55 +23,12 @@ async function ejemploUso() {
 export function usePagar() {
     const router = useRouter()
     const route = useRoute()
-
-    const mostrarEnviado = ref(false)
-    const mostrarToastSave = ref(false)
-    const mostrarToastUpdate = ref(false)
-    const mostrarToastError = ref(false)
+    const toastStore = useToastStore()
     const errorMessage = ref('')
     const isOnline = ref(navigator.onLine)
     const bancoId = ref(null) // Nuevo: almacenar bancoId
     const mostrarEnviando = ref(false)
 
-
-    // Función para obtener el banco padre
-    /*async function obtenerBancoPadre() {
-      try {
-        const userId = auth.currentUser?.uid;
-        if (!userId) throw new Error("Usuario no autenticado");
-
-        const bancosSnapshot = await getDocs(collection(db, 'bancos'));
-        
-        for (const bancoDoc of bancosSnapshot.docs) {
-          const currentBancoId = bancoDoc.id;
-          
-          // Buscar en listeros directos del banco
-          const listeroRef = doc(db, `bancos/${currentBancoId}/listeros/${userId}`);
-          const listeroSnap = await getDoc(listeroRef);
-          if (listeroSnap.exists()) {
-            return currentBancoId;
-          }
-
-          // Buscar en listeros de colectores del banco
-          const colectoresSnapshot = await getDocs(collection(db, `bancos/${currentBancoId}/colectores`));
-          
-          for (const colectorDoc of colectoresSnapshot.docs) {
-            const listeroRef = doc(db, `bancos/${currentBancoId}/colectores/${colectorDoc.id}/listeros/${userId}`);
-            const listeroSnap = await getDoc(listeroRef);
-            if (listeroSnap.exists()) {
-              return currentBancoId;
-            }
-          }
-        }
-
-        throw new Error("No se encontró el banco padre para este usuario");
-      } catch (error) {
-        console.error("Error obteniendo banco padre:", error);
-        throw error;
-      }
-    }*/
-
-    // Obtener apuesta por ID (versión mejorada)
     async function obtenerApuestaPorId(bancoId, idApuesta) {
       try {
         const apuestaRef = doc(db, `bancos/${bancoId}/apuestas`, idApuesta);
@@ -111,17 +71,19 @@ export function usePagar() {
     })
 
     const validarAntesDeEnviar = async () => {
-        mostrarEnviando.value = true
-        const apuestaId = route.query.editar;
-        const { esValido, circulosInvalidos, cuadradosInvalidos, circuloSoloInvalido } = validarFilas(filasFijas, filasExtra)
-
+        const { esValido, mensajeError } = validarFilas(
+          filasFijas, 
+          filasExtra, 
+          route.query.tipo || 'normal' // Pasar el tipo de jugada
+        );
+        
         if (circulosInvalidos) {
-            errorMessage.value = 'Cada círculo normal debe tener su cuadrado correspondiente'
+            errorMessage.value = 'Falta el numero de tu apuesta'
             return false
         }
 
         if (cuadradosInvalidos) {
-            errorMessage.value = 'Los cuadrados sin círculos solo son válidos cuando creas candados';
+            errorMessage.value = 'Falta el valor de tu apuesta';
             return false
         }
 
@@ -131,7 +93,7 @@ export function usePagar() {
         }
 
         if (!esValido) {
-            errorMessage.value = 'Ingrese al menos un par válido (cuadrado + círculo)'
+            errorMessage.value = 'Ingrese al menos un par válido (numero y valor)'
             return false
         }
         
@@ -140,39 +102,58 @@ export function usePagar() {
     }
 
     const lanzarToast = async () => {
+      try {
         mostrarEnviando.value = true
         if (!(await validarAntesDeEnviar())) {
-            mostrarEnviando.value = false
-            mostrarToastError.value = true
-            setTimeout(() => mostrarToastError.value = false, 2000)
+              toastStore.showToast(errorMessage.value, 'error', 2000, ErrorIcon)
             return
         }
         const resultado = await guardarDatos()
-
-        mostrarEnviando.value = false 
         
         if (resultado.success) {
-            if (modoEdicion.value) {
-                mostrarToastUpdate.value = true
-                setTimeout(() => {
-                  mostrarToastUpdate.value = false
-                  limpiarCampos()
-                  setNombre('')
-                  router.push(`/lista/${route.params.id}`)
-                }, 1500)
-            } else {
-                limpiarCampos()
-                setNombre('')
-                mostrarToastSave.value = true
-                setTimeout(() => {
-                  mostrarToastSave.value = false
-                }, 1500)
-            }
+          if (modoEdicion.value) {
+            toastStore.showToast(
+              isOnline.value ? 'Jugada actualizada' : 'Cambios guardados (offline)',
+              'success',
+              1500,
+              CheckIcon
+            )
+            setTimeout(() => {
+              limpiarCampos()
+              setNombre('')
+            }, 1500)
+          } 
+          else {
+            limpiarCampos()
+            setNombre('')
+            toastStore.showToast(
+              isOnline.value ? 'Jugada enviada' : 'Jugada guardada (offline)',
+              'success',
+              1500,
+              CheckIcon
+            )
+          }
+          router.push(`/lista/${route.params.id}`)
         } else {
-            errorMessage.value = resultado.message || 'Error al guardar'
-            mostrarToastError.value = true
-            setTimeout(() => mostrarToastError.value = false, 2000)
+          toastStore.showToast(
+            resultado.message || 'Error al guardar',
+            'error',
+            2000,
+            ErrorIcon
+          )
         }
+      }
+      catch (error) {
+        toastStore.showToast(
+          'Ocurrió un error inesperado',
+          'error',
+          2000,
+          ErrorIcon
+        )
+      } 
+      finally {
+        mostrarEnviando.value = false
+      }
     }
 
     const updateOnlineStatus = () => {
@@ -190,10 +171,6 @@ export function usePagar() {
     })
 
     return {
-        mostrarEnviado,
-        mostrarToastSave,
-        mostrarToastUpdate,
-        mostrarToastError,
         errorMessage,
         isOnline,
         formatNumber,
