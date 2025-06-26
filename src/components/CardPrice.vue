@@ -1,63 +1,43 @@
 <template>
   <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
+    <!-- Valor/Precio -->
     <h1 v-if="isListerosRoute" class="price-value">
       {{ formattedPrice }}
     </h1>
     <h3 v-else class="price-value">
       {{ formattedPrice }}
     </h3>
-
-    
     <!-- Cuenta Regresiva -->
     <CuentaRegresiva />
   </div>
 </template>
 
 <script>
-import CuentaRegresiva from './CuentaRegresiva.vue';
-import { computed, ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { useRegistro } from '@/scripts/Registro.js';
+import CuentaRegresiva from './CuentaRegresiva.vue'
+import { computed, onMounted } from 'vue'
+import { useTotalGlobal } from '@/scripts/UseTotalGlobal.js'
+import { useRoute } from 'vue-router'
 
 export default {
   components: { CuentaRegresiva },
-  props: {
-    price: { type: Number, default: 0 },
-    idBancoPadre: { type: String, required: true },
-    idListero: { type: String, required: true }
-  },
-  setup(props) {
-    const route = useRoute();
-    const isListerosRoute = computed(() => route.path.startsWith('/listeros'));
-    const { buscarBancoYDatosListero } = useRegistro();
-    const datos = ref(null);
-    const dynamicPrice = ref(props.price);
+  setup() {
+    const route = useRoute()
+    const isListerosRoute = computed(() => route.path.startsWith('/listeros'))
+    const { totalGlobal, isLoading, fetchTotalGlobal } = useTotalGlobal()
 
-    onMounted(async () => {
-      datos.value = await buscarBancoYDatosListero(props.idBancoPadre, props.idListero);
-      // Solo mostrar el wallet del listero
-      if (datos.value && datos.value.listero && typeof datos.value.listero.wallet === 'number') {
-        dynamicPrice.value = datos.value.listero.wallet;
-      } else {
-        dynamicPrice.value = 0; // Si no existe, muestra 0
-      }
-    });
+    onMounted(() => {
+      fetchTotalGlobal()
+    })
 
     const formattedPrice = computed(() => {
-      return `$${dynamicPrice.value.toLocaleString()}`;
-    });
+      return isLoading.value ? 'Cargando...' : `$${totalGlobal.value.toLocaleString()}`
+    })
 
     return {
       isListerosRoute,
       formattedPrice
-    };
-  },
-  computed: {
-    formattedPrice() {
-      return `$${this.price.toLocaleString()}`;
     }
   }
-
 }
 </script>
 
@@ -96,9 +76,8 @@ export default {
   color: #000000;
 }
 
-/* Ajusta estos estilos según necesites para el diseño horizontal */
+/* Ajusta estos estilos según necesites para el diseño horizontal /
 .horizontal-layout .price-value {
-  font-size: 24px; /* Tamaño más pequeño para diseño horizontal */
-}
-</style>
+  font-size: 24px; / Tamaño más pequeño para diseño horizontal */
 
+</style>

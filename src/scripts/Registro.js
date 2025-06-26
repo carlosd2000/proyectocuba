@@ -4,7 +4,7 @@ import { AuthService } from '@/firebase/auth'
 import { useAuthStore } from '@/stores/authStore'
 import Swal from 'sweetalert2'
 import { db } from '@/firebase/config'
-import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore'
+import { collection, onSnapshot } from 'firebase/firestore'
 
 export function useRegistro() {
     const nombre = ref('')
@@ -31,7 +31,7 @@ export function useRegistro() {
         return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectorPrincipal' || tipo === 'colectores'
     })
 
-    onMounted(async () => {
+    onMounted(() => {
         creadorId.value = route.params.id || ''
         if (route.path.includes('/bancos')) {
             tipoCreador.value = 'banco'
@@ -224,41 +224,6 @@ export function useRegistro() {
         }
     }
 
-    // Buscar banco padre y traer info de un listero por su id
-    const buscarBancoYDatosListero = async (idBancoPadre, idListero) => {
-        try {
-            if (!idBancoPadre || !idListero) {
-                throw new Error('ID de banco o listero no definido');
-            }
-
-            // Buscar banco padre
-            const bancoRef = doc(db, 'bancos', idBancoPadre)
-            const bancoSnap = await getDoc(bancoRef)
-            let bancoData = null
-            if (bancoSnap.exists()) {
-                bancoData = { id: bancoSnap.id, ...bancoSnap.data() }
-            }
-
-            // Buscar listero
-            const listeroRef = doc(db, 'listeros', idListero)
-            const listeroSnap = await getDoc(listeroRef)
-            let listeroData = null
-            if (listeroSnap.exists()) {
-                listeroData = { id: listeroSnap.id, ...listeroSnap.data() }
-            }
-
-            // Unificar datos en una sola variable
-            const resultado = {
-                banco: bancoData,
-                listero: listeroData
-            }
-            return resultado
-        } catch (error) {
-            console.error("Error buscando banco y listero:", error)
-            return null
-        }
-    }
-
     return {
         nombre,
         email,
@@ -278,7 +243,6 @@ export function useRegistro() {
         registrarUsuario,
         limpiarCampos,
         cerrarSesion,
-        buscarBancoYDatosListero,
         authStore
     }
 }
