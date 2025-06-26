@@ -14,119 +14,212 @@ export default function useLista(fechaRef, router, route) {
     const apuestasLocales = ref([])
     let unsubscribe = null
 
+    // Duración del cache en horas (12 horas)
+    const CACHE_DURATION_HOURS = 12
+
     const esMismoDia = (fechaA, fechaB) => {
         try {
-            const a = new Date(fechaA);
-            const b = new Date(fechaB);
+            const a = new Date(fechaA)
+            const b = new Date(fechaB)
             return a.getFullYear() === b.getFullYear() &&
                 a.getMonth() === b.getMonth() &&
-                a.getDate() === b.getDate();
+                a.getDate() === b.getDate()
         } catch (e) {
-            console.error('Error al comparar fechas:', e);
-            return false;
+            console.error('Error al comparar fechas:', e)
+            return false
         }
     }
 
     const obtenerIconoEstado = (persona) => {
         if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
         switch (persona.estado) {
-        default: case 'Cargado': return Cloud
-        case 'Pendiente': return CloudFill
-        case 'EnTiempo': return 'bi bi-stopwatch text-success'
-        case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
+            case 'Pendiente': return CloudFill
+            case 'EnTiempo': return 'bi bi-stopwatch text-success'
+            case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
+            default: return Cloud
+        }
+    }
+
+    const guardarApuestasEnCache = (apuestasFirebase) => {
+        try {
+            const cache = {
+                data: apuestasFirebase,
+                timestamp: new Date().getTime()
+            }
+            localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache))
+        } catch (error) {
+            console.error('Error guardando apuestas en cache:', error)
+        }
+    }
+
+    const cargarApuestasDesdeCache = () => {
+        try {
+            const cacheStr = localStorage.getItem('apuestasFirebaseCache')
+            if (!cacheStr) return []
+            
+            const cache = JSON.parse(cacheStr)
+            const ahora = new Date().getTime()
+            const esCacheValido = cache.timestamp && 
+                (ahora - cache.timestamp < CACHE_DURATION_HOURS * 60 * 60 * 1000)
+
+            return esCacheValido ? cache.data || [] : []
+        } catch (error) {
+            console.error('Error cargando apuestas desde cache:', error)
+            return []
         }
     }
 
     function cargarApuestasLocales() {
         try {
-        const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}');
-        const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-        apuestasLocales.value = pendientes
-            .filter(a => !eliminacionesPermanentes[a.uuid])
-            .map(a => ({
-            ...a,
-            estado: 'Pendiente',
-            id: a.uuid,
-            uuid: a.uuid,
-            totalGlobal: Number(a.totalGlobal) || 0,
-            candadoAbierto: a.candadoAbierto ?? false,
-            }));
+            const eliminacionesPermanentes = JSON.parse(
+                localStorage.getItem('eliminacionesPermanentes') || '{}'
+            )
+            const pendientes = JSON.parse(
+                localStorage.getItem('apuestasPendientes') || '[]'
+            )
+            const cacheadas = cargarApuestasDesdeCache()
+            
+            apuestasLocales.value = [
+                ...pendientes.filter(a => !eliminacionesPermanentes[a.uuid]),
+                ...cacheadas.filter(a => !eliminacionesPermanentes[a.id])
+            ].map(a => ({
+                ...a,
+                estado: a.uuid ? 'Pendiente' : 'Cargado',
+                id: a.uuid || a.id,
+                uuid: a.uuid || a.id,
+                totalGlobal: Number(a.totalGlobal) || 0,
+                candadoAbierto: a.candadoAbierto ?? false,
+            }))
         } catch (error) {
-        console.error('Error cargando apuestas locales:', error);
-        apuestasLocales.value = [];
+            console.error('Error cargando apuestas locales:', error)
+            apuestasLocales.value = []
         }
     }
 
     const mostrarHora = (persona) => {
-        if (!persona || typeof persona !== 'object') return "--:-- --"
-        const opciones = { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Havana' }
-        const formatearHora = (fecha) => {
-        if (!fecha) return "--:-- --"
-        const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha.toDate?.() || fecha
-        return fechaObj.toLocaleTimeString('es-ES', opciones)
+        try {
+            if (!persona || typeof persona !== 'object') return "--:-- --"
+            
+            const opciones = { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: true, 
+                timeZone: 'America/Havana' 
+            }
+
+            const formatearHora = (fecha) => {
+                try {
+                    if (!fecha) return "--:-- --"
+                    
+                    let fechaObj
+                    
+                    // Firebase Timestamp {seconds, nanoseconds}
+                    if (typeof fecha === 'object' && 'seconds' in fecha) {
+                        fechaObj = new Date(fecha.seconds * 1000)
+                    } 
+                    // Firebase Timestamp (método toDate)
+                    else if (typeof fecha === 'object' && typeof fecha.toDate === 'function') {
+                        fechaObj = fecha.toDate()
+                    }
+                    // String de fecha
+                    else if (typeof fecha === 'string') {
+                        fechaObj = new Date(fecha)
+                    }
+                    // Objeto Date directamente
+                    else if (fecha instanceof Date) {
+                        fechaObj = fecha
+                    }
+                    
+                    if (!fechaObj || isNaN(fechaObj.getTime())) return "--:-- --"
+                    
+                    return fechaObj.toLocaleTimeString('es-ES', opciones)
+                } catch {
+                    return "--:-- --"
+                }
+            }
+
+            // Orden de prioridad para las fechas
+            return formatearHora(
+                persona.sincronizadoEn || 
+                (persona.estado === 'Pendiente' && persona.creadoEn) || 
+                persona.creadoEn
+            ) || "--:-- --"
+            
+        } catch (error) {
+            console.error('Error al mostrar hora:', error)
+            return "--:-- --"
         }
-        if (persona.sincronizadoEn) return formatearHora(persona.sincronizadoEn)
-        if (persona.estado === 'Pendiente' && persona.creadoEn) return formatearHora(persona.creadoEn)
-        if (persona.creadoEn) return formatearHora(persona.creadoEn)
-        return "--:-- --"
     }
 
     const apuestasCombinadas = computed(() => {
-        if (!isOnline.value) {
-            const filtradas = apuestasLocales.value.filter(a => {
-                let fecha = a.creadoEn ? new Date(a.creadoEn) : null;
-                const mismoDia = fecha && esMismoDia(fecha, fechaRef.value);
-                return mismoDia;
-            });
-            
-            return filtradas.sort((a, b) => {
-                const fechaA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
-                const fechaB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
-                return fechaB - fechaA;
-            });
+        // Guardar en cache cuando hay nuevas apuestas de Firebase
+        if (isOnline.value && apuestas.value.length > 0) {
+            guardarApuestasEnCache(apuestas.value)
         }
 
-        const firebaseUuids = new Set(apuestas.value.map(a => a.uuid))
+        // Usar Firebase si hay conexión, sino usar cache
+        const apuestasParaMostrar = isOnline.value ? apuestas.value : cargarApuestasDesdeCache()
+        const firebaseUuids = new Set(apuestasParaMostrar.map(a => a.uuid))
         const localesFiltradas = apuestasLocales.value.filter(local => !firebaseUuids.has(local.uuid))
-        return [...apuestas.value, ...localesFiltradas]
-        .filter(a => {
-            let fechaA = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
-            a.creadoEn?.toDate ? a.creadoEn.toDate() :
-                a.creadoEn ? new Date(a.creadoEn) : null;
-            return fechaA && esMismoDia(fechaA, fechaRef.value)
-        })
-        .sort((a, b) => {
-            if (a.estado === 'Pendiente') return -1
-            if (b.estado === 'Pendiente') return 1
-            return (b.creadoEn?.seconds || b.creadoEn?.getTime() || 0) -
-            (a.creadoEn?.seconds || a.creadoEn?.getTime() || 0)
-        })
+        
+        return [...apuestasParaMostrar, ...localesFiltradas]
+            .filter(a => {
+                let fechaA
+                try {
+                    if (a.creadoEn?.seconds) {
+                        fechaA = new Date(a.creadoEn.seconds * 1000)
+                    } else if (a.creadoEn?.toDate) {
+                        fechaA = a.creadoEn.toDate()
+                    } else if (a.creadoEn) {
+                        fechaA = new Date(a.creadoEn)
+                    }
+                    return fechaA && esMismoDia(fechaA, fechaRef.value)
+                } catch {
+                    return false
+                }
+            })
+            .sort((a, b) => {
+                try {
+                    const fechaA = a.creadoEn?.seconds ? a.creadoEn.seconds * 1000 : 
+                        a.creadoEn?.toDate ? a.creadoEn.toDate().getTime() : 
+                        a.creadoEn ? new Date(a.creadoEn).getTime() : 0
+                    
+                    const fechaB = b.creadoEn?.seconds ? b.creadoEn.seconds * 1000 : 
+                        b.creadoEn?.toDate ? b.creadoEn.toDate().getTime() : 
+                        b.creadoEn ? new Date(b.creadoEn).getTime() : 0
+                    
+                    if (a.estado === 'Pendiente') return -1
+                    if (b.estado === 'Pendiente') return 1
+                    return fechaB - fechaA
+                } catch {
+                    return 0
+                }
+            })
     })
 
     const updateOnlineStatus = () => {
         isOnline.value = navigator.onLine
         if (isOnline.value) {
-        isSyncing.value = true
-        Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
-            .then(async () => {
-            if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
-            unsubscribe = await obtenerApuestas(); // Ahora es async
-            cargarApuestasLocales();
-            })
-            .finally(() => {
-            isSyncing.value = false
-            })
-        }
-        else {
-        cargarApuestasLocales();
+            isSyncing.value = true
+            Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
+                .then(async () => {
+                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
+                    unsubscribe = await obtenerApuestas()
+                    cargarApuestasLocales()
+                })
+                .finally(() => {
+                    isSyncing.value = false
+                })
+        } else {
+            cargarApuestasLocales()
         }
     }
 
     const handleCandadosActualizados = () => {
-        console.log('Evento de candados actualizados recibido, actualizando lista...');
-        if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
-        unsubscribe = obtenerApuestas();
-        cargarApuestasLocales();
+        console.log('Evento de candados actualizados recibido, actualizando lista...')
+        if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
+        unsubscribe = obtenerApuestas()
+        cargarApuestasLocales()
     }
 
     const cuadroClick = (persona) => {
@@ -143,47 +236,58 @@ export default function useLista(fechaRef, router, route) {
         const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal'
         const esPendiente = personaSeleccionada.value.estado === 'Pendiente'
         router.push({
-        path: `/anadirjugada/${route.params.id}`,
-        query: {
-            tipo: tipoJugada,
-            editar: esPendiente ? personaSeleccionada.value.uuid : personaSeleccionada.value.id,
-            esPendiente: esPendiente.toString()
-        }
+            path: `/anadirjugada/${route.params.id}`,
+            query: {
+                tipo: tipoJugada,
+                editar: esPendiente ? personaSeleccionada.value.uuid : personaSeleccionada.value.id,
+                esPendiente: esPendiente.toString()
+            }
         })
         cerrarModal()
     }
 
     const eliminarPersona = async () => {
         try {
-        const id = personaSeleccionada.value.id
-        const esPendiente = personaSeleccionada.value.estado === 'Pendiente'
-        if (esPendiente) {
-            apuestasLocales.value = apuestasLocales.value.filter(a => a.uuid !== id)
-            const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
-            const nuevasPendientes = pendientes.filter(p => p.uuid !== id)
-            localStorage.setItem('apuestasPendientes', JSON.stringify(nuevasPendientes))
-            const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}')
-            eliminacionesPermanentes[id] = true
-            localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesPermanentes))
-        } else {
-            apuestas.value = apuestas.value.filter(a => a.id !== id)
-        }
+            const id = personaSeleccionada.value.id
+            const esPendiente = personaSeleccionada.value.estado === 'Pendiente'
+            if (esPendiente) {
+                apuestasLocales.value = apuestasLocales.value.filter(a => a.uuid !== id)
+                const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
+                const nuevasPendientes = pendientes.filter(p => p.uuid !== id)
+                localStorage.setItem('apuestasPendientes', JSON.stringify(nuevasPendientes))
+                const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}')
+                eliminacionesPermanentes[id] = true
+                localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesPermanentes))
+            } else {
+                apuestas.value = apuestas.value.filter(a => a.id !== id)
+            }
 
-        const { success } = await eliminarApuesta(id, esPendiente)
-        if (!success) throw new Error('No se pudo completar la eliminación')
+            const { success } = await eliminarApuesta(id, esPendiente)
+            if (!success) throw new Error('No se pudo completar la eliminación')
 
-        mostrarConfirmacionEliminar.value = false
-        mostrarModal.value = false
+            mostrarConfirmacionEliminar.value = false
+            mostrarModal.value = false
 
-        Swal.fire({ icon: 'success', title: '¡Eliminada!', text: 'La apuesta fue removida', timer: 1500, showConfirmButton: false })
+            Swal.fire({ 
+                icon: 'success', 
+                title: '¡Eliminada!', 
+                text: 'La apuesta fue removida', 
+                timer: 1500, 
+                showConfirmButton: false 
+            })
         } catch (error) {
-        console.error('Error en eliminarPersona:', error)
-        if (personaSeleccionada.value.estado === 'Pendiente') cargarApuestasLocales()
-        else if (unsubscribe) {
-            unsubscribe();
-            unsubscribe = obtenerApuestas();
-        }
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la apuesta', timer: 2000 })
+            console.error('Error en eliminarPersona:', error)
+            if (personaSeleccionada.value.estado === 'Pendiente') cargarApuestasLocales()
+            else if (unsubscribe) {
+                unsubscribe()
+                unsubscribe = obtenerApuestas()
+            }
+            Swal.fire({ 
+                icon: 'error', 
+                title: 'Error', 
+                text: 'No se pudo eliminar la apuesta', 
+                timer: 2000 
+            })
         }
     }
 
@@ -192,27 +296,27 @@ export default function useLista(fechaRef, router, route) {
     }
 
     onMounted(async() => {
-        isOnline.value = navigator.onLine;
-        unsubscribe = await obtenerApuestas();
+        isOnline.value = navigator.onLine
+        unsubscribe = await obtenerApuestas()
         cargarApuestasLocales()
         window.addEventListener('online', updateOnlineStatus)
         window.addEventListener('offline', updateOnlineStatus)
         window.addEventListener('storage', cargarApuestasLocales)
         window.addEventListener('candados-actualizados', handleCandadosActualizados)
         window.addEventListener('horario-cerrado', () => {
-    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
-    unsubscribe = obtenerApuestas();
-    cargarApuestasLocales();
-});
+            if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
+            unsubscribe = obtenerApuestas()
+            cargarApuestasLocales()
+        })
 
         if (navigator.onLine) {
             isSyncing.value = true
             sincronizarEliminaciones()
                 .then(sincronizarPendientes)
                 .then(() => {
-                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
-                    unsubscribe = obtenerApuestas();
-                    cargarApuestasLocales();
+                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
+                    unsubscribe = obtenerApuestas()
+                    cargarApuestasLocales()
                 })
                 .finally(() => { isSyncing.value = false })
         }
