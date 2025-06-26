@@ -52,7 +52,7 @@
           <input
             type="number"
             placeholder="$"
-            class="circular"
+            class="circular label"
             :class="claseImagenSiHayEspacio(index, 'extra', 'circulo1')"
             v-model="fila.circulo1"
             min="0"
@@ -62,7 +62,7 @@
           <input
             type="number"
             placeholder="$"
-            class="circular"
+            class="circular label"
             :class="claseImagenSiHayEspacio(index, 'extra', 'circulo2')"
             v-model="fila.circulo2"
             min="0"
@@ -113,6 +113,12 @@ const {
 </script>
 
 <style scoped>
+.input-con-imagen {
+  background-image: url('../assets/icons/Arrow downward alt.svg');
+  background-size: 24px 24px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
 .container-main{
   display: flex;
   flex-direction: column;

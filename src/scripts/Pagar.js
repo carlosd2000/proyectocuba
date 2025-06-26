@@ -27,7 +27,6 @@ export function usePagar() {
     const mostrarToastError = ref(false)
     const errorMessage = ref('')
     const isOnline = ref(navigator.onLine)
-    const verificandoCandado = ref(false)
     const bancoId = ref(null) // Nuevo: almacenar bancoId
     const mostrarEnviando = ref(false)
 
@@ -79,7 +78,6 @@ export function usePagar() {
           return { 
             id: apuestaSnap.id, 
             ...apuestaSnap.data(),
-            candadoAbierto: apuestaSnap.data().candadoAbierto ?? false,
             nombre: apuestaSnap.data().nombre || 'Sin nombre',
             tipo: apuestaSnap.data().tipo || 'tiros',
             horario: apuestaSnap.data().horario || 'Dia'
@@ -89,27 +87,6 @@ export function usePagar() {
       } catch (error) {
         console.error('Error al obtener apuesta:', error);
         throw error;
-      }
-    }
-
-    // Verificar candado con manejo de errores mejorado
-    async function verificarCandadoPorId(idApuesta) {
-      try {
-        if (!bancoId.value) {
-          bancoId.value = await obtenerBancoPadre();
-        }
-        
-        const apuestaData = await obtenerApuestaPorId(bancoId.value, idApuesta);
-        
-        if (!apuestaData) {
-          console.warn('Apuesta no encontrada, permitiendo edición por defecto');
-          return true;
-        }
-        
-        return apuestaData.candadoAbierto ?? true;
-      } catch (error) {
-        console.error('Error verificando candado:', error);
-        return true; // Por defecto permitir edición si hay error
       }
     }
 
@@ -156,22 +133,6 @@ export function usePagar() {
         if (!esValido) {
             errorMessage.value = 'Ingrese al menos un par válido (cuadrado + círculo)'
             return false
-        }
-
-        if (apuestaId) {
-            try {
-                verificandoCandado.value = true;
-                const candadoAbierto = await verificarCandadoPorId(apuestaId);
-                if (!candadoAbierto) {
-                    errorMessage.value = 'La apuesta está bloqueada para edición (candado cerrado)';
-                    return false;
-                }
-            } catch (error) {
-                console.error('Error al verificar candado:', error);
-                return true; // Permitir continuar si hay error en verificación
-            } finally {
-                verificandoCandado.value = false;
-            }
         }
         
         errorMessage.value = ''
@@ -235,7 +196,6 @@ export function usePagar() {
         mostrarToastError,
         errorMessage,
         isOnline,
-        verificandoCandado,
         formatNumber,
         totales,
         totalGeneral,

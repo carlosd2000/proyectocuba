@@ -4,6 +4,7 @@ import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } 
 import { sincronizarPendientes } from '../scripts/añadir.js'
 import Cloud from '../assets/icons/Cloud.svg'
 import CloudFill from '../assets/icons/Cloud_fill.svg'
+import StropWatch from '../assets/icons/stopwatch.svg'
 
 export default function useLista(fechaRef, router, route) {
     const mostrarModal = ref(false)
@@ -31,12 +32,11 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const obtenerIconoEstado = (persona) => {
-        if (!persona || !persona.estado) return 'bi bi-cloud-check text-success'
         switch (persona.estado) {
+            default: case 'Cargado': return Cloud
             case 'Pendiente': return CloudFill
-            case 'EnTiempo': return 'bi bi-stopwatch text-success'
-            case 'FueraDeTiempo': return 'bi bi-stopwatch text-danger'
-            default: return Cloud
+            case 'FueraDeTiempo': return StropWatch
+            
         }
     }
 
@@ -88,8 +88,7 @@ export default function useLista(fechaRef, router, route) {
                 id: a.uuid || a.id,
                 uuid: a.uuid || a.id,
                 totalGlobal: Number(a.totalGlobal) || 0,
-                candadoAbierto: a.candadoAbierto ?? false,
-            }))
+                }))
         } catch (error) {
             console.error('Error cargando apuestas locales:', error)
             apuestasLocales.value = []
@@ -223,7 +222,6 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const cuadroClick = (persona) => {
-        if (!persona.candadoAbierto) return
         personaSeleccionada.value = persona
         mostrarModal.value = true
     }

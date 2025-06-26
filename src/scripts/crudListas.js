@@ -16,7 +16,6 @@ export const obtenerApuestas = async () => {
         apuestas.value = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          candadoAbierto: doc.data().candadoAbierto ?? false,
         }))
         .sort((a, b) => {
           const fechaA = a.creadoEn?.toDate?.()?.getTime() || 0

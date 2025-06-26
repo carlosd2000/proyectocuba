@@ -7,8 +7,6 @@
     <h3 v-else class="price-value">
       {{ formattedPrice }}
     </h3>
-
-    
     <!-- Cuenta Regresiva -->
     <CuentaRegresiva />
   </div>
@@ -39,9 +37,10 @@ export default {
   },
   computed: {
     formattedPrice() {
-      return `$${this.price.toLocaleString()}`;
+      return this.price != null ? this.price.toLocaleString() : 'N/A'
     }
   }
+
 }
 </script>
 

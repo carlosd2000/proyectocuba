@@ -115,7 +115,6 @@ function cargarApuestasLocales() {
         id: a.uuid,
         uuid: a.uuid,
         totalGlobal: Number(a.totalGlobal) || 0,
-        candadoAbierto: a.candadoAbierto ?? false,
       }))
   } catch (error) {
     apuestasLocales.value = []
