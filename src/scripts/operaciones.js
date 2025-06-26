@@ -59,7 +59,7 @@ export function validarFilas(fijas, extras, tipoJugada = 'normal') {
   const todasFilas = [...fijas.value, ...extras.value];
   const tieneCirculoSolo = fijas.value[2]?.circuloSolo !== '' && fijas.value[2]?.circuloSolo !== null;
   
-    if (tipoJugada === 'parlet' || tipoJugada === 'candado') {
+    if (tipoJugada === 'parlet' || tipoJugada === 'candado' || tipoJugada === 'normal') {
     const cuadradosConDatos = todasFilas.filter(fila => 
       fila.cuadrado !== '' && fila.cuadrado !== null
     ).length;
