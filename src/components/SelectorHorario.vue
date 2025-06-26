@@ -136,15 +136,16 @@ const isOpenClass = computed(() => dropdownOpen.value ? 'active' : '')
 <style scoped>
 .custom-select {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 4px 4px 8px;
-  gap: 4px;
-  width: 56px;
-  height: 100%;
-  border-radius: 20px;
-  transition: background-color 0.2s ease;
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 4px 0px 8px;
+gap: 4px;
+width: 56px;
+height: 32px;
+border-radius: 20px;
+transition: background-color 0.2s ease;
 }
 .selected-option {
   display: flex;

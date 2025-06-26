@@ -150,7 +150,7 @@ export const AuthService = {
       } 
       else if (tipo === 'listeros') {
         if (!creadorId || !tipoCreador || !bancoId) throw new Error("Falta información para listeros")
-        await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), {
+        await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), { 
           ...userData,
           creadorDirectoId: creadorId,
           creadorDirectoTipo: tipoCreador

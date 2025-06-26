@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
 import ButtonBack from '../components/ButtonBack.vue'
 import { useHeader } from '../scripts/Header.js'
 
-const { back, bell, cuentaRegresiva, irwallet } = useHeader()
+const { back } = useHeader()
 
 const wallet = ref(0)
 

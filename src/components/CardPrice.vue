@@ -1,12 +1,13 @@
 <template>
   <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
-    <!-- Valor/Precio -->
     <h1 v-if="isListerosRoute" class="price-value">
       {{ formattedPrice }}
     </h1>
     <h3 v-else class="price-value">
       {{ formattedPrice }}
     </h3>
+
+    
     <!-- Cuenta Regresiva -->
     <CuentaRegresiva />
   </div>
@@ -14,30 +15,46 @@
 
 <script>
 import CuentaRegresiva from './CuentaRegresiva.vue';
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { useRegistro } from '@/scripts/Registro.js';
 
 export default {
-  components: {
-    CuentaRegresiva
-  },
+  components: { CuentaRegresiva },
   props: {
-    price: {
-      type: Number,
-      default: 0
-    }
+    price: { type: Number, default: 0 },
+    idBancoPadre: { type: String, required: true },
+    idListero: { type: String, required: true }
   },
-  setup() {
+  setup(props) {
     const route = useRoute();
     const isListerosRoute = computed(() => route.path.startsWith('/listeros'));
-    
+    const { buscarBancoYDatosListero } = useRegistro();
+    const datos = ref(null);
+    const dynamicPrice = ref(props.price);
+
+    onMounted(async () => {
+      datos.value = await buscarBancoYDatosListero(props.idBancoPadre, props.idListero);
+      // Solo mostrar el wallet del listero
+      if (datos.value && datos.value.listero && typeof datos.value.listero.wallet === 'number') {
+        dynamicPrice.value = datos.value.listero.wallet;
+      } else {
+        dynamicPrice.value = 0; // Si no existe, muestra 0
+      }
+    });
+
+    const formattedPrice = computed(() => {
+      return `$${dynamicPrice.value.toLocaleString()}`;
+    });
+
     return {
-      isListerosRoute
+      isListerosRoute,
+      formattedPrice
     };
   },
   computed: {
     formattedPrice() {
-      return this.price != null ? this.price.toLocaleString() : 'N/A'
+      return `$${this.price.toLocaleString()}`;
     }
   }
 
@@ -84,3 +101,4 @@ export default {
   font-size: 24px; /* Tamaño más pequeño para diseño horizontal */
 }
 </style>
+
