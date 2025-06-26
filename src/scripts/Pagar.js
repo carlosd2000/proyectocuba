@@ -71,12 +71,15 @@ export function usePagar() {
     })
 
     const validarAntesDeEnviar = async () => {
-        const { esValido, mensajeError } = validarFilas(
-          filasFijas, 
-          filasExtra, 
-          route.query.tipo || 'normal' // Pasar el tipo de jugada
-        );
+        const tipo = route.query.tipo || 'normal';
+        const { esValido, circulosInvalidos, cuadradosInvalidos, circuloSoloInvalido, mensajeEspecial } = validarFilas(filasFijas, filasExtra, tipo)
         
+        // Primero verificamos el mensaje especial para parlet/candado
+        if (mensajeEspecial) {
+            errorMessage.value = mensajeEspecial;
+            return false;
+        }
+
         if (circulosInvalidos) {
             errorMessage.value = 'Falta el numero de tu apuesta'
             return false

@@ -55,11 +55,11 @@ export function calcularTotales(fijas, extras) {
 }
 
 // En operaciones.js
-export function validarFilas(fijas, extras) {
+export function validarFilas(fijas, extras, tipoJugada = 'normal') {
   const todasFilas = [...fijas.value, ...extras.value];
   const tieneCirculoSolo = fijas.value[2]?.circuloSolo !== '' && fijas.value[2]?.circuloSolo !== null;
-
-  if (tipoJugada === 'parlet' || tipoJugada === 'candado') {
+  
+    if (tipoJugada === 'parlet' || tipoJugada === 'candado') {
     const cuadradosConDatos = todasFilas.filter(fila => 
       fila.cuadrado !== '' && fila.cuadrado !== null
     ).length;
@@ -70,7 +70,8 @@ export function validarFilas(fijas, extras) {
         circulosInvalidos: false,
         cuadradosInvalidos: true,
         circuloSoloInvalido: false,
-        mensajeError: tipoJugada === 'parlet' 
+        // Añadimos esta propiedad nueva
+        mensajeEspecial: tipoJugada === 'parlet' 
           ? 'Deben haber dos números para un parlet' 
           : 'Los candados son al menos dos números'
       };
