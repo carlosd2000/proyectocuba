@@ -13,34 +13,31 @@
 </template>
 
 <script>
-import CuentaRegresiva from './CuentaRegresiva.vue';
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import CuentaRegresiva from './CuentaRegresiva.vue'
+import { computed, onMounted } from 'vue'
+import { useTotalGlobal } from '@/scripts/UseTotalGlobal.js'
+import { useRoute } from 'vue-router'
 
 export default {
-  components: {
-    CuentaRegresiva
-  },
-  props: {
-    price: {
-      type: Number,
-      default: 0
-    }
-  },
+  components: { CuentaRegresiva },
   setup() {
-    const route = useRoute();
-    const isListerosRoute = computed(() => route.path.startsWith('/listeros'));
-    
+    const route = useRoute()
+    const isListerosRoute = computed(() => route.path.startsWith('/listeros'))
+    const { totalGlobal, isLoading, fetchTotalGlobal } = useTotalGlobal()
+
+    onMounted(() => {
+      fetchTotalGlobal()
+    })
+
+    const formattedPrice = computed(() => {
+      return isLoading.value ? 'Cargando...' : `$${totalGlobal.value.toLocaleString()}`
+    })
+
     return {
-      isListerosRoute
-    };
-  },
-  computed: {
-    formattedPrice() {
-      return this.price != null ? this.price.toLocaleString() : 'N/A'
+      isListerosRoute,
+      formattedPrice
     }
   }
-
 }
 </script>
 
@@ -79,8 +76,8 @@ export default {
   color: #000000;
 }
 
-/* Ajusta estos estilos según necesites para el diseño horizontal */
+/* Ajusta estos estilos según necesites para el diseño horizontal /
 .horizontal-layout .price-value {
-  font-size: 24px; /* Tamaño más pequeño para diseño horizontal */
-}
+  font-size: 24px; / Tamaño más pequeño para diseño horizontal */
+
 </style>
