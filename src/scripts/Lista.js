@@ -32,19 +32,28 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const obtenerIconoEstado = (persona) => {
+        if (!persona || !persona.estado) return Cloud
         switch (persona.estado) {
-            default: case 'Cargado': return Cloud
             case 'Pendiente': return CloudFill
             case 'FueraDeTiempo': return StropWatch
-            
+            default: return Cloud
         }
     }
 
     const guardarApuestasEnCache = (apuestasFirebase) => {
         try {
+            // Filtrar solo apuestas del día actual
+            const apuestasHoy = apuestasFirebase.filter(a => {
+                let fechaA = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+                    a.creadoEn?.toDate ? a.creadoEn.toDate() :
+                    a.creadoEn ? new Date(a.creadoEn) : null
+                return fechaA && esMismoDia(fechaA, fechaRef.value)
+            })
+
             const cache = {
-                data: apuestasFirebase,
-                timestamp: new Date().getTime()
+                data: apuestasHoy,
+                timestamp: new Date().getTime(),
+                cacheDate: fechaRef.value.toISOString().split('T')[0] // Fecha actual en formato YYYY-MM-DD
             }
             localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache))
         } catch (error) {
@@ -59,8 +68,12 @@ export default function useLista(fechaRef, router, route) {
             
             const cache = JSON.parse(cacheStr)
             const ahora = new Date().getTime()
+            const hoy = new Date().toISOString().split('T')[0]
+            
+            // Validar que el cache no tenga más de 12 horas Y sea del día actual
             const esCacheValido = cache.timestamp && 
-                (ahora - cache.timestamp < CACHE_DURATION_HOURS * 60 * 60 * 1000)
+                (ahora - cache.timestamp < CACHE_DURATION_HOURS * 60 * 60 * 1000) &&
+                cache.cacheDate === hoy
 
             return esCacheValido ? cache.data || [] : []
         } catch (error) {
@@ -88,7 +101,8 @@ export default function useLista(fechaRef, router, route) {
                 id: a.uuid || a.id,
                 uuid: a.uuid || a.id,
                 totalGlobal: Number(a.totalGlobal) || 0,
-                }))
+                candadoAbierto: a.candadoAbierto ?? false,
+            }))
         } catch (error) {
             console.error('Error cargando apuestas locales:', error)
             apuestasLocales.value = []
@@ -222,6 +236,7 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const cuadroClick = (persona) => {
+        if (!persona.candadoAbierto) return
         personaSeleccionada.value = persona
         mostrarModal.value = true
     }

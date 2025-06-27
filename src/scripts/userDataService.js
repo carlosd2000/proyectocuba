@@ -1,7 +1,9 @@
 // userDataService.js
-import { auth } from '@/firebase/config';
+import { auth, db } from '@/firebase/config';
 import { obtenerBancoPadre } from '@/scripts/FunctionBancoPadre.js';
 import { AuthService } from '@/firebase/auth';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useAuthStore } from '@/stores/authStore';
 
 export const UserDataService = {
   /**
@@ -73,4 +75,23 @@ export const UserDataService = {
    * Obtiene datos básicos del usuario desde el estado de autenticación
    * @returns {Object|null} Datos básicos del usuario o null si no está autenticado
    */
+  async getTotalGlobalListero() {
+    const authStore = useAuthStore();
+    const listeroId = authStore.userId;
+    if (!listeroId) return 0;
+
+    // Busca todas las apuestas donde idistero == listeroId
+    const apuestasRef = collection(db, 'apuestas');
+    const q = query(apuestasRef, where('idistero', '==', listeroId));
+    const snapshot = await getDocs(q);
+
+    let total = 0;
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (typeof data.totalGlobal === 'number') {
+        total += data.totalGlobal;
+      }
+    });
+    return total;
+  }
 };
