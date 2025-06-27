@@ -42,7 +42,7 @@ const props = defineProps({
             <h5 v-if="props.title !== 'Fondo'" class="navegation-label">Fondo</h5>
             <div v-else class="punto"></div>
         </div>
-        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/usuario/${$route.params.id}`)">
             <img :src="props.title === 'Usuario' ? User : User" alt="">
             <h5 v-if="props.title !== 'Usuario'" class="navegation-label">Usuario</h5>
             <div v-else class="punto"></div>

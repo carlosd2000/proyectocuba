@@ -53,7 +53,10 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
     const hora = horarioSnap.data().hora
 
     if (hora instanceof Timestamp || (hora && typeof hora.toDate === 'function')) {
-      cierreDate = hora.toDate()
+      // Solo usamos la hora y minutos del timestamp, pero la fecha debe ser HOY
+      const horaObj = hora.toDate()
+      cierreDate = new Date(now)
+      cierreDate.setHours(horaObj.getHours(), horaObj.getMinutes(), 0, 0)
     } else {
       console.warn('El campo "hora" no es un Timestamp de Firebase o está indefinido:', hora)
       candadoAbierto.value = false

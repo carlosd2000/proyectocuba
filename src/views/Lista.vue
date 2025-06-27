@@ -38,7 +38,7 @@ function handleSelect(valor) {
       <CardPrice/>
       <main class="d-flex flex-column align-items-center w-100">
         <div class="d-flex flex-row  justify-content-between align-items-center w-100">
-          <div class="horario-winner d-flex flex-row align-items-center">
+          <div class="horario-winner d-flex flex-row align-items-center h-100">
             <SelectorHorario @update:selected="handleSelect"/>
             <WinerNumber />
           </div>
@@ -70,7 +70,7 @@ function handleSelect(valor) {
         </div>
       </main>
       <aside class="w-100 h-100 overflow-auto">
-        <div v-if="opcionSeleccionada === 'Lista'" class="h-100">
+        <div v-if="opcionSeleccionada === 'Lista'" class="h-100 d-flex flex-column gap-2">
           <ListaComponent :fecha="fechaSeleccionada" :horario="horarioSeleccionado" :candadoAbierto="candadoAbierto"/>
         </div>
       </aside>

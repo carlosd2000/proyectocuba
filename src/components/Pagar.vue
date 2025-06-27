@@ -2,10 +2,6 @@
 import { usePagar } from '../scripts/Pagar.js'
 
 const {
-  mostrarEnviando,
-  mostrarToastSave,
-  mostrarToastUpdate,
-  mostrarToastError,
   errorMessage,
   isOnline,
   formatNumber,
@@ -13,9 +9,20 @@ const {
   totalGeneral,
   lanzarToast
 } = usePagar()
-const props = defineProps({
-  horario: String
-})
+
+const emit = defineEmits(['update:mostrar-enviando']);
+
+// Modifica la función lanzarToast para emitir el evento
+const customLanzarToast = async () => {
+  emit('update:mostrar-enviando', true)
+  try {
+    await lanzarToast()
+  } catch (error) {
+    console.error('Error en lanzarToast:', error)
+  } finally {
+    emit('update:mostrar-enviando', false)
+  }
+}
 </script>
 <template>
   <div class="main-container">
@@ -34,100 +41,16 @@ const props = defineProps({
     </div>
     
     <!-- Botón de Pagar (343px de ancho) -->
-    <div class="pagar-button-container">
-      <button class="pagar-button" @click="lanzarToast">
+    <div class="pagar-button-container" >
+      <button class="pagar-button" @click="customLanzarToast">
         <h5 class="label">Enviar</h5>
         <h5 class="label">${{ formatNumber(totalGeneral) }}</h5>
         <img src="../assets/icons/Chevron_right.svg" alt="">
       </button>
     </div>
-
-    <!-- Mensaje de error -->
-    <div v-if="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
-    <!-- MODAL DE ENVÍO -->
-<div v-if="mostrarEnviando" class="modal-overlay">
-  <div class="modal-content">
-    <span class="loader"></span>
-    <p>Procesando jugada...</p>
-  </div>
-</div>
-
-    <!-- Toast de Guardado -->
-    <div v-if="mostrarToastSave" class="toast-container">
-      <div class="toast show">
-        <div class="toast-content">
-          <i class="bi bi-check-circle-fill"></i>
-          {{ isOnline ? 'Jugada enviada' : 'Jugada guardada (offline)' }}
-        </div>
-      </div>
-    </div>
-
-    <!-- Toast de Actualización -->
-    <div v-if="mostrarToastUpdate" class="toast-container">
-      <div class="toast show">
-        <div class="toast-content">
-          <i class="bi bi-check-circle-fill"></i>
-          {{ isOnline ? 'Jugada actualizada' : 'Cambios guardados (offline)' }}
-        </div>
-      </div>
-    </div>
-
-    <!-- Toast de Error -->
-    <div v-if="mostrarToastError" class="toast-container error">
-      <div class="toast show">
-        <div class="toast-content">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          {{ errorMessage }}
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@800&display=swap');
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(5, 5, 23, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 24px 32px;
-  border-radius: 12px;
-  text-align: center;
-  font-weight: bold;
-  color: #333;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-}
-
-.loader {
-  width: 32px;
-  height: 32px;
-  border: 4px solid #ccc;
-  border-top: 4px solid #6665DD;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 12px auto;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
 .label{
   color: #F3F3F3;
 }
@@ -260,35 +183,33 @@ const props = defineProps({
 /* TOASTS */
 .toast-container {
   position: fixed;
-  bottom: 0;
+  bottom: 80px;
   left: 0;
   width: 100%;
-  z-index: 1055;
-  background-color: #EBEBEB;
-  border: 1px solid rgba(0, 0, 0, 0.78);
-  box-shadow: 1px -2px 1px rgba(0, 0, 0, 0.39);
-  border-radius: 8px 8px 0 0;
-  font-family: 'Manrope', sans-serif;
-}
-
-.toast-container.error {
-  background-color: #DC3545 !important;
-  color: #FFFFFF;
-}
-
-.toast {
-  width: 100%;
-}
-
-.toast-content {
   padding: 12px;
+  z-index: 1055;
+}
+.toast {
+  height: 100%;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  border-radius: 12px;
+}
+.toast-content {
   display: flex;
-  justify-content: center;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 14px;
-  line-height: 16px;
+  padding: 9px 16px;
+  gap: 24px;
+  width: 100%;
+  height: 56px;
+  background: #E0E0F8;
+  box-shadow: 0px 0px 24px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  flex: none;
+  flex-grow: 0;
+  z-index: 4;
 }
 
 .toast-content i {

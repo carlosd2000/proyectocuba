@@ -2,6 +2,7 @@
 import { useAuthStore } from '@/stores/authStore'
 import { watch, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import ToastManager from './components/ToastManager.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -31,6 +32,7 @@ watch(() => authStore.user, (user) => {
     <div class="spinner"></div>
   </div>
   <RouterView v-else />
+  <ToastManager />
 </template>
 
 <style>

@@ -36,10 +36,16 @@ const idEditar = computed(() => route.query.editar || null);
 const datosEdicion = ref(null);
 const horarioEdicion = ref('Dia');
 const bancoId = ref(null);
+const mostrarEnviando = ref(false);
 
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
 });
+
+const setMostrarEnviando = (valor) => {
+  mostrarEnviando.value = valor;
+};
+
 onMounted(async () => {
   if (idEditar.value) {
     setModoEdicion(true, idEditar.value);
@@ -119,21 +125,70 @@ const componenteActual = computed(() => {
         :idEdicion="idEditar"
         :bancoId="bancoId"
       />
+      <div v-if="mostrarEnviando" class="modal-overlay gap-2">
+        <img src="../assets/icons/Logo.svg" alt="Logo" />
+        <h5 class="body">Enviando Jugada</h5>
+      </div>
     </main>
     <footer>
-      <Pagar/>
+      <Pagar @update:mostrar-enviando="setMostrarEnviando"/>
     </footer>
 </template>
 
 <style scoped>
+.modal-overlay {
+  position: fixed;
+  width: 100%;
+  height: calc(100% - 140px); /* Asume que el footer mide 64px */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(253, 254, 242, 0.4);
+  /* Accent/Mindaro 10 */
+  border: 0.5px solid #FDFEF2;
+  box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  flex: none;
+  flex-grow: 0;
+  z-index: 3;
+}
+
+
+.modal-content {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #ccc;
+  border-top: 4px solid #6665DD;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 main {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  height: calc(100vh - 64px); /* Asume que el footer mide 64px */
+  height: calc(100vh - 140px); /* Asume que el footer mide 64px */
   overflow-y: auto;
-  padding-bottom: 80px; /* Previene que el contenido se oculte detrás del footer */
 }
 footer{
   background-color: #fdfef2;
