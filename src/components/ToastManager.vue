@@ -18,13 +18,13 @@ const handleClose = (id) => {
 </script>
 
 <template>
-  <div class="toast-wrapper">
+  <div class="toast-wrapper d-flex justify-content-center">
     <div 
       v-for="(toast, index) in toastStore.toasts" 
       :key="index"
       :class="toastClasses(toast.type)"
     >
-      <div class="toast show">
+      <div class="toast show d-flex justify-content-center">
         <div class="toast-content">
           <img 
             :src="toast.icon" 
@@ -52,6 +52,7 @@ const handleClose = (id) => {
 }
 
 .toast-container {
+  max-width: 500px;
   width: 100%;
   padding: 12px;
   transition: all 0.3s ease;

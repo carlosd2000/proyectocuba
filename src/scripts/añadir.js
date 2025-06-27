@@ -14,7 +14,8 @@ async function ejemploUso() {
 // Variables reactivas
 export const nombreTemporal = ref('SinNombre');
 export const tipoOrigen = ref('tiros');
-export const horarioSeleccionado = ref('Dia');
+export const horarioSeleccionado = ref(null);
+export const hayHorariosDisponibles = ref(true)
 export const modoEdicion = ref(false);
 export const idEdicion = ref('');
 
@@ -67,7 +68,7 @@ export function setTipoOrigen(tipo) {
 }
 
 export function setHorario(horario) {
-  horarioSeleccionado.value = horario || 'Dia';
+  horarioSeleccionado.value = horario;
 }
 
 export function setModoEdicion(editar, id) {
@@ -100,6 +101,13 @@ function procesarFilas(filas, tipo) {
 
 // ================= FUNCIÓN PRINCIPAL =================
 export async function guardarDatos() {
+  if (!hayHorariosDisponibles.value || !horarioSeleccionado.value) {
+    return { 
+      success: false, 
+      message: "No hay horarios disponibles para enviar apuestas",
+      code: "NO_HORARIOS"
+    }
+  }
   const { hora24, timestamp } = obtenerHoraCuba(); 
   try {
     const bancoId = await obtenerBancoPadre();

@@ -20,12 +20,18 @@ async function ejemploUso() {
   console.log("Banco padre:", bancoId);
 }
 const onHorarioSeleccionado = (nuevoHorario) => {
+  if (nuevoHorario === null) {
+    hayHorariosDisponibles.value = false
+    return
+  }
+  
+  hayHorariosDisponibles.value = true
   const horarioSeleccionado = (() => {
     switch (nuevoHorario) {
       case '1': return 'Dia'
       case '2': return 'Tarde'
       case '3': return 'Noche'
-      default: return 'Dia'
+      default: return null
     }
   })();
   setHorario(horarioSeleccionado);
@@ -37,6 +43,7 @@ const datosEdicion = ref(null);
 const horarioEdicion = ref('Dia');
 const bancoId = ref(null);
 const mostrarEnviando = ref(false);
+const hayHorariosDisponibles = ref(true)
 
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
@@ -109,7 +116,7 @@ const componenteActual = computed(() => {
     <main class="container d-flex flex-column align-items-center w-100">
       <CardPrice/>
       <div class="components-container">
-        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar" @update:selected="onHorarioSeleccionado"/>
+        <Horario :horarioEdicion="horarioEdicion" :modoEdicion="!!idEditar" @update:selected="onHorarioSeleccionado" @no-horarios-disponibles="hayHorariosDisponibles = false"/>
         <div class="nombre-wrapper d-flex align-items-center justify-content-center">
           <Nombre/>
         </div>
@@ -131,7 +138,7 @@ const componenteActual = computed(() => {
       </div>
     </main>
     <footer>
-      <Pagar @update:mostrar-enviando="setMostrarEnviando"/>
+      <Pagar @update:mostrar-enviando="setMostrarEnviando" :hay-horarios-disponibles="hayHorariosDisponibles"/>
     </footer>
 </template>
 
