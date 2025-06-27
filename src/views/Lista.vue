@@ -38,7 +38,7 @@ function handleSelect(valor) {
       <CardPrice/>
       <main class="d-flex flex-column align-items-center w-100">
         <div class="d-flex flex-row  justify-content-between align-items-center w-100">
-          <div class="horario-winner d-flex flex-row align-items-center">
+          <div class="horario-winner d-flex flex-row align-items-center h-100">
             <SelectorHorario @update:selected="handleSelect"/>
             <WinerNumber />
           </div>

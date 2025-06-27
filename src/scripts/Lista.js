@@ -101,7 +101,6 @@ export default function useLista(fechaRef, router, route) {
                 id: a.uuid || a.id,
                 uuid: a.uuid || a.id,
                 totalGlobal: Number(a.totalGlobal) || 0,
-                candadoAbierto: a.candadoAbierto ?? false,
             }))
         } catch (error) {
             console.error('Error cargando apuestas locales:', error)
@@ -236,7 +235,6 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const cuadroClick = (persona) => {
-        if (!persona.candadoAbierto) return
         personaSeleccionada.value = persona
         mostrarModal.value = true
     }

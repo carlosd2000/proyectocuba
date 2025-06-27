@@ -44,7 +44,7 @@ const handleClose = (id) => {
 <style scoped>
 .toast-wrapper {
   position: fixed;
-  bottom: 150px;
+  bottom: 170px;
   left: 0;
   width: 100%;
   z-index: 9999;

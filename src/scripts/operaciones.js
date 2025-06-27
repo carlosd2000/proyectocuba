@@ -58,24 +58,29 @@ export function calcularTotales(fijas, extras) {
 export function validarFilas(fijas, extras, tipoJugada = 'normal') {
   const todasFilas = [...fijas.value, ...extras.value];
   const tieneCirculoSolo = fijas.value[2]?.circuloSolo !== '' && fijas.value[2]?.circuloSolo !== null;
-  
-    if (tipoJugada === 'parlet' || tipoJugada === 'candado' || tipoJugada === 'normal') {
-    const cuadradosConDatos = todasFilas.filter(fila => 
-      fila.cuadrado !== '' && fila.cuadrado !== null
-    ).length;
-    
-    if (cuadradosConDatos < 2) {
-      return {
-        esValido: false,
-        circulosInvalidos: false,
-        cuadradosInvalidos: true,
-        circuloSoloInvalido: false,
-        // Añadimos esta propiedad nueva
-        mensajeEspecial: tipoJugada === 'parlet' 
-          ? 'Deben haber dos números para un parlet' 
-          : 'Los candados son al menos dos números'
-      };
-    }
+  const cuadradosConDatos = todasFilas.filter(fila => fila.cuadrado !== '' && fila.cuadrado !== null).length;
+
+  if (tipoJugada === 'normal' && tieneCirculoSolo && cuadradosConDatos < 2) {
+    return {
+      esValido: false,
+      circulosInvalidos: false,
+      cuadradosInvalidos: true,
+      circuloSoloInvalido: true,
+      mensajeEspecial: 'Los candados son al menos dos números'
+    };
+  }
+
+  // 2. Validación para PARLET/CANDADO (siempre requieren 2+ cuadrados)
+  if ((tipoJugada === 'parlet' || tipoJugada === 'candado') && cuadradosConDatos < 2) {
+    return {
+      esValido: false,
+      circulosInvalidos: false,
+      cuadradosInvalidos: true,
+      circuloSoloInvalido: false,
+      mensajeEspecial: tipoJugada === 'parlet' 
+        ? 'Deben haber dos números para un parlet' 
+        : 'Los candados son al menos dos números'
+    };
   }
 
   // 1. Validar que los círculos normales tengan su cuadrado
@@ -105,10 +110,10 @@ export function validarFilas(fijas, extras, tipoJugada = 'normal') {
   }) || (tieneCirculoSolo && !circuloSoloInvalido);
 
   return {
-    esValido: hayDatosValidos && !circulosInvalidos && !cuadradosInvalidos && !circuloSoloInvalido,
+    esValido: hayDatosValidos && !circulosInvalidos && !cuadradosInvalidos,
     circulosInvalidos,
     cuadradosInvalidos,
-    circuloSoloInvalido
+    circuloSoloInvalido: false
   };
 }
 
