@@ -6,12 +6,17 @@ import { obtenerBancoPadre } from './FunctionBancoPadre.js'
 // Estado reactivo para apuestas
 export const apuestas = ref([])
 
-// Obtener apuestas en tiempo real
-export const obtenerApuestas = async () => {
+// Obtener apuestas en tiempo real filtradas por id_listero
+export const obtenerApuestas = async (idListero) => {
   try {
     const bancoId = await obtenerBancoPadre();
+    const q = query(
+      collection(db, `bancos/${bancoId}/apuestas`),
+      where("id_listero", "==", idListero)
+    );
+    
     const unsubscribe = onSnapshot(
-      collection(db, `bancos/${bancoId}/apuestas`), 
+      q, 
       (querySnapshot) => {
         apuestas.value = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -29,7 +34,7 @@ export const obtenerApuestas = async () => {
     )
     return unsubscribe;
   } catch (error) {
-    console.error('Error obteniendo banco padre:', error);
+    console.error('Error obteniendo banco padre o apuestas:', error);
     return () => {}; // Retorna función vacía si hay error
   }
 }
@@ -60,7 +65,7 @@ export const eliminarApuesta = async (id, esPendiente = false) => {
       return { success: true };
     } else {
       // Guardar para sincronización posterior
-      const eliminaciones = JSON.parse(localStorage.getItem('eliminacionesPendientes') || '[]');
+      const eliminaciones = getLocalStorageArray('eliminacionesPendientes');
       if (!eliminaciones.includes(id)) {
         eliminaciones.push(id);
         localStorage.setItem('eliminacionesPendientes', JSON.stringify(eliminaciones));
@@ -72,6 +77,7 @@ export const eliminarApuesta = async (id, esPendiente = false) => {
     return { success: false, error };
   }
 }
+
 // Sincronizar eliminaciones pendientes
 export const sincronizarEliminaciones = async () => {
   if (!navigator.onLine) return
@@ -80,9 +86,10 @@ export const sincronizarEliminaciones = async () => {
   if (eliminaciones.length === 0) return
 
   try {
+    const bancoId = await obtenerBancoPadre();
     const resultados = await Promise.allSettled(
       eliminaciones.map(id => 
-        deleteDoc(doc(db, 'apuestas', id))
+        deleteDoc(doc(db, `bancos/${bancoId}/apuestas`, id))
       )
     )
 
@@ -106,7 +113,8 @@ export const sincronizarEliminaciones = async () => {
 // Editar una apuesta
 export const editarApuesta = async (id, datosActualizados) => {
   try {
-    await updateDoc(doc(db, 'apuestas', id), datosActualizados)
+    const bancoId = await obtenerBancoPadre();
+    await updateDoc(doc(db, `bancos/${bancoId}/apuestas`, id), datosActualizados)
     return { success: true }
   } catch (error) {
     console.error('Error actualizando apuesta:', error)

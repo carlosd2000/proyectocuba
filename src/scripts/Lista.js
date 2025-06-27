@@ -15,6 +15,9 @@ export default function useLista(fechaRef, router, route) {
     const apuestasLocales = ref([])
     let unsubscribe = null
 
+    // Obtener el id_listero de la ruta
+    const idListero = route.params.id
+
     // Duración del cache en horas (12 horas)
     const CACHE_DURATION_HOURS = 12
 
@@ -53,7 +56,7 @@ export default function useLista(fechaRef, router, route) {
             const cache = {
                 data: apuestasHoy,
                 timestamp: new Date().getTime(),
-                cacheDate: fechaRef.value.toISOString().split('T')[0] // Fecha actual en formato YYYY-MM-DD
+                cacheDate: fechaRef.value.toISOString().split('T')[0]
             }
             localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache))
         } catch (error) {
@@ -70,7 +73,6 @@ export default function useLista(fechaRef, router, route) {
             const ahora = new Date().getTime()
             const hoy = new Date().toISOString().split('T')[0]
             
-            // Validar que el cache no tenga más de 12 horas Y sea del día actual
             const esCacheValido = cache.timestamp && 
                 (ahora - cache.timestamp < CACHE_DURATION_HOURS * 60 * 60 * 1000) &&
                 cache.cacheDate === hoy
@@ -126,19 +128,15 @@ export default function useLista(fechaRef, router, route) {
                     
                     let fechaObj
                     
-                    // Firebase Timestamp {seconds, nanoseconds}
                     if (typeof fecha === 'object' && 'seconds' in fecha) {
                         fechaObj = new Date(fecha.seconds * 1000)
                     } 
-                    // Firebase Timestamp (método toDate)
                     else if (typeof fecha === 'object' && typeof fecha.toDate === 'function') {
                         fechaObj = fecha.toDate()
                     }
-                    // String de fecha
                     else if (typeof fecha === 'string') {
                         fechaObj = new Date(fecha)
                     }
-                    // Objeto Date directamente
                     else if (fecha instanceof Date) {
                         fechaObj = fecha
                     }
@@ -151,7 +149,6 @@ export default function useLista(fechaRef, router, route) {
                 }
             }
 
-            // Orden de prioridad para las fechas
             return formatearHora(
                 persona.sincronizadoEn || 
                 (persona.estado === 'Pendiente' && persona.creadoEn) || 
@@ -165,12 +162,10 @@ export default function useLista(fechaRef, router, route) {
     }
 
     const apuestasCombinadas = computed(() => {
-        // Guardar en cache cuando hay nuevas apuestas de Firebase
         if (isOnline.value && apuestas.value.length > 0) {
             guardarApuestasEnCache(apuestas.value)
         }
 
-        // Usar Firebase si hay conexión, sino usar cache
         const apuestasParaMostrar = isOnline.value ? apuestas.value : cargarApuestasDesdeCache()
         const firebaseUuids = new Set(apuestasParaMostrar.map(a => a.uuid))
         const localesFiltradas = apuestasLocales.value.filter(local => !firebaseUuids.has(local.uuid))
@@ -217,7 +212,7 @@ export default function useLista(fechaRef, router, route) {
             Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
                 .then(async () => {
                     if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
-                    unsubscribe = await obtenerApuestas()
+                    unsubscribe = await obtenerApuestas(idListero)
                     cargarApuestasLocales()
                 })
                 .finally(() => {
@@ -231,7 +226,7 @@ export default function useLista(fechaRef, router, route) {
     const handleCandadosActualizados = () => {
         console.log('Evento de candados actualizados recibido, actualizando lista...')
         if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
-        unsubscribe = obtenerApuestas()
+        unsubscribe = obtenerApuestas(idListero)
         cargarApuestasLocales()
     }
 
@@ -293,7 +288,7 @@ export default function useLista(fechaRef, router, route) {
             if (personaSeleccionada.value.estado === 'Pendiente') cargarApuestasLocales()
             else if (unsubscribe) {
                 unsubscribe()
-                unsubscribe = obtenerApuestas()
+                unsubscribe = obtenerApuestas(idListero)
             }
             Swal.fire({ 
                 icon: 'error', 
@@ -310,7 +305,7 @@ export default function useLista(fechaRef, router, route) {
 
     onMounted(async() => {
         isOnline.value = navigator.onLine
-        unsubscribe = await obtenerApuestas()
+        unsubscribe = await obtenerApuestas(idListero)
         cargarApuestasLocales()
         window.addEventListener('online', updateOnlineStatus)
         window.addEventListener('offline', updateOnlineStatus)
@@ -318,7 +313,7 @@ export default function useLista(fechaRef, router, route) {
         window.addEventListener('candados-actualizados', handleCandadosActualizados)
         window.addEventListener('horario-cerrado', () => {
             if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
-            unsubscribe = obtenerApuestas()
+            unsubscribe = obtenerApuestas(idListero)
             cargarApuestasLocales()
         })
 
@@ -328,7 +323,7 @@ export default function useLista(fechaRef, router, route) {
                 .then(sincronizarPendientes)
                 .then(() => {
                     if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
-                    unsubscribe = obtenerApuestas()
+                    unsubscribe = obtenerApuestas(idListero)
                     cargarApuestasLocales()
                 })
                 .finally(() => { isSyncing.value = false })
