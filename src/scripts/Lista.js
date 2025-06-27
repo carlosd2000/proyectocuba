@@ -15,10 +15,7 @@ export default function useLista(fechaRef, router, route) {
     const apuestasLocales = ref([])
     let unsubscribe = null
 
-    // Obtener el id_listero de la ruta
     const idListero = route.params.id
-
-    // Duración del cache en horas (12 horas)
     const CACHE_DURATION_HOURS = 12
 
     const esMismoDia = (fechaA, fechaB) => {
@@ -45,7 +42,6 @@ export default function useLista(fechaRef, router, route) {
 
     const guardarApuestasEnCache = (apuestasFirebase) => {
         try {
-            // Filtrar solo apuestas del día actual
             const apuestasHoy = apuestasFirebase.filter(a => {
                 let fechaA = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
                     a.creadoEn?.toDate ? a.creadoEn.toDate() :
@@ -256,6 +252,8 @@ export default function useLista(fechaRef, router, route) {
         try {
             const id = personaSeleccionada.value.id
             const esPendiente = personaSeleccionada.value.estado === 'Pendiente'
+            
+            // Eliminar inmediatamente de la UI
             if (esPendiente) {
                 apuestasLocales.value = apuestasLocales.value.filter(a => a.uuid !== id)
                 const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
@@ -266,13 +264,16 @@ export default function useLista(fechaRef, router, route) {
                 localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesPermanentes))
             } else {
                 apuestas.value = apuestas.value.filter(a => a.id !== id)
+                apuestasLocales.value = apuestasLocales.value.filter(a => a.id !== id)
             }
 
-            const { success } = await eliminarApuesta(id, esPendiente)
-            if (!success) throw new Error('No se pudo completar la eliminación')
-
+            // Cerrar modales inmediatamente
             mostrarConfirmacionEliminar.value = false
             mostrarModal.value = false
+
+            // Procesar la eliminación en segundo plano
+            const { success } = await eliminarApuesta(id, esPendiente)
+            if (!success) throw new Error('No se pudo completar la eliminación')
 
             Swal.fire({ 
                 icon: 'success', 
@@ -283,10 +284,11 @@ export default function useLista(fechaRef, router, route) {
             })
         } catch (error) {
             console.error('Error en eliminarPersona:', error)
-            if (personaSeleccionada.value.estado === 'Pendiente') cargarApuestasLocales()
-            else if (unsubscribe) {
+            if (personaSeleccionada.value?.estado === 'Pendiente') {
+                cargarApuestasLocales()
+            } else if (unsubscribe) {
                 unsubscribe()
-                unsubscribe = obtenerApuestas(idListero)
+                unsubscribe = await obtenerApuestas(idListero)
             }
             Swal.fire({ 
                 icon: 'error', 
