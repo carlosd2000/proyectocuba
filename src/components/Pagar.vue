@@ -1,6 +1,7 @@
 <script setup>
 import { usePagar } from '../scripts/Pagar.js'
-
+import { ref, computed  } from 'vue'
+import { hayHorariosDisponibles } from '../scripts/añadir.js'
 const {
   errorMessage,
   isOnline,
@@ -10,16 +11,36 @@ const {
   lanzarToast
 } = usePagar()
 
+const props = defineProps({
+  hayHorariosDisponibles: { type: Boolean, default: true }
+})
+
 const emit = defineEmits(['update:mostrar-enviando']);
+const isLoading = ref(false)
+
+const isButtonDisabled = computed(() => !props.hayHorariosDisponibles)
 
 // Modifica la función lanzarToast para emitir el evento
 const customLanzarToast = async () => {
+  if (isButtonDisabled.value) return
+  
+  isLoading.value = true
   emit('update:mostrar-enviando', true)
   try {
-    await lanzarToast()
+    const resultado = await lanzarToast()
+    if (resultado?.code === "NO_HORARIOS") {
+      // Mostrar mensaje específico para horarios no disponibles
+      toastStore.showToast(
+        resultado.message,
+        'error',
+        2000,
+        ErrorIcon
+      )
+    }
   } catch (error) {
     console.error('Error en lanzarToast:', error)
   } finally {
+    isLoading.value = false
     emit('update:mostrar-enviando', false)
   }
 }
@@ -41,16 +62,37 @@ const customLanzarToast = async () => {
     </div>
     
     <!-- Botón de Pagar (343px de ancho) -->
-    <div class="pagar-button-container" >
-      <button class="pagar-button" @click="customLanzarToast">
+    <div class="pagar-button-container" :disabled="isButtonDisabled"
+        :class="{ 'disabled': isButtonDisabled }">
+      <button 
+        class="pagar-button" 
+        @click="customLanzarToast"
+        :disabled="isButtonDisabled"
+        :class="{ 'disabled': isButtonDisabled }"
+      >
         <h5 class="label">Enviar</h5>
         <h5 class="label">${{ formatNumber(totalGeneral) }}</h5>
-        <img src="../assets/icons/Chevron_right.svg" alt="">
+        <img v-if="!isLoading" src="../assets/icons/Chevron_right.svg" alt="" style="filter: invert(100%);">
+        <img v-else src="../assets/icons/Loading.svg" alt="">
       </button>
+    </div>
+        <div v-if="!hayHorariosDisponibles" class="error-message">
+      No hay horarios disponibles para enviar apuestas
     </div>
   </div>
 </template>
 <style scoped>
+.pagar-button:disabled {
+  background-color: #cccccc !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
+
+.pagar-button.disabled {
+  background-color: #cccccc !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
 .label{
   color: #F3F3F3;
 }

@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, watch, defineEmits, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre'
+import { verificarHorarioActivo, verificarHorarioBasico } from '../scripts/FunctionHorarioActivo.js'
 
 import Dia from '../assets/icons/Dia.svg'
 import Atardecer from '../assets/icons/Atardecer.svg'
@@ -10,10 +12,11 @@ import Noche from '../assets/icons/Luna.svg'
 
 const props = defineProps({
   horarioEdicion: { type: String, default: 'Dia' },
-  modoEdicion: { type: Boolean, default: false }
+  modoEdicion: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:selected'])
+const emit = defineEmits(['update:selected', 'no-horarios-disponibles'])
+const route = useRoute()
 
 const dropdownOpen = ref(false)
 const selectedValue = ref('1')
@@ -25,7 +28,7 @@ const allOptions = [
   { value: '3', icon: Noche, nombre: 'Noche' }
 ]
 
-const options = ref([]) // <-- Solo horarios activos
+const options = ref([])
 
 function horarioToValue(nombre) {
   switch (nombre) {
@@ -49,20 +52,34 @@ onMounted(async () => {
   const bancoId = await obtenerBancoPadre()
   if (!bancoId) return
 
-  const horarios = ['dia', 'tarde', 'noche']
+  const horarios = [
+    { firebaseKey: 'dia', nombre: 'Dia' },
+    { firebaseKey: 'tarde', nombre: 'Tarde' },
+    { firebaseKey: 'noche', nombre: 'Noche' }
+  ]
+  
   const activos = []
+  const esRutaAñadirJugada = route.path.startsWith('/anadirjugada')
 
   for (const h of horarios) {
-    const docRef = doc(db, `bancos/${bancoId}/hora/${h}`)
-    const snap = await getDoc(docRef)
-    if (snap.exists() && snap.data().activo === true) {
-      const nombre = h.charAt(0).toUpperCase() + h.slice(1)
-      const op = allOptions.find(o => o.nombre === nombre)
+    const estaActivo = esRutaAñadirJugada 
+      ? await verificarHorarioActivo(bancoId, h.firebaseKey)
+      : await verificarHorarioBasico(bancoId, h.firebaseKey)
+    
+    if (estaActivo) {
+      const op = allOptions.find(o => o.nombre === h.nombre)
       if (op) activos.push(op)
     }
   }
 
   options.value = activos
+
+  if (activos.length === 0) {
+    selectedValue.value = null
+    selectedIcon.value = null
+    emit('no-horarios-disponibles')
+    return
+  }
 
   // Asegura que el valor inicial también sea válido
   const val = horarioToValue(props.horarioEdicion)
@@ -77,11 +94,11 @@ onMounted(async () => {
   emit('update:selected', selectedValue.value)
 })
 
+
 watch(selectedValue, (newVal) => {
   selectedIcon.value = valueToIcon(newVal)
   emit('update:selected', newVal)
 })
-
 
 const filteredOptions = computed(() => {
   return options.value.filter(option => option.value !== selectedValue.value)
@@ -107,17 +124,18 @@ const selectClass = computed(() => {
 })
 
 const isOpenClass = computed(() => dropdownOpen.value ? 'active' : '')
+const isDisabled = computed(() => options.value.length === 0)
 </script>
 
-
 <template>
-  <div class="custom-select h-100" :class="[selectClass, isOpenClass]">
-    <div class="selected-option" @click="toggleDropdown">
-      <img :src="selectedIcon" alt="">
-      <img src="../assets/icons/Expand.svg" alt="">
+  <div class="custom-select h-100" :class="[selectClass, isOpenClass, { 'disabled': isDisabled }]">
+    <div class="selected-option" @click="!isDisabled && toggleDropdown()">
+      <img v-if="selectedIcon" :src="selectedIcon" alt="">
+      <img v-else src="../assets/icons/Error.svg" alt="Sin horarios">
+      <img src="../assets/icons/Expand.svg" alt="" :class="{ 'disabled': isDisabled }">
     </div>
 
-    <div class="options" v-if="dropdownOpen">
+    <div class="options" v-if="dropdownOpen && !isDisabled">
       <div
         class="d-flex flex-column justify-content-center align-items-center"
         v-for="option in filteredOptions"
@@ -135,18 +153,31 @@ const isOpenClass = computed(() => dropdownOpen.value ? 'active' : '')
 </template>
 
 <style scoped>
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.custom-select.disabled .selected-option {
+  cursor: not-allowed;
+}
+
+.custom-select.disabled .selected-option img:last-child {
+  filter: grayscale(100%);
+}
 .custom-select {
   position: relative;
-display: flex;
-flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 0px 4px 0px 8px;
-gap: 4px;
-width: 56px;
-height: 32px;
-border-radius: 20px;
-transition: background-color 0.2s ease;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px 4px 0px 8px;
+  gap: 4px;
+  width: 64px;
+  height: 32px;
+  border-radius: 20px;
+  transition: background-color 0.2s ease;
 }
 .selected-option {
   display: flex;
