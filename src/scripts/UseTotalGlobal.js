@@ -1,5 +1,5 @@
     import { db } from '@/firebase/config'
-    import { collection, getDocs } from 'firebase/firestore'
+    import { collection, getDocs, query, where } from 'firebase/firestore'
     import { useAuthStore } from '@/stores/authStore'
     import { ref } from 'vue'
 
@@ -13,15 +13,16 @@
         isLoading.value = true
         error.value = null
         const authStore = useAuthStore()
-        // Asegúrate de obtener el bancoId correcto (puede estar en el perfil)
         const bancoId = authStore.profile?.bancoId || authStore.profile?.idBancoPadre || authStore.profile?.creadorId
-        if (!bancoId) {
+        const listeroId = authStore.userId // UID del usuario autenticado
+        if (!bancoId || !listeroId) {
             totalGlobal.value = 0
             return
         }
-        // Busca todas las apuestas en la subcolección del banco
+        // Consulta solo las apuestas de este listero
         const apuestasRef = collection(db, `bancos/${bancoId}/apuestas`)
-        const snapshot = await getDocs(apuestasRef)
+        const q = query(apuestasRef, where('id_listero', '==', listeroId))
+        const snapshot = await getDocs(q)
 
         let total = 0
         snapshot.forEach(doc => {
@@ -45,4 +46,4 @@
         error,
         fetchTotalGlobal
     }
-}
+} 
