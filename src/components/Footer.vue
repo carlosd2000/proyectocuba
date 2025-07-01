@@ -59,6 +59,11 @@ const props = defineProps({
         flex: none;
         flex-grow: 0;
     }
+    @media (max-width: 370px) {
+        .container{
+            padding: 8px 25px;
+        }
+    }
     .buttons-heith {
         padding: 0px 4px;
         gap: 8px;

@@ -94,7 +94,7 @@ function handleSelect(valor) {
 }
 .horario-winner {
 padding: 2px 16px 2px 2px;
-gap: 12px;
+gap: 8px;
 background: #F3F3F3;
 border-radius: 30px;
 flex: none;
@@ -132,7 +132,7 @@ aside{
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  padding: 2px 16px 2px 8px;
+  padding: 2px 12px 2px 8px;
   gap: 8px;
   height: 32px;
   border-radius: 30px;
