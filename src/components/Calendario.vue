@@ -17,7 +17,7 @@
         @click="abrirCalendario"
         readonly
         class="border-0 bg-transparent text-center body"
-        style="width: 100%; font-size: 1rem; cursor: pointer;"
+        style="width: 56px; cursor: pointer;"
       />
 
       <!-- Real: input tipo date oculto para usar el selector -->

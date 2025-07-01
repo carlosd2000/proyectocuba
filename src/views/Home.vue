@@ -75,8 +75,8 @@ main{
   align-items: center;
   gap: 24px;
   flex: none;
-  order: 2;
   flex-grow: 1;
+  height: calc(100vh - 7% - 88px);
 }
 .line{
   display: flex;

@@ -35,7 +35,7 @@ p{
     font-size: 0.9rem;
 }
 .tabs-container {
-    padding: 8px;
+    padding: 8px 0px;
     gap: 12px;
     width: 343px;
     flex: none;
