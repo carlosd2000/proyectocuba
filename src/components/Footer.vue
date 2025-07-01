@@ -37,7 +37,7 @@ const props = defineProps({
         <div class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
             <img src="../assets/icons/Plus.svg" alt="">
         </div>
-        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/wallet/${$route.params.id}`)">
+        <div class="buttons-heith d-flex flex-column justify-content-center align-items-center">
             <img :src="props.title === 'Fondo' ? Wallet : Wallet" alt="">
             <h5 v-if="props.title !== 'Fondo'" class="navegation-label">Fondo</h5>
             <div v-else class="punto"></div>
