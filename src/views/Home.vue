@@ -52,7 +52,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="container-login">
+  <div class="container-login d-flex flex-column align-items-center">
     <header>
       <Header/>
     </header>
