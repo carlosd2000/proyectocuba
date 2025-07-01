@@ -17,7 +17,7 @@
         @click="abrirCalendario"
         readonly
         class="border-0 bg-transparent text-center body"
-        style="width: 56px; cursor: pointer;"
+        style="cursor: pointer;"
       />
 
       <!-- Real: input tipo date oculto para usar el selector -->
@@ -127,7 +127,17 @@ img{
   pointer-events: none;
   height: 0;
 }
+@media (min-width: 350px) {
+  input[type="text"] {
+  width: 56px;
+}
+}
 
+@media (max-width: 349px) {
+  input[type="text"] {
+    width: 100%;
+  }
+}
 /* Ocultar ícono de calendario nativo */
 input[type="date"].no-calendar-icon::-webkit-calendar-picker-indicator {
   display: none;

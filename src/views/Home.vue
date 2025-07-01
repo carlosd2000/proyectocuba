@@ -56,7 +56,7 @@ onUnmounted(() => {
     <header>
       <Header/>
     </header>
-    <main class="container">
+    <main class="container-main">
       <CardPrice :price="userWallet"/>
       <dailyplay moneytime="999"/>
       <div class="line w-100"></div>
@@ -69,14 +69,15 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-main{
+.container-main {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 0px 16px;
   gap: 24px;
-  flex: none;
-  flex-grow: 1;
-  height: calc(100vh - 7% - 88px);
+  width: 100%;
+  height: calc(100vh - 7% - 88px); /* Ajusta 60px según la altura real del footer */
+  overflow-y: auto;
 }
 .line{
   display: flex;
