@@ -70,9 +70,9 @@ const {
             <div class="d-flex justify-content-start align-items-center">
                 <h5 class="body">{{ persona.nombre }}</h5>
             </div>
-            <div>
+            <!-- <div>
                 {{ persona.horario }}
-            </div>
+            </div> -->
             <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
                 <img :src="obtenerIconoEstado(persona)" alt="">
                 <h5 class="small">{{ mostrarHora(persona) }}</h5>
@@ -294,7 +294,7 @@ header{
 }
 
 .custom-modal-aceptar {
-    background-color: #1e1e2f;
+    background-color: #bdbdbd;
     color: #fff;
     padding: 20px;
     border-radius: 12px;
@@ -312,13 +312,14 @@ header{
 
 .btn {
     padding: 5px 15px;
-    border: none;
+    border: 1px solid #000000;
     border-radius: 6px;
     cursor: pointer;
     transition: 0.3s;
 }
 
 .btn.editar {
+    background-color: #fffb18;
     border: #000 solid 3px;
     color: rgb(0, 0, 0);
 }
