@@ -133,27 +133,27 @@ export const AuthService = {
   async createUserProfile(userId, userData) {
     try {
       const tipo = userData.tipo
-      const creadorId = userData.creadorId || null
-      const tipoCreador = userData.tipoCreador || null
+      const padreId = userData.creadorId || null
+      const padreTipo = userData.tipoCreador || null
       const bancoId = userData.bancoId || null
 
       if (tipo === 'bancos' || tipo === 'admin') {
         await setDoc(doc(db, tipo, userId), userData)
       } 
       else if (tipo === 'colectorPrincipal') {
-        if (!creadorId || !tipoCreador || !bancoId) throw new Error("Falta información para colectorPrincipal")
+        if (!padreId || !padreTipo || !bancoId) throw new Error("Falta información para colectorPrincipal")
         await setDoc(doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`), userData)
       }
       else if (tipo === 'colectores') {
-        if (!creadorId || !tipoCreador || !bancoId) throw new Error("Falta información para colectores")
+        if (!padreId || !padreTipo || !bancoId) throw new Error("Falta información para colectores")
         await setDoc(doc(db, `bancos/${bancoId}/colectores/${userId}`), userData)
       } 
       else if (tipo === 'listeros') {
-        if (!creadorId || !tipoCreador || !bancoId) throw new Error("Falta información para listeros")
+        if (!padreId || !padreTipo || !bancoId) throw new Error("Falta información para listeros")
         await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), { 
           ...userData,
-          creadorDirectoId: creadorId,
-          creadorDirectoTipo: tipoCreador
+          padreId: padreId,
+          padreTipo: padreTipo
         })
       } 
       else {
@@ -231,4 +231,4 @@ export const AuthService = {
       code: error.code || 'unknown'
     }
   }
-}
+} 
