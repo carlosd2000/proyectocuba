@@ -1,5 +1,4 @@
 // src/scripts/operaciones.js
-
 import { ref } from 'vue'
 
 // Datos compartidos
@@ -33,23 +32,27 @@ export const limpiarCampos = () => {
 }
 
 // Cálculo de totales
-export function calcularTotales(fijas, extras) {
-  const fijasValue = fijas.value || []
-  const extrasValue = extras.value || []
+export function calcularTotales(filasFijas, filasExtra) {
+  // Aplica la expansión antes de sumar
+  const apuestasFijas = expandirApuestasGeneral(filasFijas.value ?? filasFijas)
+  const apuestasExtra = expandirApuestasGeneral(filasExtra.value ?? filasExtra)
 
-  const col3 = fijasValue.reduce(
-    (acc, fila) => acc + (fila.circulo1 !== '' ? Number(fila.circulo1) : 0), 0
-  ) + extrasValue.reduce(
-    (acc, fila) => acc + (fila.circulo1 !== '' ? Number(fila.circulo1) : 0), 0
-  )
+  // Suma los valores de los círculos de todas las apuestas expandidas
+  let col3 = 0, col4 = 0
+  for (const fila of [...apuestasFijas, ...apuestasExtra]) {
+    col3 += Number(fila.circulo1) || 0
+    col4 += Number(fila.circulo2) || 0
+  }
 
-  const col4 = fijasValue.reduce(
-    (acc, fila) => acc + (fila.circulo2 !== '' ? Number(fila.circulo2) : 0), 0
-  ) + extrasValue.reduce(
-    (acc, fila) => acc + (fila.circulo2 !== '' ? Number(fila.circulo2) : 0), 0
-  )
-
-  const col5 = fijasValue[2]?.circuloSolo !== '' ? Number(fijasValue[2].circuloSolo) : 0
+  // col5 solo toma el valor de circuloSolo del tercer cuadrado de filasFijas
+  let col5 = 0
+  if (
+    (filasFijas.value ?? filasFijas)[2] &&
+    (filasFijas.value ?? filasFijas)[2].circuloSolo !== '' &&
+    (filasFijas.value ?? filasFijas)[2].circuloSolo !== null
+  ) {
+    col5 = Number((filasFijas.value ?? filasFijas)[2].circuloSolo) || 0
+  }
 
   return { col3, col4, col5 }
 }
@@ -156,18 +159,109 @@ export function expandirApuestasIncrementativas(filas) {
 
         // Generar todos los números intermedios
         const apuestas = [];
-        for (let n = actual; n <= siguiente; n += 10) {
-          apuestas.push({
-            cuadrado: n.toString().padStart(2, '0'),
-            circulo1: baseCirculo1,
-            circulo2: baseCirculo2
-            // NO copiar circuloSolo
-          });
-        }
+// ...dentro de expandirApuestasIncrementativas, donde está el for (let n = actual; n <= siguiente; n += 10) ...
+for (let n = actual; n <= siguiente; n += 10) {
+  let apuesta = {
+    cuadrado: n.toString().padStart(2, '0'),
+    circulo1: baseCirculo1,
+    circulo2: baseCirculo2
+  };
+if (filas[2] && filas[2].circuloSolo !== undefined && filas[2].circuloSolo !== '') {
+  apuesta.circuloSolo = filas[2].circuloSolo;
+}
+  apuestas.push(apuesta);
+}
         return apuestas;
       }
     }
   }
   // Si no hay incrementativa, retorna las filas originales no vacías
+  return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
+}
+
+/**
+ * Expande apuestas secuenciales de uno en uno si la diferencia es <= 19 y hay espacio entre los cuadros.
+ * @param {Array} filas Array de filas (fijas o extra)
+ * @returns {Array} Array de filas procesadas (expandidas si aplica)
+ */
+export function expandirApuestasSecuenciales(filas) {
+  const indices = filas
+    .map((fila, idx) => ({ idx, val: fila.cuadrado }))
+    .filter(f => f.val !== '' && f.val !== null && !isNaN(f.val));
+
+  if (indices.length >= 2) {
+    for (let i = 0; i < indices.length - 1; i++) {
+      const idxInicio = indices[i].idx;
+      const idxFin = indices[i + 1].idx;
+      const actual = parseInt(indices[i].val, 10);
+      const siguiente = parseInt(indices[i + 1].val, 10);
+
+      // Solo si la diferencia es > 0 y <= 19 y hay vacíos entre ellos
+      if (
+        siguiente > actual &&
+        (siguiente - actual) <= 19 &&
+        idxFin - idxInicio > 1
+      ) {
+        // Exigir que circulo1 y circulo2 sean iguales en ambos extremos
+        const baseCirculo1 = filas[idxInicio].circulo1;
+        const baseCirculo2 = filas[idxInicio].circulo2;
+        const finCirculo1 = filas[idxFin].circulo1;
+        const finCirculo2 = filas[idxFin].circulo2;
+
+        if (baseCirculo1 !== finCirculo1 || baseCirculo2 !== finCirculo2) {
+          return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
+        }
+
+        // Verifica que no haya ningún cuadrado lleno entre los extremos
+        for (let j = idxInicio + 1; j < idxFin; j++) {
+          if (filas[j].cuadrado !== '' && filas[j].cuadrado !== null && !isNaN(filas[j].cuadrado)) {
+            return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
+          }
+        }
+
+        // Generar todos los números intermedios de uno en uno
+        const apuestas = [];
+// ...dentro de expandirApuestasSecuenciales, donde está el for (let n = actual; n <= siguiente; n++) ...
+for (let n = actual; n <= siguiente; n++) {
+  let apuesta = {
+    cuadrado: n.toString().padStart(2, '0'),
+    circulo1: baseCirculo1,
+    circulo2: baseCirculo2
+  };
+if (filas[2] && filas[2].circuloSolo !== undefined && filas[2].circuloSolo !== '') {
+  apuesta.circuloSolo = filas[2].circuloSolo;
+}
+  apuestas.push(apuesta);
+}
+        return apuestas;
+      }
+    }
+  }
+  return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
+}
+
+/**
+ * Expande apuestas usando la lógica de 10 en 10 o de uno en uno.
+ * @param {Array} filas
+ * @returns {Array}
+ */
+export function expandirApuestasGeneral(filas) {
+  // Intenta primero la expansión de 10 en 10
+  const inc = expandirApuestasIncrementativas(filas);
+  if (
+    inc.length > 2 &&
+    Math.abs(parseInt(inc[1].cuadrado) - parseInt(inc[0].cuadrado)) === 10
+  ) {
+    return inc;
+  }
+  // Si no, intenta la expansión secuencial de uno en uno
+  const sec = expandirApuestasSecuenciales(filas);
+  if (
+    sec.length > 2 &&
+    Math.abs(parseInt(sec[1].cuadrado) - parseInt(sec[0].cuadrado)) === 1
+  ) {
+    return sec;
+  }
+  // Si ninguna aplica, retorna los llenos
   return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
 }

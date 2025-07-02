@@ -1,7 +1,7 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
-import { filasFijas, filasExtra, calcularTotales, expandirApuestasIncrementativas } from './operaciones';
+import { filasFijas, filasExtra, calcularTotales, expandirApuestasGeneral } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
@@ -131,7 +131,7 @@ export async function guardarDatos() {
     }
 
 
-    const filasIncrementadas = expandirApuestasIncrementativas(filasFijas.value);
+    const filasIncrementadas = expandirApuestasGeneral(filasFijas.value);
 
     // Calcular el total sumando los valores de los círculos de cada apuesta expandida
     let totalGlobal = 0;

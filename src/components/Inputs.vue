@@ -8,8 +8,8 @@
           <input
             type="number"
             class="cuadrado label"
+            :placeholder="claseImagenSiHayEspacio(fila - 1, 'fija') ? null : '-'"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
-            placeholder="-"
             v-model="filasFijas[fila - 1].cuadrado"
             min="0"
             step="1"
@@ -17,8 +17,8 @@
           />
           <input
             type="number"
-            placeholder="$"
             class="circular label"
+            :placeholder="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo1') ? null : '$'"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo1')"
             v-model="filasFijas[fila - 1].circulo1"
             min="0"
@@ -27,8 +27,8 @@
           />
           <input
             type="number"
-            placeholder="$"
             class="circular label"
+            :placeholder="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo2') ? null : '$'"
             :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo2')"
             v-model="filasFijas[fila - 1].circulo2"
             min="0"
@@ -42,7 +42,7 @@
           <input
             type="number"
             class="cuadrado label"
-            placeholder="-"
+            :placeholder="claseImagenSiHayEspacio(index, 'extra') ? null : '-'"
             :class="claseImagenSiHayEspacio(index, 'extra')"
             v-model="fila.cuadrado"
             min="0"
@@ -51,8 +51,8 @@
           />
           <input
             type="number"
-            placeholder="$"
             class="circular label"
+            :placeholder="claseImagenSiHayEspacio(index, 'extra', 'circulo1') ? null : '$'"
             :class="claseImagenSiHayEspacio(index, 'extra', 'circulo1')"
             v-model="fila.circulo1"
             min="0"
@@ -61,8 +61,8 @@
           />
           <input
             type="number"
-            placeholder="$"
             class="circular label"
+            :placeholder="claseImagenSiHayEspacio(index, 'extra', 'circulo2') ? null : '$'"
             :class="claseImagenSiHayEspacio(index, 'extra', 'circulo2')"
             v-model="fila.circulo2"
             min="0"
@@ -81,8 +81,8 @@
       <div class="circulo-solo-fixed">
         <input
           type="number"
-          placeholder="$"
           class="circular-solo label"
+          placeholder="$"
           v-model="filasFijas[2].circuloSolo"
           min="0"
           step="1"
@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-import masIcon from '@/assets/icons/mas.svg'
+import masIcon from '../assets/icons/mas.svg'
 import { useInputs } from '../scripts/Inputs.js'
 
 const props = defineProps({
@@ -114,10 +114,10 @@ const {
 
 <style scoped>
 .input-con-imagen {
-  background-image: url('../assets/icons/Arrow downward alt.svg');
-  background-size: 24px 24px;
-  background-repeat: no-repeat;
-  background-position: center;
+  background-image: url('../assets/icons/Arrow downward alt.svg') !important;
+  background-size: 24px 24px !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
 }
 .container-main{
   display: flex;
