@@ -75,7 +75,7 @@ const {
             </div> -->
             <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
                 <img :src="obtenerIconoEstado(persona)" alt="">
-                <h5 class="small">{{ mostrarHora(persona) }}</h5>
+                    <h5 class="small">{{ mostrarHora(persona) }}</h5>
                 <img src="../assets/icons/Expand.svg" alt="">
             </div>
         </header>
@@ -241,12 +241,6 @@ const {
 .container-edit-button.disabled {
   opacity: 0.5;
   pointer-events: none;
-}
-header{
-    padding: 0px;
-    gap: 12px;
-    flex: none;
-    flex-grow: 1;
 }
 .offline-banner{
     font-size: 0.8rem;
