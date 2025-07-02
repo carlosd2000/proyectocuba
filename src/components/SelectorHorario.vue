@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, defineEmits, onMounted } from 'vue'
+import { ref, computed, watch, defineEmits, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
@@ -20,7 +20,9 @@ const route = useRoute()
 
 const dropdownOpen = ref(false)
 const selectedValue = ref('1')
-const selectedIcon = ref(Dia)
+const selectedIcon = ref(null)
+
+const intervalId = ref(null)
 
 const allOptions = [
   { value: '1', icon: Dia, nombre: 'Dia' },
@@ -48,7 +50,7 @@ function valueToIcon(value) {
   }
 }
 
-onMounted(async () => {
+async function actualizarHorarios() {
   const bancoId = await obtenerBancoPadre()
   if (!bancoId) return
 
@@ -65,7 +67,6 @@ onMounted(async () => {
     const estaActivo = esRutaAñadirJugada 
       ? await verificarHorarioActivo(bancoId, h.firebaseKey)
       : await verificarHorarioBasico(bancoId, h.firebaseKey)
-    
     if (estaActivo) {
       const op = allOptions.find(o => o.nombre === h.nombre)
       if (op) activos.push(op)
@@ -81,7 +82,6 @@ onMounted(async () => {
     return
   }
 
-  // Asegura que el valor inicial también sea válido
   const val = horarioToValue(props.horarioEdicion)
   const exists = activos.find(o => o.value === val)
   if (exists) {
@@ -92,6 +92,15 @@ onMounted(async () => {
     selectedIcon.value = activos[0].icon
   }
   emit('update:selected', selectedValue.value)
+}
+
+onMounted(() => {
+  actualizarHorarios()
+  intervalId.value = setInterval(actualizarHorarios, 10000) // cada 10 segundos
+})
+
+onUnmounted(() => {
+  if (intervalId.value) clearInterval(intervalId.value)
 })
 
 

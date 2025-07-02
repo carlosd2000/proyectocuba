@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { Timestamp } from 'firebase/firestore'
 import Header from '../components/Header.vue';
 import Hora from '../components/hora.vue';
 import { db } from '../firebase/config.js';
@@ -7,13 +8,11 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc pa
 
 import mostrarhora from '../components/mostrarhora.vue';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+import { obtenerHorasTurnos } from '../scripts/obtenerHorasTurnos.js'
 import toggleon from '@/assets/icons/Toggleon.svg';
 import toggleoff from '@/assets/icons/Toggleoff.svg';
 
 const turno = ref('Dia');
-const horas = ref('');
-const minutos = ref('');
-const segundos = ref('');
 
 // Valores de la base de datos para los placeholders
 const dbHoras = ref('');
@@ -28,6 +27,20 @@ const mostrarToastComplete = ref(false);
 const toggleActivo1 = ref(false);
 const toggleActivo2 = ref(false);
 const toggleActivo3 = ref(false);
+
+const bancoPadreId = ref('');
+
+const dbHoradia = ref(null)
+const dbHoratarde = ref(null)
+const dbHoranoche = ref(null)
+
+const horaInputDia = ref('')
+const horaInputTarde = ref(null)
+const horaInputNoche = ref(null)
+
+const valorHoraDia = ref('');
+const valorHoraTarde = ref('');
+const valorHoraNoche = ref('');
 
 const cambiarToggle = async (num) => {
     let estadoNuevo;
@@ -47,66 +60,86 @@ const cambiarToggle = async (num) => {
     }
 };
 
-
-
-// Nueva función para validar y formatear los inputs
-const handleInput = (value, type) => {
-    // Eliminar cualquier caracter que no sea número
-    let numericValue = value.replace(/[^0-9]/g, '');
-    
-    // Limitar a 2 dígitos
-    if (numericValue.length > 2) {
-        numericValue = numericValue.slice(0, 2);
-    }
-    
-    // Asignar el valor formateado
-    if (type === 'hora') horas.value = numericValue;
-    else if (type === 'minuto') minutos.value = numericValue;
-    else if (type === 'segundo') segundos.value = numericValue;
-};
-
 // Modifica cargarDatos para usar la subcolección
 const cargarDatos = async () => {
     try {
-        const docDia = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'dia'));
-        if (docDia.exists()) {
-            toggleActivo1.value = !!docDia.data().activo;
-        }
-        const docTarde = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'tarde'));
-        if (docTarde.exists()) {
-            toggleActivo2.value = !!docTarde.data().activo;
-        }
-        const docNoche = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, 'noche'));
-        if (docNoche.exists()) {
-            toggleActivo3.value = !!docNoche.data().activo;
-        }
         if (!bancoPadreId.value) {
-            bancoPadreId.value = await obtenerBancoPadre()
+            bancoPadreId.value = await obtenerBancoPadre();
         }
-        if (!bancoPadreId.value) return
+        if (!bancoPadreId.value) return;
 
-        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno.value.toLowerCase())
-        const docSnap = await getDoc(docRef)
-        
-        if (docSnap.exists()) {
-            const data = docSnap.data()
-            dbHoras.value = data.hh !== undefined ? data.hh.toString() : ''
-            dbMinutos.value = data.mm !== undefined ? data.mm.toString() : ''
-            dbSegundos.value = data.ss !== undefined ? data.ss.toString() : ''
-        } else {
-            dbHoras.value = ''
-            dbMinutos.value = ''
-            dbSegundos.value = ''
+        const horarios = ['dia', 'tarde', 'noche'];
+
+        for (const turno of horarios) {
+            const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (turno === 'dia') toggleActivo1.value = !!data.activo;
+                if (turno === 'tarde') toggleActivo2.value = !!data.activo;
+                if (turno === 'noche') toggleActivo3.value = !!data.activo;
+            }
         }
+
+        // También cargar los datos de hora actuales
+        const horaDoc = await getDoc(doc(db, `bancos/${bancoPadreId.value}/hora`, turno.value.toLowerCase()));
+        if (horaDoc.exists()) {
+            const data = horaDoc.data();
+            dbHoras.value = data.hh ?? '';
+            dbMinutos.value = data.mm ?? '';
+            dbSegundos.value = data.ss ?? '';
+        }
+
     } catch (error) {
-        console.error('Error al cargar datos:', error)
+        console.error('Error al cargar datos:', error);
     }
 };
+
+const guardarHora = async (turnoNombre, horaSeleccionada) => {
+  try {
+    if (!horaSeleccionada) {
+      mostrarToastComplete.value = true
+      lanzarToast()
+      return
+    }
+
+    // Obtener fecha de hoy y combinar con la hora ingresada
+    const [hh, mm] = horaSeleccionada.split(':')
+    const ahora = new Date()
+    ahora.setHours(parseInt(hh), parseInt(mm), 0, 0)
+
+    const timestampHora = Timestamp.fromDate(ahora)
+
+    if (!bancoPadreId.value) {
+      bancoPadreId.value = await obtenerBancoPadre()
+    }
+    if (!bancoPadreId.value) return
+
+    const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turnoNombre)
+    await setDoc(docRef, {
+      hora: timestampHora,
+      activo: true
+    }, { merge: true })
+
+    mostrarToastSave.value = true
+    lanzarToast()
+  } catch (err) {
+    console.error('Error al guardar hora:', err)
+    mostrarToastError.value = true
+    lanzarToast()
+  }
+}
 
 // Cargar datos cuando cambie el turno
 onMounted(async () => {
     bancoPadreId.value = await obtenerBancoPadre()
     await cargarDatos()
+    if (!bancoPadreId.value) return
+
+    const horas = await obtenerHorasTurnos(bancoPadreId.value)
+    dbHoradia.value = horas.dia
+    dbHoratarde.value = horas.tarde
+    dbHoranoche.value = horas.noche
 })
 watch(turno, cargarDatos); // Cargar cuando cambie el turno
 
@@ -120,47 +153,6 @@ const lanzarToast = () => {
     }, 3000);
 };
 
-const guardarHora = async () => {
-    try {
-        if (!horas.value || !minutos.value || !segundos.value) {
-            mostrarToastComplete.value = true
-            lanzarToast()
-            return
-        }
-        if (isNaN(horas.value) || isNaN(minutos.value) || isNaN(segundos.value)) {
-            mostrarToastError.value = true
-            lanzarToast()
-            return
-        }
-        if (!bancoPadreId.value) {
-            bancoPadreId.value = await obtenerBancoPadre()
-        }
-        if (!bancoPadreId.value) return
-
-        const horaData = {
-            hh: horas.value.padStart(2, '0'),
-            mm: minutos.value.padStart(2, '0'),
-            ss: segundos.value.padStart(2, '0'),
-            timestamp: new Date().toISOString()
-        }
-
-        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno.value.toLowerCase())
-        await setDoc(docRef, horaData, { merge: false })
-
-        mostrarToastSave.value = true
-        lanzarToast()
-        dbHoras.value = horaData.hh
-        dbMinutos.value = horaData.mm
-        dbSegundos.value = horaData.ss
-        horas.value = ''
-        minutos.value = ''
-        segundos.value = ''
-    } catch (error) {
-        console.error('Error al guardar la hora:', error)
-        mostrarToastError.value = true
-        lanzarToast()
-    }
-};
 const actualizarActivoTurno = async (turnoNombre, estado) => {
     try {
         if (!bancoPadreId.value) {
@@ -187,8 +179,8 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                 <header class="d-flex flex-column align-items-center justify-content-center">
                     <h3 class="text-center border-bottom border-3">Horario de cierre</h3>
                 </header>
-                <div class="col-12">
-                    <div class="row d-flex justify-content-between align-items-center">
+                <div class="col-12 d-flex flex-column">
+                    <div class="d-flex flex-row justify-content-between align-items-center">
                         <h6 class="m-0 p-0">
                             Tiro del dia
                         </h6>
@@ -196,17 +188,18 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                             <img :src="toggleActivo1 ? toggleon : toggleoff" alt="Toggle" width="24" />
                         </button>
                     </div>
-                    <div class="row d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h6 class="m-0 p-0">
-                            {{ dbHoranoche }}
+                            {{ dbHoradia }}
                         </h6>
-                        <button class="btn bg-transparent p-1" @click="activarHorario">
+                        <input type="time" v-model="valorHoraDia">
+                        <button class="btn bg-transparent p-1" @click="guardarHora('dia', valorHoraDia)">
                             <img src="@/assets/icons/Timer.svg" alt="">
                         </button>
                     </div>
                 </div>
-                <div class="col-12">
-                    <div class="row d-flex justify-content-between align-items-center">
+                <div class="col-12 d-flex flex-column">
+                    <div class="d-flex flex-row justify-content-between align-items-center">
                         <h6 class="m-0 p-0">
                             Tiro de la tarde
                         </h6>
@@ -214,17 +207,18 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                             <img :src="toggleActivo2 ? toggleon : toggleoff" alt="Toggle" width="24" />
                         </button>
                     </div>
-                    <div class="row d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h6 class="m-0 p-0">
                             {{ dbHoratarde }}
                         </h6>
-                        <button class="btn bg-transparent p-1">
+                        <input type="time" v-model="valorHoraTarde">
+                        <button class="btn bg-transparent p-1" @click="guardarHora('tarde', valorHoraTarde)">
                             <img src="@/assets/icons/Timer.svg" alt="">
                         </button>
                     </div>
                 </div>
-                <div class="col-12">
-                    <div class="row d-flex justify-content-between align-items-center">
+                <div class="col-12 d-flex flex-column">
+                    <div class="d-flex flex-row justify-content-between align-items-center">
                         <h6 class="m-0 p-0">
                             Tiro de  la noche
                         </h6>
@@ -232,37 +226,16 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                             <img :src="toggleActivo3 ? toggleon : toggleoff" alt="Toggle" width="24" />
                         </button>
                     </div>
-                    <div class="row d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h6 class="m-0 p-0">
                             {{ dbHoranoche }}
                         </h6>
-                        <button class="btn bg-transparent p-1">
+                        <input type="time" v-model="valorHoraNoche">
+                        <button class="btn bg-transparent p-1" @click="guardarHora('noche', valorHoraNoche)">
                             <img src="@/assets/icons/Timer.svg" alt="">
                         </button>
                     </div>
                 </div>
-                <main class="p-0 pb-1">
-                    <div class="col-12 row m-0 p-3">
-                        <Hora v-model="turno"/>
-                    </div>
-                    <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center">
-                        <div class="col-4">
-                            <input v-model="horas" type="text" class="form-control" :placeholder="dbHoras || 'hh'" maxlength="2"/>
-                        </div>
-                        <div class="col-4">
-                            <input v-model="minutos" type="text" class="form-control" :placeholder="dbMinutos || 'mm'" maxlength="2"/>
-                        </div>
-                        <div class="col-4">
-                            <input v-model="segundos" type="text" class="form-control" :placeholder="dbSegundos || 'ss'" maxlength="2"/>
-                        </div>
-                    </div>
-                    <div class="col-12 row m-0 p-0 d-flex justify-content-center align-items-center mt-3">
-                        <button @click="guardarHora" class="p-1 btn-page">
-                            <i class="bi bi-clock-history m-2 p-0"></i>
-                            <span class="m-2">Guardar</span>
-                        </button>
-                    </div>
-                </main>
                 <mostrarhora/>
             </div>
         </div>

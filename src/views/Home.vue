@@ -24,7 +24,6 @@ onMounted(async () => {
     // Función para actualizar la wallet
     const updateUserData = (userData) => {
       if (userData) {
-        console.log("Usuario autenticado:", userData);
         userWallet.value = userData.wallet || 0; // Asigna 0 si no hay wallet
       } else {
         console.log("Usuario cerró sesión");

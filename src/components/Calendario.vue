@@ -1,8 +1,13 @@
 <script setup>
+import { useRoute } from 'vue-router'
 import { defineEmits, ref, computed } from 'vue'
 import { useCalendario } from '../scripts/calendario.js'
 
 const emit = defineEmits(['cambiar-fecha'])
+
+const route = useRoute()
+
+const esVistaListeros = computed(() => route.path.startsWith('/listeros/'))
 
 const {
   fecha,
@@ -40,9 +45,14 @@ const abrirCalendario = () => {
 </script>
 <template>
   <div class="contenedor d-flex align-items-center justify-content-between">
-    <button @click="diaAnterior">
+    <button
+      @click="!esVistaListeros && diaAnterior()"
+      :disabled="esVistaListeros"
+      :class="{ 'disabled-button': esVistaListeros }"
+    >
       <img src="../assets/icons/Chevron_left.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
     </button>
+
     <!-- Imagen personalizada -->
     <div class="d-flex flex-row w-100" style="height: 20px; position: relative;">
       <!-- Visual: Hoy o fecha formateada -->

@@ -29,9 +29,8 @@ export async function verificarHorarioActivo(bancoId, horario) {
             const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
             const horaLimiteMinutos = horaLimite.getHours() * 60 + horaLimite.getMinutes();
             
-            if (horaActual > horaLimiteMinutos) return false;
+            if (horaActual >= horaLimiteMinutos) return false;
         }
-        
         return true;
     } catch (error) {
         console.error(`Error verificando horario ${horario}:`, error);

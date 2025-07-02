@@ -23,6 +23,7 @@ const logout = async () => {
             <span>Cerrar</span>
         </button>
     </div>
+    <button @click="$router.push(`/horario/${$route.params.id}`)" class="m-5">click para ir a horarios</button>
     <footer>
         <Footer title="Usuario" />
     </footer>

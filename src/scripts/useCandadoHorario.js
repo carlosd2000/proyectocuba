@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { doc, getDoc, getFirestore, Timestamp } from 'firebase/firestore'
 import { obtenerBancoPadre } from './FunctionBancoPadre.js'
 
@@ -8,6 +8,7 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
   const candadoAbierto = ref(false)
   const horaCierre = ref(null)
   const serverTime = ref(null)
+  let intervalId = null
 
   async function obtenerHoraServidor() {
     // Si tienes un endpoint de hora del servidor, úsalo aquí.
@@ -58,7 +59,6 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
       cierreDate = new Date(now)
       cierreDate.setHours(horaObj.getHours(), horaObj.getMinutes(), 0, 0)
     } else {
-      console.warn('El campo "hora" no es un Timestamp de Firebase o está indefinido:', hora)
       candadoAbierto.value = false
       horaCierre.value = null
       return
@@ -74,9 +74,27 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
       candadoAbierto.value = true
     }
   }
+  // Intervalo para actualizar el candado en tiempo real si la fecha es hoy
+  function startIntervalIfToday() {
+    clearInterval(intervalId)
+    const hoy = new Date()
+    const fecha = new Date(fechaSeleccionada.value)
+    hoy.setHours(0, 0, 0, 0)
+    fecha.setHours(0, 0, 0, 0)
+    if (fecha.getTime() === hoy.getTime()) {
+      intervalId = setInterval(actualizarEstadoCandado, 1000)
+    }
+  }
 
-  watch([fechaSeleccionada, horarioSeleccionado], actualizarEstadoCandado, { immediate: true })
+  watch([fechaSeleccionada, horarioSeleccionado], () => {
+    actualizarEstadoCandado()
+    startIntervalIfToday()
+  }, { immediate: true })
 
+  onUnmounted(() => {
+    clearInterval(intervalId)
+  })
+  
   return {
     candadoAbierto,
     horaCierre,

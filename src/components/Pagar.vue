@@ -76,7 +76,7 @@ const customLanzarToast = async () => {
         <img v-else src="../assets/icons/Loading.svg" alt="">
       </button>
     </div>
-        <div v-if="!hayHorariosDisponibles" class="error-message">
+    <div v-if="!hayHorariosDisponibles" class="error-message">
       No hay horarios disponibles para enviar apuestas
     </div>
   </div>
