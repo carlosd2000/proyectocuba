@@ -3,7 +3,7 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   filasFijas,
   filasExtra,
-  calcularTotales,
+  calcularTotalesCombinados,
   limpiarCampos,
   validarFilas
 } from '../scripts/operaciones.js'
@@ -56,12 +56,12 @@ export function usePagar() {
     }
 
     const totales = computed(() => {
-        const calculos = calcularTotales(filasFijas, filasExtra)
-        return {
-          col3: formatNumber(calculos.col3),
-          col4: formatNumber(calculos.col4),
-          col5: formatNumber(calculos.col5)
-        }
+      const calculos = calcularTotalesCombinados()
+      return {
+        col3: formatNumber(calculos.col3),
+        col4: formatNumber(calculos.col4),
+        col5: formatNumber(calculos.col5)
+      }
     })
 
     const totalGeneral = computed(() => {

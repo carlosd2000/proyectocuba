@@ -265,3 +265,53 @@ export function expandirApuestasGeneral(filas) {
   // Si ninguna aplica, retorna los llenos
   return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
 }
+
+
+
+// Une filas fijas y extra en una sola lista
+export function obtenerFilasCombinadas() {
+  return [...filasFijas.value, ...filasExtra.value];
+}
+
+// Expansión combinada (incrementativas y secuenciales sobre todas las filas)
+export function expandirApuestasGeneralCombinadas() {
+  const filas = obtenerFilasCombinadas();
+
+  // --- Incrementativas ---
+  const inc = expandirApuestasIncrementativas(filas);
+  if (
+    inc.length > 2 &&
+    Math.abs(parseInt(inc[1].cuadrado) - parseInt(inc[0].cuadrado)) === 10
+  ) {
+    return inc;
+  }
+  // --- Secuenciales ---
+  const sec = expandirApuestasSecuenciales(filas);
+  if (
+    sec.length > 2 &&
+    Math.abs(parseInt(sec[1].cuadrado) - parseInt(sec[0].cuadrado)) === 1
+  ) {
+    return sec;
+  }
+  // Si ninguna aplica, retorna los llenos
+  return filas.filter(f => f.cuadrado !== '' && f.cuadrado !== null && !isNaN(f.cuadrado));
+}
+
+// Totales combinados
+export function calcularTotalesCombinados() {
+  const apuestas = expandirApuestasGeneralCombinadas();
+  let col3 = 0, col4 = 0, col5 = 0;
+  for (const fila of apuestas) {
+    col3 += Number(fila.circulo1) || 0;
+    col4 += Number(fila.circulo2) || 0;
+  }
+  // col5 solo toma el valor de circuloSolo del tercer cuadrado de filasFijas
+  if (
+    filasFijas.value[2] &&
+    filasFijas.value[2].circuloSolo !== '' &&
+    filasFijas.value[2].circuloSolo !== null
+  ) {
+    col5 = Number(filasFijas.value[2].circuloSolo) || 0;
+  }
+  return { col3, col4, col5 };
+}

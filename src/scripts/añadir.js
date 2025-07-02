@@ -1,7 +1,7 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
-import { filasFijas, filasExtra, calcularTotales, expandirApuestasGeneral } from './operaciones';
+import { filasFijas, filasExtra, calcularTotales, expandirApuestasGeneralCombinadas } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
@@ -131,16 +131,11 @@ export async function guardarDatos() {
     }
 
 
-    const filasIncrementadas = expandirApuestasGeneral(filasFijas.value);
+    const filasExpandidaCombinadas = expandirApuestasGeneralCombinadas();
 
     // Calcular el total sumando los valores de los círculos de cada apuesta expandida
     let totalGlobal = 0;
-    for (const fila of filasIncrementadas) {
-      if (fila.circulo1) totalGlobal += Number(fila.circulo1);
-      if (fila.circulo2) totalGlobal += Number(fila.circulo2);
-    }
-    // Si tienes filasExtra, súmalas también:
-    for (const fila of filasExtra.value) {
+    for (const fila of filasExpandidaCombinadas) {
       if (fila.circulo1) totalGlobal += Number(fila.circulo1);
       if (fila.circulo2) totalGlobal += Number(fila.circulo2);
     }
@@ -150,10 +145,7 @@ export async function guardarDatos() {
     if (circuloSoloValido) totalGlobal += Number(circuloSolo);
 
     // 3. Procesar filas
-    const datosAGuardar = [
-      ...procesarFilas(filasIncrementadas, 'fija'),
-      ...procesarFilas(filasExtra.value, 'extra')
-    ];
+    const datosAGuardar = procesarFilas(filasExpandidaCombinadas, 'fija');
 
     // 4. Validación
     if (datosAGuardar.length === 0 && !circuloSoloValido && totalGlobal === 0) {

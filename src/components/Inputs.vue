@@ -8,8 +8,8 @@
           <input
             type="number"
             class="cuadrado label"
-            :placeholder="claseImagenSiHayEspacio(fila - 1, 'fija') ? null : '-'"
-            :class="claseImagenSiHayEspacio(fila - 1, 'fija')"
+            :placeholder="claseImagenSiHayEspacioGlobal(fila - 1) ? null : '-'"
+            :class="claseImagenSiHayEspacioGlobal(fila - 1)"
             v-model="filasFijas[fila - 1].cuadrado"
             min="0"
             step="1"
@@ -18,8 +18,8 @@
           <input
             type="number"
             class="circular label"
-            :placeholder="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo1') ? null : '$'"
-            :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo1')"
+            :placeholder="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo1') ? null : '$'"
+            :class="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo1')"
             v-model="filasFijas[fila - 1].circulo1"
             min="0"
             step="1"
@@ -28,8 +28,8 @@
           <input
             type="number"
             class="circular label"
-            :placeholder="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo2') ? null : '$'"
-            :class="claseImagenSiHayEspacio(fila - 1, 'fija', 'circulo2')"
+            :placeholder="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo2') ? null : '$'"
+            :class="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo2')"
             v-model="filasFijas[fila - 1].circulo2"
             min="0"
             step="1"
@@ -42,8 +42,8 @@
           <input
             type="number"
             class="cuadrado label"
-            :placeholder="claseImagenSiHayEspacio(index, 'extra') ? null : '-'"
-            :class="claseImagenSiHayEspacio(index, 'extra')"
+            :placeholder="claseImagenSiHayEspacioGlobal(filasFijas.length + index) ? null : '-'"
+            :class="claseImagenSiHayEspacioGlobal(filasFijas.length + index)"
             v-model="fila.cuadrado"
             min="0"
             step="1"
@@ -52,8 +52,8 @@
           <input
             type="number"
             class="circular label"
-            :placeholder="claseImagenSiHayEspacio(index, 'extra', 'circulo1') ? null : '$'"
-            :class="claseImagenSiHayEspacio(index, 'extra', 'circulo1')"
+            :placeholder="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo1') ? null : '$'"
+            :class="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo1')"
             v-model="fila.circulo1"
             min="0"
             step="1"
@@ -62,8 +62,8 @@
           <input
             type="number"
             class="circular label"
-            :placeholder="claseImagenSiHayEspacio(index, 'extra', 'circulo2') ? null : '$'"
-            :class="claseImagenSiHayEspacio(index, 'extra', 'circulo2')"
+            :placeholder="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo2') ? null : '$'"
+            :class="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo2')"
             v-model="fila.circulo2"
             min="0"
             step="1"
@@ -108,8 +108,9 @@ const {
   filasExtra,
   agregarFila,
   soloEnteros,
-  claseImagenSiHayEspacio
+  claseImagenSiHayEspacioGlobal
 } = useInputs(props)
+
 </script>
 
 <style scoped>
