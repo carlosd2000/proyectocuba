@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { AuthService } from '@/firebase/auth';
 import Footer from '../components/Footer.vue';
@@ -10,6 +9,7 @@ const logout = async () => {
     try {
         await AuthService.logout();
         localStorage.removeItem('userProfile');
+        localStorage.clear();
         router.push('/');
     } catch (error) {
         console.error('Error al cerrar sesión:', error);

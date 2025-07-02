@@ -90,11 +90,12 @@ export function useHeader() {
                 const unsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data()
-                        if (data.hora && typeof data.hora.toDate === 'function') {
+                        if (data.activo === true && data.hora && typeof data.hora.toDate === 'function') {
                             globalHorasTurno[turno] = data.hora.toDate()
                         } else {
                             globalHorasTurno[turno] = null
                         }
+
                     }
                 })
                 unsubscribeCallbacks.push(unsubscribe)
