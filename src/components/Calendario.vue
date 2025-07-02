@@ -1,41 +1,3 @@
-<template>
-  <div
-    class="light d-flex align-items-center justify-content-between"
-  >
-    <button @click="diaAnterior">
-      <img src="../assets/icons/Chevron_left.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
-    </button>
-
-    <!-- Imagen personalizada -->
-    
-    <div class="d-flex flex-row w-100" style="height: 20px; position: relative;">
-      <!-- Visual: Hoy o fecha formateada -->
-      <img src="../assets/icons/Calendario.svg" alt="Calendario" @click="abrirCalendario" style="cursor: pointer;" />
-      <input
-        type="text"
-        :value="esMismoDia(fechaSeleccionada, hoy) ? 'Hoy' : fechaFormateadaCorta"
-        @click="abrirCalendario"
-        readonly
-        class="border-0 bg-transparent text-center body"
-        style="cursor: pointer;"
-      />
-
-      <!-- Real: input tipo date oculto para usar el selector -->
-      <input
-        ref="inputCalendario"
-        type="date"
-        v-model="fechaSeleccionadaString"
-        :max="hoyString"
-        class="input-oculto-datepicker"
-      />
-    </div>
-
-    <button @click="diaSiguiente" :disabled="esMismoDia(fechaSeleccionada, hoy)" :class="{ 'disabled-button': esMismoDia(fechaSeleccionada, hoy) }">
-      <img src="../assets/icons/Chevron_right.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
-    </button>
-  </div>
-</template>
-
 <script setup>
 import { defineEmits, ref, computed } from 'vue'
 import { useCalendario } from '../scripts/calendario.js'
@@ -75,23 +37,51 @@ const abrirCalendario = () => {
     input?.focus()
   }
 }
-
-
-
 </script>
+<template>
+  <div class="contenedor d-flex align-items-center justify-content-between">
+    <button @click="diaAnterior">
+      <img src="../assets/icons/Chevron_left.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
+    </button>
+    <!-- Imagen personalizada -->
+    <div class="d-flex flex-row w-100" style="height: 20px; position: relative;">
+      <!-- Visual: Hoy o fecha formateada -->
+      <img src="../assets/icons/Calendario.svg" alt="Calendario" @click="abrirCalendario" style="cursor: pointer;" />
+      <input
+        type="text"
+        :value="esMismoDia(fechaSeleccionada, hoy) ? 'Hoy' : fechaFormateadaCorta"
+        @click="abrirCalendario"
+        readonly
+        class="border-0 bg-transparent text-center body"
+        style="cursor: pointer;"
+      />
 
+      <!-- Real: input tipo date oculto para usar el selector -->
+      <input
+        v-if="$route.path === '/listeros'"
+        ref="inputCalendario"
+        type="date"
+        v-model="fechaSeleccionadaString"
+        :max="hoyString"
+        class="input-oculto-datepicker"
+      />
+    </div>
+
+    <button @click="diaSiguiente" :disabled="esMismoDia(fechaSeleccionada, hoy)" :class="{ 'disabled-button': esMismoDia(fechaSeleccionada, hoy) }">
+      <img src="../assets/icons/Chevron_right.svg" alt="" style="width: 20px; height: 20px; cursor: pointer;" />
+    </button>
+  </div>
+</template>
 
 <style scoped>
-.light {
+.contenedor {
   padding: 2px 8px;
   gap: 6px;
   margin: 0;
-  max-width: 160px;
+  max-width: 148px;
   height: 36px;
   background: #F3F3F3;
   border-radius: 30px;
-  flex: none;
-  flex-grow: 0;
 }
 button{
 display: flex;
