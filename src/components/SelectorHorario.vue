@@ -24,6 +24,8 @@ const selectedIcon = ref(null)
 
 const intervalId = ref(null)
 
+const yaInicializado = ref(false)
+
 const allOptions = [
   { value: '1', icon: Dia, nombre: 'Dia' },
   { value: '2', icon: Atardecer, nombre: 'Tarde' },
@@ -82,16 +84,21 @@ async function actualizarHorarios() {
     return
   }
 
-  const val = horarioToValue(props.horarioEdicion)
-  const exists = activos.find(o => o.value === val)
-  if (exists) {
-    selectedValue.value = val
-    selectedIcon.value = exists.icon
-  } else if (activos.length > 0) {
-    selectedValue.value = activos[0].value
-    selectedIcon.value = activos[0].icon
+  if (!yaInicializado.value) {
+    const val = horarioToValue(props.horarioEdicion)
+    const exists = activos.find(o => o.value === val)
+
+    if (exists) {
+      selectedValue.value = val
+      selectedIcon.value = exists.icon
+    } else if (activos.length > 0) {
+      selectedValue.value = activos[0].value
+      selectedIcon.value = activos[0].icon
+    }
+
+    emit('update:selected', selectedValue.value)
+    yaInicializado.value = true  // ✅ marcamos como inicializado
   }
-  emit('update:selected', selectedValue.value)
 }
 
 onMounted(() => {
