@@ -1,6 +1,6 @@
 import { auth, db } from './config'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore'
 
 export const AuthService = {
   capitalizeUsername(username) {
@@ -205,6 +205,30 @@ export const AuthService = {
     } catch (error) {
       console.error('Error obteniendo perfil:', error)
       throw error
+    }
+  },
+
+  //MODIFICADO ===========================
+  // NUEVO: Actualizar el campo wallet del usuario
+  async updateUserWallet(userId, bancoId, tipo, nuevoWallet) {
+    try {
+      let docRef = null
+      if (tipo === 'admin' || tipo === 'bancos') {
+        docRef = doc(db, tipo, userId)
+      } else if (tipo === 'colectorPrincipal') {
+        docRef = doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`)
+      } else if (tipo === 'colectores') {
+        docRef = doc(db, `bancos/${bancoId}/colectores/${userId}`)
+      } else if (tipo === 'listeros') {
+        docRef = doc(db, `bancos/${bancoId}/listeros/${userId}`)
+      } else {
+        throw new Error('Tipo de usuario inválido')
+      }
+      await updateDoc(docRef, { wallet: nuevoWallet })
+      return { success: true }
+    } catch (error) {
+      console.error('Error actualizando wallet:', error)
+      return { success: false, error }
     }
   },
 

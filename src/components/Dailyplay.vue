@@ -1,27 +1,32 @@
 <script setup>
-import { useDailyPlay } from '../scripts/DailyPlay.js'
-import SelectorHorario from './SelectorHorario.vue';
-import Calendario from './Calendario.vue';
+import { ref, onMounted } from 'vue'
+import { useTotalGlobal } from '@/scripts/UseTotalGlobal.js'
+import SelectorHorario from './SelectorHorario.vue'
+import Calendario from './Calendario.vue'
 
-const {
-    opciones,
-    turnoSeleccionado,
-    totalGlobal,
-    totalFormateado,
-    route,
-    router
-} = useDailyPlay()
+const horarioSeleccionado = ref('Dia') // Valor inicial
+const { totalGlobal, fetchTotalGlobal, isLoading } = useTotalGlobal()
 
-defineProps({
-    moneytime: {
-        type: String,
-        default: '0'
-    }
-})
+// Formatea el total para mostrarlo en la vista
+const moneytime = ref('0')
 
 const handleSelect = (selectedValue) => {
-    console.log('Horario seleccionado:', selectedValue);
+    // Convierte el valor del selector a nombre de horario
+    let nombreHorario = 'Dia'
+    if (selectedValue === '1') nombreHorario = 'Dia'
+    else if (selectedValue === '2') nombreHorario = 'Tarde'
+    else if (selectedValue === '3') nombreHorario = 'Noche'
+    horarioSeleccionado.value = nombreHorario
+    fetchTotalGlobal(nombreHorario).then(() => {
+        moneytime.value = totalGlobal.value.toLocaleString()
+    })
 }
+
+// Inicializa con el horario por defecto (Dia)
+onMounted(async () => {
+    await fetchTotalGlobal(horarioSeleccionado.value)
+    moneytime.value = totalGlobal.value.toLocaleString()
+})
 </script>
 
 <template>
@@ -37,7 +42,7 @@ const handleSelect = (selectedValue) => {
         </div>
         <div>
             <h5 class="label">
-                ${{ moneytime }}
+                {{ isLoading ? 'Cargando...' : '$' + moneytime }}
             </h5>
         </div>
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
