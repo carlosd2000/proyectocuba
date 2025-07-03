@@ -1,8 +1,139 @@
 import { auth, db } from './config'
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut 
+} from 'firebase/auth'
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs 
+} from 'firebase/firestore'
 
-export const AuthService = {
+// ==================== JERARQUIA SERVICE ====================
+const JerarquiaService = {
+  async obtenerContexto(usuarioId, tipoUsuario, bancoIdFromProfile = null) {
+    const contexto = { 
+      bancoId: null, 
+      rutaCompleta: [] 
+    }
+
+    try {
+      switch (tipoUsuario) {
+        case 'admin':
+          contexto.bancoId = null
+          break
+
+        case 'bancos':
+          contexto.bancoId = usuarioId
+          contexto.rutaCompleta = [usuarioId]
+          break
+
+        case 'colectorPrincipal':
+          contexto.bancoId = bancoIdFromProfile || await this._obtenerBancoPadre(usuarioId, 'colectorPrincipal')
+          if (contexto.bancoId) {
+            contexto.rutaCompleta = [contexto.bancoId, usuarioId]
+          }
+          break
+
+        case 'colectores':
+          contexto.bancoId = bancoIdFromProfile || await this._obtenerBancoPadre(usuarioId, 'colectores')
+          if (contexto.bancoId) {
+            const colectorPrincipalId = await this._obtenerPadreDirecto(usuarioId, 'colectores')
+            contexto.rutaCompleta = [
+              contexto.bancoId, 
+              colectorPrincipalId, 
+              usuarioId
+            ].filter(Boolean)
+          }
+          break
+
+        case 'listeros':
+          contexto.bancoId = bancoIdFromProfile || await this._obtenerBancoPadre(usuarioId, 'listeros')
+          if (contexto.bancoId) {
+            const colectorId = await this._obtenerPadreDirecto(usuarioId, 'listeros')
+            contexto.rutaCompleta = [
+              contexto.bancoId, 
+              colectorId, 
+              usuarioId
+            ].filter(Boolean)
+          }
+          break
+      }
+    } catch (error) {
+      console.error("Error obteniendo contexto jerárquico:", error)
+    }
+
+    return contexto
+  },
+
+  async _obtenerBancoPadre(usuarioId, tipoUsuario) {
+    const tiposPadre = {
+      colectorPrincipal: 'bancos',
+      colectores: 'colectorPrincipal',
+      listeros: 'colectores'
+    }
+
+    try {
+      const padreTipo = tiposPadre[tipoUsuario]
+      const bancosSnapshot = await getDocs(collection(db, 'bancos'))
+
+      for (const bancoDoc of bancosSnapshot.docs) {
+        // Buscar en la subcolección correspondiente
+        const subcoleccionPath = `bancos/${bancoDoc.id}/${padreTipo === 'colectorPrincipal' ? 'colectorPrincipal' : 'colectores'}`
+        const userDocRef = doc(db, subcoleccionPath, usuarioId)
+        const docSnap = await getDoc(userDocRef)
+
+        if (docSnap.exists()) {
+          return bancoDoc.id
+        }
+
+        // Buscar también en la colección de listeros por si acaso
+        if (tipoUsuario === 'listeros') {
+          const listerosPath = `bancos/${bancoDoc.id}/listeros`
+          const listeroDocRef = doc(db, listerosPath, usuarioId)
+          const listeroDocSnap = await getDoc(listeroDocRef)
+          if (listeroDocSnap.exists()) {
+            return bancoDoc.id
+          }
+        }
+      }
+      return null
+    } catch (error) {
+      console.error("Error obteniendo banco padre:", error)
+      return null
+    }
+  },
+
+  async _obtenerPadreDirecto(usuarioId, tipoUsuario) {
+    const tiposPadre = {
+      colectores: 'colectorPrincipal',
+      listeros: 'colectores'
+    }
+
+    try {
+      const padreTipo = tiposPadre[tipoUsuario]
+      const q = query(
+        collection(db, 'bancos'),
+        where(`${padreTipo}.${usuarioId}`, '!=', null)
+      )
+      const querySnapshot = await getDocs(q)
+      return querySnapshot.empty ? null : querySnapshot.docs[0].id
+    } catch (error) {
+      console.error("Error obteniendo padre directo:", error)
+      return null
+    }
+  }
+}
+
+// ==================== AUTH SERVICE ====================
+const AuthService = {
+  JerarquiaService,
+
   capitalizeUsername(username) {
     return username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()
   },
@@ -20,6 +151,7 @@ export const AuthService = {
         { padre: 'colectores', hijo: 'listeros' }
       ]
 
+      // Verificar en colecciones raíz
       for (const tipo of tiposRaiz) {
         const ref = collection(db, tipo)
         const q = query(ref, where('nombre', '==', capitalizedNombre))
@@ -27,6 +159,7 @@ export const AuthService = {
         if (!snapshot.empty) return true
       }
 
+      // Verificar en subcolecciones
       for (const path of subcolecciones) {
         const padresSnapshot = await getDocs(collection(db, path.padre))
         for (const padreDoc of padresSnapshot.docs) {
@@ -85,10 +218,19 @@ export const AuthService = {
       const capitalizedName = this.capitalizeUsername(userData.nombre)
 
       if (await this.isUsernameTaken(userData.nombre)) {
-        return { success: false, error: 'Este nombre de usuario ya está en uso', code: 'name-already-in-use' }
+        return { 
+          success: false, 
+          error: 'Este nombre de usuario ya está en uso', 
+          code: 'name-already-in-use' 
+        }
       }
+
       if (await this.isEmailTaken(email)) {
-        return { success: false, error: 'Este correo ya está vinculado a otra cuenta', code: 'email-already-used-custom' }
+        return { 
+          success: false, 
+          error: 'Este correo ya está vinculado a otra cuenta', 
+          code: 'email-already-used-custom' 
+        }
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
@@ -99,13 +241,16 @@ export const AuthService = {
         nombre: capitalizedName,
         email,
         uid: newUserId,
-        wallet: 0, // Campo wallet para todos los usuarios
+        wallet: 0,
         createdAt: new Date().toISOString()
       }
 
       await this.createUserProfile(newUserId, userProfileData)
 
-      return { user: userCredential.user, success: true }
+      return { 
+        user: userCredential.user, 
+        success: true 
+      }
     } catch (error) {
       return this.handleAuthError(error)
     }
@@ -115,8 +260,22 @@ export const AuthService = {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       const userProfile = await this.getUserProfile(userCredential.user.uid)
+      
+      if (userProfile) {
+        const contexto = await JerarquiaService.obtenerContexto(
+          userCredential.user.uid,
+          userProfile.tipo,
+          userProfile.bancoId
+        )
+        userProfile.bancoId = contexto.bancoId
+        userProfile.rutaJerarquica = contexto.rutaCompleta
+      }
 
-      return { user: userCredential.user, profile: userProfile, success: true }
+      return { 
+        user: userCredential.user, 
+        profile: userProfile, 
+        success: true 
+      }
     } catch (error) {
       return this.handleAuthError(error)
     }
@@ -136,31 +295,24 @@ export const AuthService = {
       const tipo = userData.tipo
       const bancoId = userData.bancoId
 
-      // Base de datos para todos los tipos de usuario
       const baseProfileData = {
         ...userData,
-        wallet: 0 // Aseguramos que wallet esté presente
+        wallet: 0
       }
 
       if (tipo === 'admin' || tipo === 'bancos') {
         await setDoc(doc(db, tipo, userId), baseProfileData)
       } 
       else if (tipo === 'colectorPrincipal') {
-        if (!userData.creadorDirectoId || !userData.creadorDirectoTipo || !bancoId) {
-          throw new Error("Falta información para colectorPrincipal")
-        }
+        if (!bancoId) throw new Error("Falta bancoId para colectorPrincipal")
         await setDoc(doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`), baseProfileData)
       }
       else if (tipo === 'colectores') {
-        if (!userData.creadorDirectoId || !userData.creadorDirectoTipo || !bancoId) {
-          throw new Error("Falta información para colectores")
-        }
+        if (!bancoId) throw new Error("Falta bancoId para colectores")
         await setDoc(doc(db, `bancos/${bancoId}/colectores/${userId}`), baseProfileData)
       } 
       else if (tipo === 'listeros') {
-        if (!userData.creadorDirectoId || !userData.creadorDirectoTipo || !bancoId) {
-          throw new Error("Falta información para listeros")
-        }
+        if (!bancoId) throw new Error("Falta bancoId para listeros")
         await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), baseProfileData)
       } 
       else {
@@ -176,7 +328,7 @@ export const AuthService = {
 
   async getUserProfile(userId) {
     try {
-      // Buscar en colecciones raíz (admin/bancos)
+      // 1. Buscar en colecciones raíz
       const tiposRaiz = ['admin', 'bancos']
       for (const tipo of tiposRaiz) {
         const docRef = doc(db, tipo, userId)
@@ -186,17 +338,21 @@ export const AuthService = {
         }
       }
 
-      // Buscar en subcolecciones de bancos
+      // 2. Buscar en subcolecciones de bancos
       const bancosSnapshot = await getDocs(collection(db, 'bancos'))
       for (const bancoDoc of bancosSnapshot.docs) {
-        const bancoId = bancoDoc.id
         const subcolecciones = ['colectorPrincipal', 'colectores', 'listeros']
-
+        
         for (const subcoleccion of subcolecciones) {
-          const docRef = doc(db, `bancos/${bancoId}/${subcoleccion}/${userId}`)
+          const docRef = doc(db, `bancos/${bancoDoc.id}/${subcoleccion}/${userId}`)
           const docSnap = await getDoc(docRef)
           if (docSnap.exists()) {
-            return { ...docSnap.data(), tipo: subcoleccion }
+            const data = docSnap.data()
+            return { 
+              ...data,
+              tipo: subcoleccion,
+              bancoId: data.bancoId || bancoDoc.id
+            }
           }
         }
       }
@@ -227,4 +383,10 @@ export const AuthService = {
       code: error.code || 'unknown'
     }
   }
+}
+
+// Exportación unificada
+export { 
+  AuthService,
+  JerarquiaService 
 }

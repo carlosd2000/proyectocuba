@@ -4,7 +4,7 @@ import { AuthService } from '@/firebase/auth'
 import { useAuthStore } from '@/stores/authStore'
 import Swal from 'sweetalert2'
 import { db } from '@/firebase/config'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, query, where } from 'firebase/firestore'
 
 export function useRegistro() {
     // Estados reactivos
@@ -15,6 +15,7 @@ export function useRegistro() {
     const padreSeleccionado = ref('')
     const colectores = ref([])
     const colectoresPrincipales = ref([])
+    const listeros = ref([])
     const mensajeNombre = ref('')
     const isValidNombre = ref(false)
     const mensajePassword = ref('')
@@ -32,9 +33,25 @@ export function useRegistro() {
         return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectorPrincipal' || tipo === 'colectores'
     })
 
+    const tiposPermitidos = computed(() => {
+        const tipoUsuario = authStore.profile?.tipo
+        switch (tipoUsuario) {
+            case 'admin':
+                return ['bancos', 'colectorPrincipal', 'colectores', 'listeros']
+            case 'bancos':
+                return ['colectorPrincipal', 'colectores', 'listeros']
+            case 'colectorPrincipal':
+                return ['colectores', 'listeros']
+            case 'colectores':
+                return ['listeros']
+            default:
+                return []
+        }
+    })
+
     // Hooks
     onMounted(() => {
-        if (route.path.includes('/bancos')) {
+        if (['bancos', 'colectorPrincipal', 'colectores'].includes(authStore.profile?.tipo)) {
             const unsubscribe = cargarSubordinados()
             return () => unsubscribe && unsubscribe()
         }
@@ -63,10 +80,11 @@ export function useRegistro() {
 
     const cargarSubordinados = () => {
         try {
-            if (authStore.profile?.tipo === 'bancos' && authStore.user?.uid) {
-                const bancoId = authStore.user.uid
-                
-                // Cargar Colectores Principales
+            const tipoUsuario = authStore.profile?.tipo
+            const bancoId = authStore.contextoJerarquico.bancoId
+            
+            if (tipoUsuario === 'bancos' && bancoId) {
+                // Cargar Colectores Principales para bancos
                 const cpUnsubscribe = onSnapshot(
                     collection(db, 'bancos', bancoId, 'colectorPrincipal'),
                     (snapshot) => {
@@ -77,7 +95,7 @@ export function useRegistro() {
                     }
                 )
 
-                // Cargar Colectores
+                // Cargar Colectores para bancos
                 const cUnsubscribe = onSnapshot(
                     collection(db, 'bancos', bancoId, 'colectores'),
                     (snapshot) => {
@@ -92,6 +110,36 @@ export function useRegistro() {
                     cpUnsubscribe()
                     cUnsubscribe()
                 }
+            } else if (tipoUsuario === 'colectorPrincipal' && bancoId) {
+                // Cargar solo los colectores de este CP
+                const q = query(
+                    collection(db, 'bancos', bancoId, 'colectores'),
+                    where('creadorDirectoId', '==', authStore.user.uid)
+                )
+                
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    colectores.value = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                })
+                
+                return unsubscribe
+            } else if (tipoUsuario === 'colectores' && bancoId) {
+                // Cargar listeros para este colector
+                const q = query(
+                    collection(db, 'bancos', bancoId, 'listeros'),
+                    where('creadorDirectoId', '==', authStore.user.uid)
+                )
+                
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    listeros.value = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                })
+                
+                return unsubscribe
             }
         } catch (error) {
             console.error("Error cargando subordinados:", error)
@@ -116,39 +164,77 @@ export function useRegistro() {
             return
         }
 
-        // Validaciones específicas para bancos
-        if (authStore.profile?.tipo === 'bancos') {
-            if ((tipoCuenta.value === 'colectores' || tipoCuenta.value === 'listeros') && !padreSeleccionado.value) {
-                Swal.fire("Error", `Selecciona un padre para el ${tipoCuenta.value}`, "error")
-                return
-            }
+        if (!tiposPermitidos.value.includes(tipoCuenta.value)) {
+            Swal.fire("Error", "No tienes permiso para crear este tipo de cuenta", "error")
+            return
         }
 
         try {
             isLoading.value = true
-
-            // *** ÚNICO CAMBIO REALIZADO *** (Manteniendo toda tu lógica intacta)
             const currentUserId = authStore.user?.uid
             const currentUserTipo = authStore.profile?.tipo
-            
-            // Obtener bancoId basado en el path de la ruta
-            const bancoId = route.path.split('/')[2] || 
-                             (currentUserTipo === 'bancos' ? currentUserId : authStore.profile?.bancoId)
+            const bancoId = authStore.contextoJerarquico.bancoId
 
-            // Verificación crítica del bancoId
-            if (!bancoId) {
-                throw new Error("No se encontró el ID del banco padre")
+            // Validar bancoId para roles que lo requieren
+            if (['colectorPrincipal', 'colectores', 'listeros'].includes(currentUserTipo) && !bancoId) {
+                throw new Error("No se pudo determinar el banco padre")
             }
 
-            // Configurar datos del padre según tipo de usuario (todo esto se mantiene igual)
+            // Configuración automática para ColectorPrincipal
             let padreData = {}
-            if (currentUserTipo === 'bancos') {
+            if (currentUserTipo === 'colectorPrincipal') {
+                if (tipoCuenta.value === 'colectores') {
+                    // ColectorPrincipal creando Colector (asignación automática)
+                    padreData = {
+                        creadorDirectoId: currentUserId,
+                        creadorDirectoTipo: 'colectorPrincipal',
+                        bancoId: bancoId
+                    }
+                } else if (tipoCuenta.value === 'listeros') {
+                    // ColectorPrincipal creando Listero (puede elegir padre)
+                    if (!padreSeleccionado.value) {
+                        // Por defecto el CP es el padre
+                        padreData = {
+                            creadorDirectoId: currentUserId,
+                            creadorDirectoTipo: 'colectorPrincipal',
+                            bancoId: bancoId
+                        }
+                    } else {
+                        // O puede asignar un Colector como padre
+                        const [tipoPadre, idPadre] = padreSeleccionado.value.split('_')
+                        padreData = {
+                            creadorDirectoId: idPadre,
+                            creadorDirectoTipo: tipoPadre,
+                            bancoId: bancoId
+                        }
+                    }
+                }
+            } 
+            // Configuración para Colectores
+            else if (currentUserTipo === 'colectores') {
+                if (tipoCuenta.value === 'listeros') {
+                    // Colector creando Listero (asignación automática)
+                    padreData = {
+                        creadorDirectoId: currentUserId,
+                        creadorDirectoTipo: 'colectores',
+                        bancoId: bancoId
+                    }
+                } else {
+                    Swal.fire("Error", "Solo puedes crear listeros", "error")
+                    return
+                }
+            }
+            // Configuración para Bancos
+            else if (currentUserTipo === 'bancos') {
                 if (tipoCuenta.value === 'colectorPrincipal') {
                     padreData = {
                         creadorDirectoId: currentUserId,
                         creadorDirectoTipo: 'banco',
-                        bancoId: bancoId
+                        bancoId: currentUserId
                     }
+                } else if (['colectores', 'listeros'].includes(tipoCuenta.value) && !padreSeleccionado.value) {
+                    Swal.fire("Error", `Selecciona un padre para el ${tipoCuenta.value}`, "error")
+                    return
                 } else if (padreSeleccionado.value) {
                     const [tipoPadre, idPadre] = padreSeleccionado.value.split('_')
                     padreData = {
@@ -157,15 +243,16 @@ export function useRegistro() {
                         bancoId: bancoId
                     }
                 }
-            } else {
+            }
+            // Configuración para Admin
+            else if (currentUserTipo === 'admin') {
                 padreData = {
                     creadorDirectoId: currentUserId,
-                    creadorDirectoTipo: currentUserTipo,
-                    bancoId: bancoId
+                    creadorDirectoTipo: 'admin',
+                    bancoId: tipoCuenta.value === 'bancos' ? null : bancoId
                 }
             }
 
-            // Crear objeto de usuario (todo esto igual)
             const userData = {
                 nombre: nombre.value,
                 email: email.value,
@@ -173,7 +260,6 @@ export function useRegistro() {
                 ...padreData
             }
 
-            // Registrar en Firebase (igual)
             const result = await AuthService.register({
                 email: email.value,
                 password: password.value,
@@ -224,12 +310,14 @@ export function useRegistro() {
         padreSeleccionado,
         colectores,
         colectoresPrincipales,
+        listeros,
         mensajeNombre,
         isValidNombre,
         mensajePassword,
         isValidPassword,
         isLoading,
         showSelect,
+        tiposPermitidos,
         validateNombre,
         validatePassword,
         registrarUsuario,
