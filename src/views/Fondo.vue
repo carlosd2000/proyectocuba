@@ -57,10 +57,10 @@ onUnmounted(() => {
     </header>
     <main class="container-main">
       <CardPrice :price="userWallet"/>
-      <div class="row w-100">
+      <div class="row" style="max-width: 400px; width: 100%;">
         <ButtonFilter/>
       </div>
-      <div class="w-100">
+      <div class="d-flex flex-column align-items-center w-100">
         <ListaMovimientos/>
       </div>
     </main>
