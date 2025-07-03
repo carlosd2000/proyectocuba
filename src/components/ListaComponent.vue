@@ -66,14 +66,14 @@ const {
         </h5>
     </div>
     <div v-for="persona in apuestasFiltradas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
-        <header class="d-flex flex-row justify-content-between align-items-center" @click="toggleDetalles(persona.id)">
-            <div class="d-flex justify-content-start align-items-center">
+        <header class="d-flex flex-row justify-content-between align-items-center h-100" @click="toggleDetalles(persona.id)">
+            <div class="container-title d-flex justify-content-center align-items-center">
                 <h5 class="body">{{ persona.nombre }}</h5>
             </div>
             <!-- <div>
                 {{ persona.horario }}
             </div> -->
-            <div class="container-cloud d-flex flex-row justify-content-end align-items-center w-100">
+            <div class="container-cloud d-flex flex-row justify-content-center align-items-center">
                 <img :src="obtenerIconoEstado(persona)" alt="">
                     <h5 class="small">{{ mostrarHora(persona) }}</h5>
                 <img src="../assets/icons/Expand.svg" alt="">
@@ -199,6 +199,16 @@ const {
 }
 .container-cloud{
     gap: 6px;
+}
+.container-title{
+    max-width: 200px;
+}
+
+@media (max-width: 375px) {
+    .container-title{
+        max-width: 140px;
+    }
+
 }
 .container-apuestas{
     gap: 12px;

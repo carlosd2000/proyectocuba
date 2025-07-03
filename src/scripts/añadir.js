@@ -12,7 +12,7 @@ async function ejemploUso() {
 }
 
 // Variables reactivas
-export const nombreTemporal = ref('SinNombre');
+export const nombreTemporal = ref('');
 export const tipoOrigen = ref('tiros');
 export const horarioSeleccionado = ref(null);
 export const hayHorariosDisponibles = ref(true)
@@ -60,7 +60,7 @@ function guardarEnLocal(docAGuardar, esEdicion = false) {
 
 // ================= CONFIGURACIÓN =================
 export function setNombre(nombre) {
-  nombreTemporal.value = nombre?.trim() || 'SinNombre';
+  nombreTemporal.value = nombre?.trim();
 }
 
 export function setTipoOrigen(tipo) {
@@ -157,7 +157,7 @@ export async function guardarDatos() {
 
     // 5. Preparar documento final
       const docAGuardar = {
-      nombre: nombreTemporal.value,
+      nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuid,
       totalGlobal,
       datos: datosAGuardar,
       id_listero: auth.currentUser?.uid || 'sin-autenticar',
