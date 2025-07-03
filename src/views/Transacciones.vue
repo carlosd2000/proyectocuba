@@ -1,7 +1,7 @@
 <script setup>
 import Header from '../components/Header.vue';
 import Valores from '../components/Valores.vue';
-import listamovimientos from '../components/listamovimientos.vue';
+import ListaMovimientos from '../components/ListaMovimientos.vue';
 import Footer from '../components/Footer.vue';
 </script>
 <template>
@@ -22,7 +22,7 @@ import Footer from '../components/Footer.vue';
                 </div>
             </div>
             <div class="continer-lista p-0 px-2">
-                <listamovimientos/>
+                <ListaMovimientos/>
             </div>
         </main>
         <div class="p-0 footer">

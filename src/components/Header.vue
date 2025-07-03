@@ -3,9 +3,7 @@ import { ref } from 'vue'
 import ButtonBack from '../components/ButtonBack.vue'
 import { useHeader } from '../scripts/Header.js'
 
-const { back, bell, cuentaRegresiva, irwallet } = useHeader()
-
-const wallet = ref(0)
+const { back, bell} = useHeader()
 
 const props = defineProps({
   title: {
@@ -26,7 +24,7 @@ const props = defineProps({
           {{  title }}
         </h5>
       </div>
-      <div v-if="bell" class="d-flex justify-content-center align-items-center" @click="$router.push(`/wallet/${$route.params.id}`)">
+      <div v-if="bell" class="d-flex justify-content-center align-items-center">
         <img src="../assets/icons/Notificacion.svg" alt="">
       </div>
     </div>

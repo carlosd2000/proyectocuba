@@ -1,17 +1,3 @@
-<template>
-  <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
-    <!-- Valor/Precio -->
-    <h1 v-if="isListerosRoute" class="price-value">
-      {{ formattedPrice }}
-    </h1>
-    <h3 v-else class="price-value">
-      {{ formattedPrice }}
-    </h3>
-    <!-- Cuenta Regresiva -->
-    <CuentaRegresiva />
-  </div>
-</template>
-
 <script>
 import CuentaRegresiva from './CuentaRegresiva.vue'
 import { computed, onMounted } from 'vue'
@@ -22,7 +8,8 @@ export default {
   components: { CuentaRegresiva },
   setup() {
     const route = useRoute()
-    const isListerosRoute = computed(() => route.path.startsWith('/listeros'))
+    const isListerosRoute = computed(() => route.path.startsWith('/listeros') || route.path.startsWith('/fondo'))
+    const isFondoRoute = route.path.startsWith('/fondo')
     const { totalGlobal, isLoading, fetchTotalGlobal } = useTotalGlobal()
 
     onMounted(() => {
@@ -35,11 +22,34 @@ export default {
 
     return {
       isListerosRoute,
+      isFondoRoute,
       formattedPrice
     }
   }
 }
 </script>
+<template>
+  <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
+    <!-- Valor/Precio -->
+    <h1 v-if="isListerosRoute" class="price-value">
+      {{ formattedPrice }}
+    </h1>
+    <h3 v-else class="price-value">
+      {{ formattedPrice }}
+    </h3>
+    <!-- Cuenta Regresiva -->
+    <div v-if="!isFondoRoute">
+      <CuentaRegresiva />
+    </div>
+    <div v-else class="container-text-fondo d-flex flex-row justify-content-center">
+      <img src="../assets/icons/Ganancia.svg" alt="">
+      <h5 class="small">
+        Fondo recaudado
+      </h5>
+      <img src="../assets/icons/Chevron_right.svg" alt="">
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .card-price {
@@ -76,8 +86,17 @@ export default {
   color: #000000;
 }
 
-/* Ajusta estos estilos según necesites para el diseño horizontal /
-.horizontal-layout .price-value {
-  font-size: 24px; / Tamaño más pequeño para diseño horizontal */
+.container-text-fondo {
+  padding: 0px;
+  gap: 8px;
+  width: 165px;
+  flex: none;
+  flex-grow: 0;
+}
+
+.container-text-fondo img,
+.container-text-fondo h5 {
+  color: #373745;
+}
 
 </style>
