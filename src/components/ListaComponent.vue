@@ -118,8 +118,8 @@ const {
                     </div>
                 </div>
                 <div class="col-2 d-flex justify-content-center align-items-center">
-                    <div v-if="persona.circuloSolo" class="label d-flex justify-content-center align-items-center container-number">
-                        {{ persona.circuloSolo }}
+                    <div v-if="persona.circuloSolo" class="d-flex justify-content-center align-items-center container-number">
+                        <h5 class="label">{{ persona.circuloSolo }}</h5>
                     </div>
                 </div>
             </div>

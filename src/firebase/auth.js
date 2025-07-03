@@ -99,6 +99,7 @@ export const AuthService = {
         nombre: capitalizedName,
         email,
         uid: newUserId,
+        wallet: 0, // Campo wallet para todos los usuarios
         createdAt: new Date().toISOString()
       }
 
@@ -133,28 +134,34 @@ export const AuthService = {
   async createUserProfile(userId, userData) {
     try {
       const tipo = userData.tipo
-      const padreId = userData.creadorId || null
-      const padreTipo = userData.tipoCreador || null
-      const bancoId = userData.bancoId || null
+      const bancoId = userData.bancoId
 
-      if (tipo === 'bancos' || tipo === 'admin') {
-        await setDoc(doc(db, tipo, userId), userData)
+      // Base de datos para todos los tipos de usuario
+      const baseProfileData = {
+        ...userData,
+        wallet: 0 // Aseguramos que wallet esté presente
+      }
+
+      if (tipo === 'admin' || tipo === 'bancos') {
+        await setDoc(doc(db, tipo, userId), baseProfileData)
       } 
       else if (tipo === 'colectorPrincipal') {
-        if (!padreId || !padreTipo || !bancoId) throw new Error("Falta información para colectorPrincipal")
-        await setDoc(doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`), userData)
+        if (!userData.creadorDirectoId || !userData.creadorDirectoTipo || !bancoId) {
+          throw new Error("Falta información para colectorPrincipal")
+        }
+        await setDoc(doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`), baseProfileData)
       }
       else if (tipo === 'colectores') {
-        if (!padreId || !padreTipo || !bancoId) throw new Error("Falta información para colectores")
-        await setDoc(doc(db, `bancos/${bancoId}/colectores/${userId}`), userData)
+        if (!userData.creadorDirectoId || !userData.creadorDirectoTipo || !bancoId) {
+          throw new Error("Falta información para colectores")
+        }
+        await setDoc(doc(db, `bancos/${bancoId}/colectores/${userId}`), baseProfileData)
       } 
       else if (tipo === 'listeros') {
-        if (!padreId || !padreTipo || !bancoId) throw new Error("Falta información para listeros")
-        await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), { 
-          ...userData,
-          padreId: padreId,
-          padreTipo: padreTipo
-        })
+        if (!userData.creadorDirectoId || !userData.creadorDirectoTipo || !bancoId) {
+          throw new Error("Falta información para listeros")
+        }
+        await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), baseProfileData)
       } 
       else {
         throw new Error("Tipo de usuario inválido")
@@ -169,39 +176,28 @@ export const AuthService = {
 
   async getUserProfile(userId) {
     try {
+      // Buscar en colecciones raíz (admin/bancos)
       const tiposRaiz = ['admin', 'bancos']
-
       for (const tipo of tiposRaiz) {
         const docRef = doc(db, tipo, userId)
         const docSnap = await getDoc(docRef)
         if (docSnap.exists()) {
-          return { ...docSnap.data(), tipo: tipo }
+          return { ...docSnap.data(), tipo }
         }
       }
 
+      // Buscar en subcolecciones de bancos
       const bancosSnapshot = await getDocs(collection(db, 'bancos'))
       for (const bancoDoc of bancosSnapshot.docs) {
         const bancoId = bancoDoc.id
+        const subcolecciones = ['colectorPrincipal', 'colectores', 'listeros']
 
-        // Colector Principal
-        const colectorPrincipalRef = doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`)
-        const colectorPrincipalSnap = await getDoc(colectorPrincipalRef)
-        if (colectorPrincipalSnap.exists()) {
-          return { ...colectorPrincipalSnap.data(), tipo: 'colectorPrincipal' }
-        }
-
-        // Colectores
-        const colectoresRef = doc(db, `bancos/${bancoId}/colectores/${userId}`)
-        const colectoresSnap = await getDoc(colectoresRef)
-        if (colectoresSnap.exists()) {
-          return { ...colectoresSnap.data(), tipo: 'colectores' }
-        }
-
-        // Listeros
-        const listerosRef = doc(db, `bancos/${bancoId}/listeros/${userId}`)
-        const listerosSnap = await getDoc(listerosRef)
-        if (listerosSnap.exists()) {
-          return { ...listerosSnap.data(), tipo: 'listeros' }
+        for (const subcoleccion of subcolecciones) {
+          const docRef = doc(db, `bancos/${bancoId}/${subcoleccion}/${userId}`)
+          const docSnap = await getDoc(docRef)
+          if (docSnap.exists()) {
+            return { ...docSnap.data(), tipo: subcoleccion }
+          }
         }
       }
 
@@ -231,4 +227,4 @@ export const AuthService = {
       code: error.code || 'unknown'
     }
   }
-} 
+}

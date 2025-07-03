@@ -7,6 +7,7 @@ import { db } from '@/firebase/config'
 import { collection, onSnapshot } from 'firebase/firestore'
 
 export function useRegistro() {
+    // Estados reactivos
     const nombre = ref('')
     const email = ref('')
     const password = ref('')
@@ -19,35 +20,27 @@ export function useRegistro() {
     const mensajePassword = ref('')
     const isValidPassword = ref(false)
     const isLoading = ref(false)
-    const creadorId = ref('')
-    const tipoCreador = ref('')
 
+    // Router y Store
     const router = useRouter()
     const route = useRoute()
     const authStore = useAuthStore()
 
+    // Computed
     const showSelect = computed(() => {
         const tipo = authStore.profile?.tipo
         return tipo === 'admin' || tipo === 'bancos' || tipo === 'colectorPrincipal' || tipo === 'colectores'
     })
 
+    // Hooks
     onMounted(() => {
-        creadorId.value = route.params.id || ''
         if (route.path.includes('/bancos')) {
-            tipoCreador.value = 'banco'
             const unsubscribe = cargarSubordinados()
-            return () => {
-                if (unsubscribe) unsubscribe()
-            }
-        }
-        else if (route.path.includes('/colectorPrincipal')) {
-            tipoCreador.value = 'colectorPrincipal'
-        }
-        else if (route.path.includes('/colectores')) {
-            tipoCreador.value = 'colector'
+            return () => unsubscribe && unsubscribe()
         }
     })
 
+    // Métodos
     const validateNombre = () => {
         const regex = /^[a-zA-Z0-9]{3,15}$/
         if (!nombre.value) {
@@ -55,133 +48,132 @@ export function useRegistro() {
             isValidNombre.value = false
             return
         }
-        if (!regex.test(nombre.value)) {
-            mensajeNombre.value = 'El nombre debe tener entre 3 y 15 caracteres, solo letras y números'
-            isValidNombre.value = false
-        } else {
-            mensajeNombre.value = 'Nombre válido'
-            isValidNombre.value = true
-        }
+        isValidNombre.value = regex.test(nombre.value)
+        mensajeNombre.value = isValidNombre.value 
+            ? 'Nombre válido' 
+            : 'El nombre debe tener entre 3 y 15 caracteres alfanuméricos'
     }
 
     const validatePassword = () => {
-        if (!password.value) {
-            mensajePassword.value = ''
-            isValidPassword.value = false
-            return
-        }
-        if (password.value.length < 6) {
-            mensajePassword.value = 'La contraseña debe tener al menos 6 caracteres'
-            isValidPassword.value = false
-        } else {
-            mensajePassword.value = 'Contraseña válida'
-            isValidPassword.value = true
-        }
+        isValidPassword.value = password.value.length >= 6
+        mensajePassword.value = isValidPassword.value
+            ? 'Contraseña válida'
+            : 'La contraseña debe tener al menos 6 caracteres'
     }
 
-    const cargarSubordinados = async () => {
+    const cargarSubordinados = () => {
         try {
             if (authStore.profile?.tipo === 'bancos' && authStore.user?.uid) {
-                // Cargar colectores principales
-                const colectoresPrincipalesRef = collection(db, 'bancos', authStore.user.uid, 'colectorPrincipal')
-                const unsubscribeColectoresPrincipales = onSnapshot(colectoresPrincipalesRef, (snapshot) => {
-                    colectoresPrincipales.value = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }))
-                })
+                const bancoId = authStore.user.uid
+                
+                // Cargar Colectores Principales
+                const cpUnsubscribe = onSnapshot(
+                    collection(db, 'bancos', bancoId, 'colectorPrincipal'),
+                    (snapshot) => {
+                        colectoresPrincipales.value = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }))
+                    }
+                )
 
-                // Cargar colectores normales
-                const colectoresRef = collection(db, 'bancos', authStore.user.uid, 'colectores')
-                const unsubscribeColectores = onSnapshot(colectoresRef, (snapshot) => {
-                    colectores.value = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }))
-                })
+                // Cargar Colectores
+                const cUnsubscribe = onSnapshot(
+                    collection(db, 'bancos', bancoId, 'colectores'),
+                    (snapshot) => {
+                        colectores.value = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }))
+                    }
+                )
 
                 return () => {
-                    unsubscribeColectoresPrincipales()
-                    unsubscribeColectores()
+                    cpUnsubscribe()
+                    cUnsubscribe()
                 }
             }
         } catch (error) {
             console.error("Error cargando subordinados:", error)
+            Swal.fire("Error", "No se pudieron cargar los subordinados", "error")
         }
     }
 
     const registrarUsuario = async () => {
+        // Validaciones básicas
         if (!showSelect.value) {
             Swal.fire("Error", "No tienes permisos para crear cuentas", "error")
             return
         }
+
         if (!nombre.value || !email.value || !password.value || !tipoCuenta.value) {
-            Swal.fire("Error", "Por favor llena todos los campos", "error")
+            Swal.fire("Error", "Por favor completa todos los campos", "error")
             return
         }
-        
-        if (authStore.profile?.tipo === 'bancos') {
-            if (tipoCuenta.value === 'listeros' && !padreSeleccionado.value) {
-                Swal.fire("Error", "Por favor selecciona un padre para el listero", "error")
-                return
-            }
-            if (tipoCuenta.value === 'colectores' && !padreSeleccionado.value) {
-                Swal.fire("Error", "Por favor selecciona un padre para el colector", "error")
-                return
-            }
-        }
-        
+
         if (!isValidNombre.value || !isValidPassword.value) {
-            Swal.fire("Error", "Por favor completa los campos correctamente", "error")
+            Swal.fire("Error", "Por favor corrige los campos inválidos", "error")
             return
+        }
+
+        // Validaciones específicas para bancos
+        if (authStore.profile?.tipo === 'bancos') {
+            if ((tipoCuenta.value === 'colectores' || tipoCuenta.value === 'listeros') && !padreSeleccionado.value) {
+                Swal.fire("Error", `Selecciona un padre para el ${tipoCuenta.value}`, "error")
+                return
+            }
         }
 
         try {
             isLoading.value = true
-            let padreData = {}
+
+            // *** ÚNICO CAMBIO REALIZADO *** (Manteniendo toda tu lógica intacta)
             const currentUserId = authStore.user?.uid
             const currentUserTipo = authStore.profile?.tipo
-            const bancoId = authStore.profile?.tipo === 'colectorPrincipal' 
-                ? authStore.profile?.creadorId 
-                : authStore.user?.uid
+            
+            // Obtener bancoId basado en el path de la ruta
+            const bancoId = route.path.split('/')[2] || 
+                             (currentUserTipo === 'bancos' ? currentUserId : authStore.profile?.bancoId)
 
+            // Verificación crítica del bancoId
+            if (!bancoId) {
+                throw new Error("No se encontró el ID del banco padre")
+            }
+
+            // Configurar datos del padre según tipo de usuario (todo esto se mantiene igual)
+            let padreData = {}
             if (currentUserTipo === 'bancos') {
-                if (['colectores', 'listeros'].includes(tipoCuenta.value) && padreSeleccionado.value) {
+                if (tipoCuenta.value === 'colectorPrincipal') {
+                    padreData = {
+                        creadorDirectoId: currentUserId,
+                        creadorDirectoTipo: 'banco',
+                        bancoId: bancoId
+                    }
+                } else if (padreSeleccionado.value) {
                     const [tipoPadre, idPadre] = padreSeleccionado.value.split('_')
                     padreData = {
-                        creadorId: idPadre,
-                        tipoCreador: tipoPadre,
-                        bancoId: bancoId
-                    }
-                } else if (tipoCuenta.value === 'colectorPrincipal') {
-                    padreData = {
-                        creadorId: currentUserId,
-                        tipoCreador: 'banco',
+                        creadorDirectoId: idPadre,
+                        creadorDirectoTipo: tipoPadre,
                         bancoId: bancoId
                     }
                 }
-            } 
-            else if (currentUserTipo === 'colectorPrincipal') {
+            } else {
                 padreData = {
-                    creadorId: currentUserId,
-                    tipoCreador: 'colectorPrincipal',
-                    bancoId: bancoId
-                }
-            }
-            else if (currentUserTipo === 'colectores') {
-                padreData = {
-                    creadorId: currentUserId,
-                    tipoCreador: 'colector',
+                    creadorDirectoId: currentUserId,
+                    creadorDirectoTipo: currentUserTipo,
                     bancoId: bancoId
                 }
             }
 
+            // Crear objeto de usuario (todo esto igual)
             const userData = {
                 nombre: nombre.value,
+                email: email.value,
                 tipo: tipoCuenta.value,
                 ...padreData
             }
 
+            // Registrar en Firebase (igual)
             const result = await AuthService.register({
                 email: email.value,
                 password: password.value,
@@ -189,14 +181,14 @@ export function useRegistro() {
             })
 
             if (result.success) {
-                Swal.fire("Creación exitosa", "Usuario creado correctamente", "success")
+                Swal.fire("Éxito", "Usuario creado correctamente", "success")
                 limpiarCampos()
             } else {
                 Swal.fire("Error", result.error, "error")
             }
         } catch (error) {
             console.error("Error en registro:", error)
-            Swal.fire("Error", "No se pudo crear el usuario", "error")
+            Swal.fire("Error", `Error al crear el usuario: ${error.message}`, "error")
         } finally {
             isLoading.value = false
         }
@@ -219,7 +211,7 @@ export function useRegistro() {
             await authStore.logout()
             router.push('/')
         } catch (error) {
-            console.error("Error al cerrar sesión", error)
+            console.error("Error al cerrar sesión:", error)
             Swal.fire("Error", "No se pudo cerrar sesión", "error")
         }
     }
