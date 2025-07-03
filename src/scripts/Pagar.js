@@ -8,7 +8,7 @@ import {
   validarFilas
 } from '../scripts/operaciones.js'
 import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase/config';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
 import { useToastStore } from '../stores/toast'

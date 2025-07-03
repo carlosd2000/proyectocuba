@@ -64,33 +64,15 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/wallet/:id',
-      name: 'wallet',
-      component: () => import('../views/Wallet.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/monitoreolisteros/:id',
-      name: 'monitoreolisteros',
-      component: () => import('../views/Monitoreolisteros.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/transacciones/:id',
-      name: 'transacciones',
-      component: () => import('../views/Transacciones.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/transferencias/:id',
-      name: 'transferencias',
-      component: () => import('../views/Transferencias.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/usuario/:id',
       name: 'usuario',
       component: () => import('../views/Usuario.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/fondo/:id',
+      name: 'fondo',
+      component: () => import('../views/Fondo.vue'),
       meta: { requiresAuth: true },
     }
   ],

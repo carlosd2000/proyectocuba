@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import Header from '../components/Header.vue';
 import Valores from '../components/Valores.vue';
 import listacolaboradores from '../components/listacolaboradores.vue';
-import listamovimientos from '../components/listamovimientos.vue';
+import ListaMovimientos from '../components/ListaMovimientos.vue';
 import Footer from '../components/Footer.vue';
 
 const seleccion = ref('colaboradores') 
@@ -68,7 +68,7 @@ const listeros = ref([
             </div>
             <div class="continer-lista p-0 px-2">
                 <listacolaboradores v-if="seleccion === 'colaboradores'" :listeros="listeros"/>
-                <listamovimientos v-if="seleccion === 'movimientos'"/>
+                <ListaMovimientos v-if="seleccion === 'movimientos'"/>
             </div>
         </main>
         <div class="p-0 footer">

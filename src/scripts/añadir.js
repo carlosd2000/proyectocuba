@@ -1,7 +1,7 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
-import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
-import { filasFijas, filasExtra, calcularTotales, expandirApuestasGeneralCombinadas } from './operaciones';
+import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
+import { filasFijas, expandirApuestasGeneralCombinadas } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
