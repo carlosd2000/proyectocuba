@@ -16,64 +16,78 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
     return new Date()
   }
 
-  async function actualizarEstadoCandado() {
-    // 1. Si la fecha seleccionada es anterior a hoy, candado cerrado
-    const hoy = new Date()
-    const fecha = new Date(fechaSeleccionada.value)
-    hoy.setHours(0, 0, 0, 0)
-    fecha.setHours(0, 0, 0, 0)
-    if (fecha < hoy) {
-      candadoAbierto.value = false
-      horaCierre.value = null
-      return
-    }
+async function actualizarEstadoCandado() {
+  const hoy = new Date();
+  const fecha = new Date(fechaSeleccionada.value);
+  hoy.setHours(0, 0, 0, 0);
+  fecha.setHours(0, 0, 0, 0);
 
-    // 2. Si es hoy, verifica la hora de cierre en la base de datos
-    const bancoId = await obtenerBancoPadre()
-    if (!bancoId) {
-      candadoAbierto.value = false
-      horaCierre.value = null
-      return
-    }
+  const horarioKey = (horarioSeleccionado.value || '').toLowerCase();
 
-    // 3. Trae la hora de cierre del horario seleccionado
-    const horarioKey = (horarioSeleccionado.value || '').toLowerCase()
-    const horarioRef = doc(db, `bancos/${bancoId}/hora`, horarioKey)
-    const horarioSnap = await getDoc(horarioRef)
-    if (!horarioSnap.exists()) {
-      candadoAbierto.value = false
-      horaCierre.value = null
-      return
-    }
-
-    // 4. Compara con la hora actual del servidor
-    const now = await obtenerHoraServidor()
-    serverTime.value = now
-
-    let cierreDate = null
-    const hora = horarioSnap.data().hora
-
-    if (hora instanceof Timestamp || (hora && typeof hora.toDate === 'function')) {
-      // Solo usamos la hora y minutos del timestamp, pero la fecha debe ser HOY
-      const horaObj = hora.toDate()
-      cierreDate = new Date(now)
-      cierreDate.setHours(horaObj.getHours(), horaObj.getMinutes(), 0, 0)
+  if (!navigator.onLine) {
+    // OFFLINE: Si la fecha seleccionada no es hoy, candado cerrado
+    if (fecha.getTime() !== hoy.getTime()) {
+      candadoAbierto.value = false;
     } else {
-      candadoAbierto.value = false
-      horaCierre.value = null
-      return
+      // Si es hoy, lee el estado del cache para la fecha y horario
+      const cacheAbierto = leerEstadoCandadoCache(fechaSeleccionada, horarioKey);
+      candadoAbierto.value = !!cacheAbierto;
     }
-
-    horaCierre.value = cierreDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-    // Si la fecha seleccionada es hoy, compara la hora
-    if (fecha.getTime() === hoy.getTime()) {
-      candadoAbierto.value = now < cierreDate
-    } else {
-      // Si la fecha es futura, candado abierto
-      candadoAbierto.value = true
-    }
+    return;
   }
+
+  // ONLINE: lógica normal
+  if (fecha < hoy) {
+    candadoAbierto.value = false;
+    horaCierre.value = null;
+    guardarEstadoCandadoEnCache(fechaSeleccionada, horarioKey, false);
+    return;
+  }
+
+  const bancoId = await obtenerBancoPadre();
+  if (!bancoId) {
+    candadoAbierto.value = false;
+    horaCierre.value = null;
+    guardarEstadoCandadoEnCache(fechaSeleccionada, horarioKey, false);
+    return;
+  }
+
+  const horarioRef = doc(db, `bancos/${bancoId}/hora`, horarioKey);
+  const horarioSnap = await getDoc(horarioRef);
+  if (!horarioSnap.exists()) {
+    candadoAbierto.value = false;
+    horaCierre.value = null;
+    guardarEstadoCandadoEnCache(fechaSeleccionada, horarioKey, false);
+    return;
+  }
+
+  const now = await obtenerHoraServidor();
+  serverTime.value = now;
+
+  let cierreDate = null;
+  const hora = horarioSnap.data().hora;
+
+  if (hora instanceof Timestamp || (hora && typeof hora.toDate === 'function')) {
+    const horaObj = hora.toDate();
+    cierreDate = new Date(now);
+    cierreDate.setHours(horaObj.getHours(), horaObj.getMinutes(), 0, 0);
+  } else {
+    candadoAbierto.value = false;
+    horaCierre.value = null;
+    guardarEstadoCandadoEnCache(fechaSeleccionada, horarioKey, false);
+    return;
+  }
+
+  horaCierre.value = cierreDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (fecha.getTime() === hoy.getTime()) {
+    candadoAbierto.value = now < cierreDate;
+    guardarEstadoCandadoEnCache(fechaSeleccionada, horarioKey, candadoAbierto.value);
+  } else {
+    candadoAbierto.value = true;
+    guardarEstadoCandadoEnCache(fechaSeleccionada, horarioKey, true);
+  }
+}
   // Intervalo para actualizar el candado en tiempo real si la fecha es hoy
   function startIntervalIfToday() {
     clearInterval(intervalId)
@@ -85,6 +99,24 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
       intervalId = setInterval(actualizarEstadoCandado, 1000)
     }
   }
+
+function guardarEstadoCandadoEnCache(fechaSeleccionada, horario, abierto) {
+  const fecha = new Date(fechaSeleccionada.value);
+  fecha.setHours(0, 0, 0, 0);
+  const fechaKey = fecha.toISOString().slice(0, 10); // yyyy-mm-dd
+  let cache = JSON.parse(localStorage.getItem('candadoCache') || '{}');
+  if (!cache[fechaKey]) cache[fechaKey] = {};
+  cache[fechaKey][horario] = abierto;
+  localStorage.setItem('candadoCache', JSON.stringify(cache));
+}
+
+function leerEstadoCandadoCache(fechaSeleccionada, horario) {
+  const fecha = new Date(fechaSeleccionada.value);
+  fecha.setHours(0, 0, 0, 0);
+  const fechaKey = fecha.toISOString().slice(0, 10);
+  const cache = JSON.parse(localStorage.getItem('candadoCache') || '{}');
+  return cache[fechaKey]?.[horario];
+}
 
   watch([fechaSeleccionada, horarioSeleccionado], () => {
     actualizarEstadoCandado()
