@@ -24,7 +24,7 @@ export function useHeader() {
     const back = computed(() => route.path.startsWith('/listeros'))
     const bell = computed(() => route.path.startsWith('/'))
 
-    const irwallet = () => {
+    const irfondo = () => {
         if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
             router.push(`/${authStore.userType}/${authStore.userId}`)
         } else {
@@ -131,7 +131,7 @@ export function useHeader() {
         back,
         bell,
         cuentaRegresiva,
-        irwallet,
+        irfondo,
         turnoActual,
         limpiarSuscripciones
     }

@@ -63,7 +63,7 @@
         })
         totalGlobal.value = total
         const tipo = authStore.profile?.tipo
-        await AuthService.updateUserWallet(listeroId, bancoId, tipo, total)
+        await AuthService.updateUserfondo(listeroId, bancoId, tipo, total)
         } catch (e) {
         error.value = e
         totalGlobal.value = 0
