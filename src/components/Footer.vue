@@ -6,6 +6,7 @@ import Home_Active from '../assets/icons/Home_Active.svg'
 import Lista from '../assets/icons/Lista.svg'
 import Lista_Active from '../assets/icons/Lista_Active.svg'
 import Wallet from '../assets/icons/Wallet.svg'
+import Wallet_Active from '../assets/icons/Wallet_Active.svg'
 import User from '../assets/icons/User.svg'
 
 
@@ -26,25 +27,25 @@ const props = defineProps({
     <div class="container d-flex flex-row justify-content-between align-items-center">
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/listeros/${$route.params.id}`)">
             <img :src="props.title === 'Home' ? Home_Active : Home" alt="">
-            <h5 v-if="props.title !== 'Home'" class="navegation-label">Home</h5>
+            <h5 v-if="props.title !== 'Home'" class="navigation-label">Home</h5>
             <div v-else class="punto"></div>
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/lista/${$route.params.id}`)">
             <img :src="props.title === 'Lista' ? Lista_Active : Lista" alt="">
-            <h5 v-if="props.title !== 'Lista'" class="navegation-label">Lista</h5>
+            <h5 v-if="props.title !== 'Lista'" class="navigation-label">Lista</h5>
             <div v-else class="punto"></div>
         </div>
         <div class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
             <img src="../assets/icons/Plus.svg" alt="">
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/fondo/${$route.params.id}`)">
-            <img :src="props.title === 'Fondo' ? Wallet : Wallet" alt="">
-            <h5 v-if="props.title !== 'Fondo'" class="navegation-label">Fondo</h5>
+            <img :src="props.title === 'Fondo' ? Wallet_Active : Wallet" alt="">
+            <h5 v-if="props.title !== 'Fondo'" class="navigation-label">Fondo</h5>
             <div v-else class="punto"></div>
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/usuario/${$route.params.id}`)">
             <img :src="props.title === 'Usuario' ? User : User" alt="">
-            <h5 v-if="props.title !== 'Usuario'" class="navegation-label">Usuario</h5>
+            <h5 v-if="props.title !== 'Usuario'" class="navigation-label">Usuario</h5>
             <div v-else class="punto"></div>
         </div>
     </div>

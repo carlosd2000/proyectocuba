@@ -48,31 +48,31 @@ onMounted(async () => {
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
                 <img src="../assets/icons/Jugada.svg" alt="" >
-                <h5 class="navegation-label">
+                <h5 class="navigation-label">
                     Jugada
                 </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
                 <img src="../assets/icons/Parlet.svg" alt="">
-                <h5 class="navegation-label">
+                <h5 class="navigation-label">
                     Parlet
                 </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
                 <img src="../assets/icons/Candado.svg" alt="">
-                <h5 class="navegation-label">
+                <h5 class="navigation-label">
                     Candado
                 </h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
                 <img src="../assets/icons/Centena.svg" alt="">
-                <h5 class="navegation-label">
+                <h5 class="navigation-label">
                     Centena
                 </h5>
             </div>
             <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
                 <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
-                <h5 class="navegation-label" style="color: #FDFEF2" >
+                <h5 class="navigation-label" style="color: #FDFEF2" >
                     Lista
                 </h5>
             </div>
