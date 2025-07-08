@@ -28,7 +28,7 @@ export default {
           const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${new Date().toISOString().split('T')[0]}`
           const cachedData = JSON.parse(localStorage.getItem(cacheKey) || '{}')
           if (cachedData.total) {
-            return `$${cachedData.total.toLocaleString()} (caché)`
+            return `$${cachedData.total.toLocaleString()}`
           }
         }
         return 'Cargando...'
