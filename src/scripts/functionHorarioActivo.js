@@ -32,6 +32,7 @@ export async function verificarHorarioActivo(bancoId, horario) {
 
         if (horarioData.hora) {
             const ahora = new Date();
+            ahora.setHours(ahora.getHours() + 1);
             const horaLimite = horarioData.hora.toDate();
             const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
             const horaLimiteMinutos = horaLimite.getHours() * 60 + horaLimite.getMinutes();

@@ -13,7 +13,9 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
   async function obtenerHoraServidor() {
     // Si tienes un endpoint de hora del servidor, úsalo aquí.
     // Por ahora, usamos la hora local del cliente.
-    return new Date()
+    const now = new Date()
+    now.setHours(now.getHours() + 1) // <--- AJUSTE AQUÍ
+    return now
   }
 
 async function actualizarEstadoCandado() {
@@ -25,14 +27,9 @@ async function actualizarEstadoCandado() {
   const horarioKey = (horarioSeleccionado.value || '').toLowerCase();
 
   if (!navigator.onLine) {
-    // OFFLINE: Si la fecha seleccionada no es hoy, candado cerrado
-    if (fecha.getTime() !== hoy.getTime()) {
-      candadoAbierto.value = false;
-    } else {
-      // Si es hoy, lee el estado del cache para la fecha y horario
-      const cacheAbierto = leerEstadoCandadoCache(fechaSeleccionada, horarioKey);
-      candadoAbierto.value = !!cacheAbierto;
-    }
+    // OFFLINE: Solo usa el cache
+    const cacheAbierto = leerEstadoCandadoCache(fechaSeleccionada, horarioKey);
+    candadoAbierto.value = !!cacheAbierto;
     return;
   }
 
@@ -82,6 +79,7 @@ async function actualizarEstadoCandado() {
 
   if (fecha.getTime() === hoy.getTime()) {
     candadoAbierto.value = now < cierreDate;
+    // ACTUALIZA EL CACHE SIEMPRE QUE ESTÉS ONLINE
     guardarEstadoCandadoEnCache(fechaSeleccionada, horarioKey, candadoAbierto.value);
   } else {
     candadoAbierto.value = true;

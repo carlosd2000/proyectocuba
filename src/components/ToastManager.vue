@@ -25,14 +25,22 @@ const handleClose = (id) => {
       :class="toastClasses(toast.type)"
     >
       <div class="toast show d-flex justify-content-center">
-        <div class="toast-content">
+        <div class="toast-content" :style="{ height: toast.type === 'double-message' ? 'auto' : '56px' }">
           <img 
             :src="toast.icon" 
             alt=""
             v-if="toast.icon"
           />
-          <h3>{{ toast.message }}</h3>
-          <button type="button" class="btn btn-close-black me-2 m-auto" @click.stop="handleClose(toast.id)">
+          <div v-if="!toast.type === 'double-message'">
+            <h5 class="body-bold">
+              {{ toast.message }}
+            </h5>
+          </div>
+          <div v-else class="d-flex flex-column align-items-start gap-1">
+            <h5 class="body-bold">{{ toast.message.split('!!')[0] }}</h5>
+            <h5 class="small">{{ toast.message.split('!!')[1] }}</h5>
+          </div>
+          <button type="button" class="btn btn-close-black" @click.stop="handleClose(toast.id)">
             <img src="../assets/icons/Cerrar.svg" alt="">
           </button>
         </div>
@@ -73,7 +81,6 @@ const handleClose = (id) => {
   padding: 9px 16px;
   gap: 24px;
   width: 100%;
-  height: 56px;
   background: #E0E0F8;
   box-shadow: 0px 0px 24px rgba(0, 0, 0, 0.1);
   border-radius: 12px;

@@ -60,7 +60,7 @@ onUnmounted(() => {
       <div class="row" style="max-width: 400px; width: 100%;">
         <ButtonFilter/>
       </div>
-      <div class="d-flex flex-column align-items-center w-100">
+      <div class="d-flex flex-column align-items-center w-100 h-100 overflow-y-auto">
         <ListaMovimientos/>
       </div>
     </main>
@@ -75,10 +75,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0px 16px;
+  padding: 0px 16px 24px 16px;
   gap: 16px;
   width: 100%;
   height: calc(100vh - 7% - 88px); /* Ajusta 60px según la altura real del footer */
-  overflow-y: auto;
 }
 </style>

@@ -107,8 +107,58 @@ export function usePagar() {
     const lanzarToast = async () => {
       try {
         mostrarEnviando.value = true
+        // Leer valores de localStorage
+        const valorBote = Number(localStorage.getItem('valorBote'))
+        const boteActivo = localStorage.getItem('boteActivo') === 'true'
+
+        // Recolectar todos los valores de apuestas
+        const valores = [
+          ...filasFijas.value.map(f => Number(f.circulo1) || 0),
+          ...filasFijas.value.map(f => Number(f.circulo2) || 0),
+          ...filasExtra.value.map(f => Number(f.circulo1) || 0),
+          ...filasExtra.value.map(f => Number(f.circulo2) || 0),
+        ]
+        if (filasFijas.value[2]?.circuloSolo !== '' && filasFijas.value[2]?.circuloSolo !== null) {
+          valores.push(Number(filasFijas.value[2].circuloSolo) || 0)
+        }
+
+        // Validación: si algún valor supera el valorBote y boteActivo es false, bloquear envío
+        if (
+          valorBote &&
+          !boteActivo &&
+          valores.some(v => v > valorBote)
+        ) {
+          toastStore.showToast(
+            `Limite alcanzado !! El valor ingresado supera $${valorBote} al limite permitido para esta jugada.`,
+            'double-message',
+            5000,
+            ErrorIcon
+          )
+          mostrarEnviando.value = false
+          return
+        }
+
+        // Si boteActivo es true y algún valor supera el valorBote, mostrar el otro toast (pero permitir enviar)
+        if (
+          valorBote &&
+          boteActivo &&
+          valores.some(v => v > valorBote)
+        ) {
+          toastStore.showToast(
+            `Tu tirada superó el límite !! Se juega $${valorBote} como valor máximo, el excedente se va directo al bote.`,
+            'double-message',
+            5000,
+            ErrorIcon
+          )
+          // Aquí SÍ se permite enviar la jugada
+        }
         if (!(await validarAntesDeEnviar())) {
-              toastStore.showToast(errorMessage.value, 'error', 2000, ErrorIcon)
+              toastStore.showToast(
+                errorMessage.value, 
+                'error', 
+                2000, 
+                ErrorIcon
+              )
             return
         }
         const resultado = await guardarDatos()

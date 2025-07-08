@@ -19,21 +19,23 @@
             type="number"
             class="circular label"
             :placeholder="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo1') ? null : '$'"
-            :class="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo1')"
+            :class="[claseImagenSiHayEspacioGlobal(fila - 1, 'circulo1'), camposInvalidos.circulo1.has(fila - 1) ? 'input-invalido' : '']"
             v-model="filasFijas[fila - 1].circulo1"
             min="0"
             step="1"
             @keypress="soloEnteros($event)"
+            @input="validarCampo(filasFijas[fila - 1].circulo1, 'circulo1', fila - 1)"
           />
           <input
             type="number"
             class="circular label"
             :placeholder="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo2') ? null : '$'"
-            :class="claseImagenSiHayEspacioGlobal(fila - 1, 'circulo2')"
+            :class="[claseImagenSiHayEspacioGlobal(fila - 1, 'circulo2'), camposInvalidos.circulo2.has(fila - 1) ? 'input-invalido' : '']"
             v-model="filasFijas[fila - 1].circulo2"
             min="0"
             step="1"
             @keypress="soloEnteros($event)"
+            @input="validarCampo(filasFijas[fila - 1].circulo2, 'circulo2', fila - 1)"
           />
         </div>
 
@@ -53,21 +55,23 @@
             type="number"
             class="circular label"
             :placeholder="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo1') ? null : '$'"
-            :class="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo1')"
+            :class="[claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo1'), camposInvalidos.circulo1.has(filasFijas.length + index) ? 'input-invalido' : '']"
             v-model="fila.circulo1"
             min="0"
             step="1"
             @keypress="soloEnteros($event)"
+            @input="validarCampo(fila.circulo1, 'circulo1', filasFijas.length + index)"
           />
           <input
             type="number"
             class="circular label"
             :placeholder="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo2') ? null : '$'"
-            :class="claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo2')"
+            :class="[claseImagenSiHayEspacioGlobal(filasFijas.length + index, 'circulo2'), camposInvalidos.circulo2.has(filasFijas.length + index) ? 'input-invalido' : '']"
             v-model="fila.circulo2"
             min="0"
             step="1"
             @keypress="soloEnteros($event)"
+            @input="validarCampo(fila.circulo2, 'circulo2', filasFijas.length + index)"
           />
         </div>
         <div class="btn-agregar-container">
@@ -84,9 +88,11 @@
           class="circular-solo label"
           placeholder="$"
           v-model="filasFijas[2].circuloSolo"
+          :class="camposInvalidos.circuloSolo ? 'input-invalido' : ''"
           min="0"
           step="1"
           @keypress="soloEnteros($event)"
+          @input="validarCampo(filasFijas[2].circuloSolo, 'circuloSolo')"
         />
       </div>
     </div>
@@ -94,8 +100,77 @@
 </template>
 
 <script setup>
+import Alert from '../assets/icons/alert.svg'
 import masIcon from '../assets/icons/mas.svg'
 import { useInputs } from '../scripts/Inputs.js'
+import { ref, reactive, watch, onMounted } from 'vue'
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../firebase/config'
+import { useToastStore } from '../stores/toast'
+
+const toastStore = useToastStore()
+const valorBote = ref(null)
+const boteActivo = ref(false)
+const camposInvalidos = reactive({
+  circulo1: new Set(),
+  circulo2: new Set(),
+  circuloSolo: false
+})
+
+onMounted(async () => {
+  const bancoId = await obtenerBancoPadre()
+  if (!bancoId) return
+
+  const docRef = doc(db, 'bancos', bancoId)
+  const docSnap = await getDoc(docRef)
+
+  if (docSnap.exists()) {
+    valorBote.value = docSnap.data().bote || 0
+    boteActivo.value = docSnap.data().boteActivo
+
+    // Guardar en localStorage
+    localStorage.setItem('valorBote', valorBote.value)
+    localStorage.setItem('boteActivo', boteActivo.value ? 'true' : 'false')
+  }
+})
+
+function validarCampo(valor, tipo, filaIndex = null) {
+  if (valorBote.value === null) return
+
+  const esInvalido = Number(valor) > valorBote.value
+  if (tipo === 'circuloSolo') {
+    camposInvalidos.circuloSolo = esInvalido
+  } else {
+    if (filaIndex !== null) {
+      if (esInvalido) {
+        camposInvalidos[tipo].add(filaIndex)
+      } else {
+        camposInvalidos[tipo].delete(filaIndex)
+      }
+    }
+  }
+
+  if (esInvalido) {
+    console.warn(`El valor ingresado (${valor}) supera el bote (${valorBote.value})`)
+    if (boteActivo.value){
+      toastStore.showToast(
+        `Tu tirada superó el límite !! Se juega $${valorBote.value} como valor máximo, el excedente se va directo al bote.`,
+        'double-message',
+        5000,
+        Alert,
+      )
+    }
+    else{
+      toastStore.showToast(
+        `Limite alcanzado !! El valor ingresado supera $${valorBote.value} al limite permitido para esta jugada.`,
+        'double-message',
+        5000,
+        Alert,
+      )
+    }
+  }
+}
 
 const props = defineProps({
   datosEdicion: Object,
@@ -108,7 +183,7 @@ const {
   filasExtra,
   agregarFila,
   soloEnteros,
-  claseImagenSiHayEspacioGlobal
+  claseImagenSiHayEspacioGlobal,
 } = useInputs(props)
 
 </script>
@@ -203,6 +278,10 @@ const {
   border: 1px solid #F3F3F3;
   border-radius: 30px;
 }
+.input-invalido {
+  border: 2px solid red !important;
+}
+
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

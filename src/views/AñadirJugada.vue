@@ -1,19 +1,19 @@
 <script setup>
+import { useRoute } from 'vue-router';
+import { computed, ref, onMounted } from 'vue';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import Header from '../components/Header.vue';
+import Nombre from '../components/Nombre.vue';
+import CardPrice from '../components/CardPrice.vue';
 import Inputs from '../components/Inputs.vue';
 import InputsCandado from '../components/InputCandado.vue';
 import InputsCentena from '../components/InputCentena.vue';
 import InputsParlet from '../components/InputParlet.vue';
 import Horario from '../components/SelectorHorario.vue';
 import Pagar from '../components/Pagar.vue';
-import { useRoute } from 'vue-router';
-import { computed, ref, onMounted } from 'vue';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { setModoEdicion, setHorario } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
-import Nombre from '../components/Nombre.vue';
-import CardPrice from '../components/CardPrice.vue';
 
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
