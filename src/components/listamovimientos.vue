@@ -30,7 +30,7 @@ function iconoPorTipo(tipo) {
 }
 function iramovimiento(tipo) {
   if (tipo !== 'Deposito') {
-    router.push(`/fondo/${route.params.id}`)
+    router.push(`/lista/${route.params.id}`)
   }
 }
 

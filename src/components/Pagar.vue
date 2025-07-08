@@ -1,7 +1,11 @@
 <script setup>
-import { usePagar } from '../scripts/Pagar.js'
 import { ref, computed  } from 'vue'
-import { hayHorariosDisponibles } from '../scripts/añadir.js'
+import { usePagar } from '../scripts/Pagar.js'
+import { hayHorariosDisponibles, horarioSeleccionado } from '../scripts/añadir.js'
+import { verificarHorarioActivo } from '../scripts/FunctionHorarioActivo.js'
+import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+import { useToastStore } from '../stores/toast'
+import ErrorIcon from '../assets/icons/Error.svg'
 const {
   errorMessage,
   isOnline,
@@ -19,17 +23,57 @@ const emit = defineEmits(['update:mostrar-enviando']);
 const isLoading = ref(false)
 
 const isButtonDisabled = computed(() => !props.hayHorariosDisponibles)
-
+const toastStore = useToastStore()
 // Modifica la función lanzarToast para emitir el evento
 const customLanzarToast = async () => {
   if (isButtonDisabled.value) return
-  
+
   isLoading.value = true
   emit('update:mostrar-enviando', true)
   try {
+    const bancoId = await obtenerBancoPadre()
+    let horarioKey = null
+    switch (horarioSeleccionado.value) {
+      case 'Dia': horarioKey = 'dia'; break
+      case 'Tarde': horarioKey = 'tarde'; break
+      case 'Noche': horarioKey = 'noche'; break
+      default: horarioKey = 'dia'
+    }
+
+    if (!navigator.onLine) {
+      // OFFLINE: revisa el cache local
+      const cache = JSON.parse(localStorage.getItem('horariosCache') || '{}')
+      const estado = cache[horarioKey]
+      if (!estado || estado.sobrepasado) {
+        toastStore.showToast(
+          'La apuesta está fuera de tiempo para este horario',
+          'error',
+          2000,
+          ErrorIcon
+        )
+        isLoading.value = false
+        emit('update:mostrar-enviando', false)
+        return
+      }
+    } else {
+      // ONLINE: consulta en tiempo real
+      const horarioDisponible = await verificarHorarioActivo(bancoId, horarioKey)
+      if (!horarioDisponible) {
+        toastStore.showToast(
+          'La apuesta está fuera de tiempo para este horario',
+          'error',
+          2000,
+          ErrorIcon
+        )
+        isLoading.value = false
+        emit('update:mostrar-enviando', false)
+        return
+      }
+    }
+
+    // Si pasa la validación, continúa
     const resultado = await lanzarToast()
     if (resultado?.code === "NO_HORARIOS") {
-      // Mostrar mensaje específico para horarios no disponibles
       toastStore.showToast(
         resultado.message,
         'error',

@@ -243,8 +243,9 @@ export async function sincronizarPendientes() {
   try {
     const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
     const pendientesExitosos = [];
-    
-    const serverTime = await obtenerHoraServidor();
+
+    const horaServidorObj = await obtenerHoraServidor();
+    const horaServidor = horaServidorObj.toDate();
 
     for (const apuesta of pendientes) {
       try {
@@ -256,51 +257,40 @@ export async function sincronizarPendientes() {
             continue;
           }
         }
-        // Usar bancoId en todas las referencias
         const docRef = doc(db, `bancos/${bancoId}/apuestas`, apuesta.uuid);
         const snap = await getDoc(docRef);
-        
-        if (!snap.exists()) {
-          console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid} al banco ${apuesta.bancoId}`);
-          
-          // Obtener configuración del horario específico de esta apuesta
-          const horarioRef = doc(db, `bancos/${bancoId}/hora`, apuesta.horario.toLowerCase());
-          const horarioSnap = await getDoc(horarioRef);
-          
-          let fueraDeTiempo = false;
-          
-          if (horarioSnap.exists()) {
-            const config = horarioSnap.data();
-            const horaCierre = new Date(serverTime.toDate());
-            horaCierre.setHours(
-              parseInt(config.hh) || 0,
-              parseInt(config.mm) || 0,
-              parseInt(config.ss) || 0,
-              0
-            );
-            
-            // Verificar si el horario de esta apuesta ya pasó
-            // fueraDeTiempo = serverTime.toMillis() > horaCierre.getTime();
-            
-            // Si el horario ya pasó, verificar si fue creada antes del cierre
-            // if (fueraDeTiempo && apuesta.creadoEn) {
-            //   const creadoEn = new Date(apuesta.creadoEn);
-            //   fueraDeTiempo = creadoEn.getTime() < horaCierre.getTime();
-            // }
-
-            fueraDeTiempo = await verificarFueraDeTiempo(apuesta.horario, { ...apuesta, bancoId }, serverTime);
-            
-          }
-          
-          await setDoc(docRef, {
-            ...apuesta,
-            creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
-            sincronizadoEn: serverTimestamp(),
-            estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
-          });
-          
-          pendientesExitosos.push(apuesta.uuid);
+        if (snap.exists()) {
+          console.log(`[SYNC] Apuesta ${apuesta.uuid} ya existe, se omite`);
+          continue;
         }
+
+        // 🔹 2. Obtener hora límite del horario
+        const horarioRef = doc(db, `bancos/${bancoId}/hora`, apuesta.horario.toLowerCase());
+        const horarioSnap = await getDoc(horarioRef);
+
+        let fueraDeTiempo = false;
+
+        if (horarioSnap.exists()) {
+          const horaLimite = horarioSnap.data().hora?.toDate();
+          if (horaLimite) {
+            // Crear nuevo Date con la fecha actual del servidor y la hora del cierre
+            const cierre = new Date(horaServidor);
+            cierre.setHours(horaLimite.getHours(), horaLimite.getMinutes(), 0, 0);
+            fueraDeTiempo = horaServidor > cierre;
+            console.log(`[SYNC] Apuesta ${apuesta.uuid} - Hora de cierre:`, cierre.toLocaleString());
+            console.log(`[SYNC] Apuesta ${apuesta.uuid} - Hora de servidor:`, horaServidor.toLocaleString());
+          }
+        }
+
+        await setDoc(docRef, {
+          ...apuesta,
+          creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
+          sincronizadoEn: serverTimestamp(),
+          estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
+          fueraDeTiempo
+        });
+
+        pendientesExitosos.push(apuesta.uuid);
       } catch (error) {
         console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
         break;
@@ -337,45 +327,6 @@ async function obtenerHoraServidor() {
     toDate: () => fechaAjustada,
     toMillis: () => fechaAjustada.getTime()
   };
-}
-
-async function verificarFueraDeTiempo(horario, apuestaData, serverTime) {
-  try {
-    let bancoId = apuestaData?.bancoId;
-    if (!bancoId) {
-      bancoId = await obtenerBancoPadre();
-    }
-    if (!bancoId) return false;
-
-    const horarioRef = doc(db, `bancos/${bancoId}/hora`, horario.toLowerCase());
-    const horarioSnap = await getDoc(horarioRef);
-    
-    if (!horarioSnap.exists()) return false;
-    
-    const config = horarioSnap.data();
-    const horaCierre = new Date(serverTime.toDate());
-    horaCierre.setHours(
-      parseInt(config.hh) || 0,
-      parseInt(config.mm) || 0,
-      parseInt(config.ss) || 0,
-      0
-    );
-    
-    const horarioYaPaso = serverTime.toMillis() > horaCierre.getTime();
-    if (!horarioYaPaso) return false;
-    
-    if (apuestaData) {
-      const creadoEnBase = apuestaData.creadoEn?.toDate?.() || new Date(apuestaData.creadoEn);
-      const creadoEn = new Date(creadoEnBase.getTime() + 3600000);
-      const creadoAntesDeCierre = creadoEn.getTime() < horaCierre.getTime();
-      return creadoAntesDeCierre;
-    }
-    
-    return false;
-  } catch (error) {
-    console.error('Error verificando horario:', error);
-    return false;
-  }
 }
 
 // ================= LISTENERS DE CONEXIÓN =================
