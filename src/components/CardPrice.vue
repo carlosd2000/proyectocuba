@@ -3,11 +3,13 @@ import CuentaRegresiva from './CuentaRegresiva.vue'
 import { computed, onMounted } from 'vue'
 import { useTotalGlobal } from '@/scripts/UseTotalGlobal.js'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 
 export default {
   components: { CuentaRegresiva },
   setup() {
     const route = useRoute()
+    const authStore = useAuthStore()
     const isListerosRoute = computed(() => route.path.startsWith('/listeros') || route.path.startsWith('/fondo'))
     const isFondoRoute = route.path.startsWith('/fondo')
     const { totalGlobal, isLoading, fetchTotalGlobal } = useTotalGlobal()
@@ -17,7 +19,21 @@ export default {
     })
 
     const formattedPrice = computed(() => {
-      return isLoading.value ? 'Cargando...' : `$${totalGlobal.value.toLocaleString()}`
+      if (isLoading.value) {
+        // Intentar mostrar datos cacheados mientras carga
+        const bancoId = authStore.profile?.bancoId || authStore.profile?.idBancoPadre || authStore.profile?.creadorId
+        const listeroId = authStore.userId
+        
+        if (bancoId && listeroId) {
+          const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${new Date().toISOString().split('T')[0]}`
+          const cachedData = JSON.parse(localStorage.getItem(cacheKey) || '{}')
+          if (cachedData.total) {
+            return `$${cachedData.total.toLocaleString()} (caché)`
+          }
+        }
+        return 'Cargando...'
+      }
+      return `$${totalGlobal.value.toLocaleString()}`
     })
 
     return {
@@ -28,6 +44,7 @@ export default {
   }
 }
 </script>
+
 <template>
   <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
     <!-- Valor/Precio -->
@@ -98,5 +115,4 @@ export default {
 .container-text-fondo h5 {
   color: #373745;
 }
-
 </style>

@@ -9,7 +9,7 @@ import Footer from '../components/Footer.vue';
 const seleccion = ref('colaboradores') 
 
 const banco = ref(
-    { id: 1, nombre: 'Banco Central', wallet: 1000000, fondo: 1000000, fondorecaudado: 1000000 }
+    { id: 1, nombre: 'Banco Central', fondo: 1000000, fondo: 1000000, fondorecaudado: 1000000 }
 );
 
 const seleccionar = (opcion) => {

@@ -11,7 +11,7 @@ import ListaMovimientos from '../components/ListaMovimientos.vue';
 const authStore = useAuthStore()
 const isLoading = ref(true)
 const error = ref(null)
-const userWallet = ref(null)
+const userfondo = ref(null)
 
 const unsubscribe = ref(null)
 
@@ -21,13 +21,13 @@ onMounted(async () => {
       await authStore.loadUserProfile()
     }
     
-    // Función para actualizar la wallet
+    // Función para actualizar la fondo
     const updateUserData = (userData) => {
       if (userData) {
-        userWallet.value = userData.wallet || 0; // Asigna 0 si no hay wallet
+        userfondo.value = userData.fondo || 0; // Asigna 0 si no hay fondo
       } else {
         console.log("Usuario cerró sesión");
-        userWallet.value = 0;
+        userfondo.value = 0;
       }
     };
     
@@ -56,7 +56,7 @@ onUnmounted(() => {
       <Header title="Fondo"/>
     </header>
     <main class="container-main">
-      <CardPrice :price="userWallet"/>
+      <CardPrice :price="userfondo"/>
       <div class="row" style="max-width: 400px; width: 100%;">
         <ButtonFilter/>
       </div>

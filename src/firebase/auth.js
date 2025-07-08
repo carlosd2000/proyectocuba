@@ -229,7 +229,7 @@ const AuthService = {
         nombre: capitalizedName,
         email,
         uid: newUserId,
-        wallet: 0,
+        fondo: 0,
         createdAt: new Date().toISOString()
       }
 
@@ -285,7 +285,7 @@ const AuthService = {
 
       const baseProfileData = {
         ...userData,
-        wallet: 0
+        fondo: 0
       }
 
       if (tipo === 'admin' || tipo === 'bancos') {
@@ -353,8 +353,8 @@ const AuthService = {
   },
 
   //MODIFICADO ===========================
-  // NUEVO: Actualizar el campo wallet del usuario
-  async updateUserWallet(userId, bancoId, tipo, nuevoWallet) {
+  // NUEVO: Actualizar el campo fondo del usuario
+  async updateUserfondo(userId, bancoId, tipo, nuevofondo) {
     try {
       let docRef = null
       if (tipo === 'admin' || tipo === 'bancos') {
@@ -368,10 +368,10 @@ const AuthService = {
       } else {
         throw new Error('Tipo de usuario inválido')
       }
-      await updateDoc(docRef, { wallet: nuevoWallet })
+      await updateDoc(docRef, { fondo: nuevofondo })
       return { success: true }
     } catch (error) {
-      console.error('Error actualizando wallet:', error)
+      console.error('Error actualizando fondo:', error)
       return { success: false, error }
     }
   },
