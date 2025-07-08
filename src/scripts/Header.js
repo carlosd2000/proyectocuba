@@ -76,7 +76,14 @@ export function useHeader() {
             turnoActual.value = ''
         }
     }
-
+    const cargarDesdeLocalStorage = () => {
+        const dataLocal = JSON.parse(localStorage.getItem('horasTurnos') || '{}')
+        for (const turno of turnos) {
+        if (dataLocal[turno]) {
+            globalHorasTurno[turno] = new Date(dataLocal[turno])
+        }
+        }
+    }
     const suscribirHorasTurnos = async () => {
         if (!bancoPadreId.value) {
             bancoPadreId.value = await obtenerBancoPadre()
@@ -91,12 +98,18 @@ export function useHeader() {
                     if (docSnap.exists()) {
                         const data = docSnap.data()
                         if (data.activo === true && data.hora && typeof data.hora.toDate === 'function') {
-                            globalHorasTurno[turno] = data.hora.toDate()
+                            const fechaHora = data.hora.toDate()
+                            globalHorasTurno[turno] = fechaHora
+
+                            // GUARDAR EN LOCALSTORAGE
+                            const guardado = JSON.parse(localStorage.getItem('horasTurnos') || '{}')
+                            guardado[turno] = fechaHora.toISOString()
+                            localStorage.setItem('horasTurnos', JSON.stringify(guardado))
                         } else {
                             globalHorasTurno[turno] = null
                         }
-
                     }
+
                 })
                 unsubscribeCallbacks.push(unsubscribe)
             }
@@ -104,13 +117,17 @@ export function useHeader() {
     }
 
     onMounted(() => {
+        cargarDesdeLocalStorage() // Primero cargamos desde local
         // Solo iniciar el intervalo si no está activo
         if (!intervalId) {
             intervalId = setInterval(() => {
                 calcularTiempoRestante(new Date())
             }, 1000)
         }
-        suscribirHorasTurnos().catch(console.error)
+        suscribirHorasTurnos().catch((e) => {
+            console.warn('No se pudo conectar a Firebase, usando localStorage:', e)
+            cargarDesdeLocalStorage()
+        })
     })
 
     onUnmounted(() => {

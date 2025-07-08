@@ -78,6 +78,7 @@ const handleClose = (id) => {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   padding: 9px 16px;
   gap: 24px;
   width: 100%;

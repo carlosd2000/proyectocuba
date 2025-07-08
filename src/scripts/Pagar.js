@@ -143,15 +143,7 @@ export function usePagar() {
           valorBote &&
           boteActivo &&
           valores.some(v => v > valorBote)
-        ) {
-          toastStore.showToast(
-            `Tu tirada superó el límite !! Se juega $${valorBote} como valor máximo, el excedente se va directo al bote.`,
-            'double-message',
-            5000,
-            ErrorIcon
-          )
-          // Aquí SÍ se permite enviar la jugada
-        }
+        )
         if (!(await validarAntesDeEnviar())) {
               toastStore.showToast(
                 errorMessage.value, 
