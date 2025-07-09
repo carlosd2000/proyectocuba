@@ -165,7 +165,7 @@ export async function guardarDatos() {
 
     // 5. Preparar documento final
       const docAGuardar = {
-      nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuidGenerado.value,
+      nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuidGenerado.value.slice(0, 6),
       totalGlobal,
       datos: datosAGuardar,
       id_listero: auth.currentUser?.uid || 'sin-autenticar',

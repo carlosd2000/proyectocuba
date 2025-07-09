@@ -68,7 +68,7 @@ const {
     <div v-for="persona in apuestasFiltradas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
         <header class="d-flex flex-row justify-content-between align-items-center h-100" @click="toggleDetalles(persona.id)">
             <div class="container-title d-flex justify-content-center align-items-center">
-                <h5 class="body">{{ persona.nombre.slice(0, 6) }}</h5>
+                <h5 class="body">{{ persona.nombre }}</h5>
             </div>
             <!-- <div>
                 {{ persona.horario }}
