@@ -12,7 +12,7 @@ import InputsCentena from '../components/InputCentena.vue';
 import InputsParlet from '../components/InputParlet.vue';
 import Horario from '../components/SelectorHorario.vue';
 import Pagar from '../components/Pagar.vue';
-import { setModoEdicion, setHorario } from '../scripts/añadir.js';
+import { setModoEdicion, setHorario, tomarUUID } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
 
 async function ejemploUso() {
@@ -94,6 +94,7 @@ onMounted(async () => {
       }
     }
   } else {
+    tomarUUID();
     setModoEdicion(false, null);
     horarioEdicion.value = 'Dia';
   }

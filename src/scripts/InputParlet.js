@@ -1,7 +1,8 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import {
   filasFijas,
-  filasExtra,
+  filasExtra, 
+  expandirApuestasPorLinea,
   agregarFila,
   limpiarCampos,
   nombreUsuario

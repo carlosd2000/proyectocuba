@@ -68,7 +68,7 @@ const {
     <div v-for="persona in apuestasFiltradas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
         <header class="d-flex flex-row justify-content-between align-items-center h-100" @click="toggleDetalles(persona.id)">
             <div class="container-title d-flex justify-content-center align-items-center">
-                <h5 class="body">{{ persona.nombre }}</h5>
+                <h5 class="body">{{ persona.nombre.slice(0, 6) }}</h5>
             </div>
             <!-- <div>
                 {{ persona.horario }}
@@ -91,7 +91,7 @@ const {
                     </div>
                 </div>
                 <div class="col-8 apuestas d-flex flex-column justify-content-center align-items-start">
-                    <div v-for="(mapa, index) in persona.datos" :key="index" class="my-2 w-100">
+                    <div v-for="(mapa, index) in persona.datos" :key="index" class="my-1 w-100">
                         <div class="d-flex align-items-center flex-wrap justify-content-around container-line">
                             <div class="col-4">
                                 <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number">

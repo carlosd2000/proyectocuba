@@ -86,37 +86,48 @@ export function validarFilas(fijas, extras, tipoJugada = 'normal') {
     };
   }
 
-  // 1. Validar que los círculos normales tengan su cuadrado
-  const circulosInvalidos = todasFilas.some(fila => {
-    const tieneCirculosNormales = (fila.circulo1 !== '' && fila.circulo1 !== null) || 
-                                (fila.circulo2 !== '' && fila.circulo2 !== null);
-    const sinCuadrado = !(fila.cuadrado !== '' && fila.cuadrado !== null);
-    return tieneCirculosNormales && sinCuadrado;
-  });
-
-  const cuadradosInvalidos = !tieneCirculoSolo && todasFilas.some(fila => {
+  // 1. Si hay alguna fila parcialmente llena, bloquear
+  for (const fila of todasFilas) {
     const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
-    const sinCirculos = !(fila.circulo1 !== '' || fila.circulo2 !== '');
-    return tieneCuadrado && sinCirculos;
-  });
+    const tieneCirculos = (fila.circulo1 !== '' && fila.circulo1 !== null) ||
+                          (fila.circulo2 !== '' && fila.circulo2 !== null);
+    // Si tiene cuadrado pero no tiene círculo ni circuloSolo
+    if (tieneCuadrado && !tieneCirculos && !tieneCirculoSolo) {
+      return {
+        esValido: false,
+        circulosInvalidos: false,
+        cuadradosInvalidos: true,
+        circuloSoloInvalido: false
+      };
+    }
+    // Si tiene círculo pero no tiene cuadrado
+    if (!tieneCuadrado && tieneCirculos) {
+      return {
+        esValido: false,
+        circulosInvalidos: true,
+        cuadradosInvalidos: false,
+        circuloSoloInvalido: false
+      };
+    }
+  }
 
   // 2. Validar que circuloSolo tenga al menos 1 cuadrado
   const circuloSoloInvalido = tieneCirculoSolo && 
     !todasFilas.some(fila => fila.cuadrado !== '' && fila.cuadrado !== null);
 
-  // 3. Validar que haya al menos un dato válido
-  const hayDatosValidos = todasFilas.some(fila => {
+  // 3. Debe haber al menos una apuesta válida
+  const hayApuestaValida = todasFilas.some(fila => {
     const tieneCuadrado = fila.cuadrado !== '' && fila.cuadrado !== null;
-    const tieneCirculos = (fila.circulo1 !== '' && fila.circulo1 !== null) || 
-                         (fila.circulo2 !== '' && fila.circulo2 !== null);
+    const tieneCirculos = (fila.circulo1 !== '' && fila.circulo1 !== null) ||
+                          (fila.circulo2 !== '' && fila.circulo2 !== null);
     return tieneCuadrado && (tieneCirculos || tieneCirculoSolo);
-  }) || (tieneCirculoSolo && !circuloSoloInvalido);
+  });
 
   return {
-    esValido: hayDatosValidos && !circulosInvalidos && !cuadradosInvalidos,
-    circulosInvalidos,
-    cuadradosInvalidos,
-    circuloSoloInvalido: false
+    esValido: hayApuestaValida && !circuloSoloInvalido,
+    circulosInvalidos: false,
+    cuadradosInvalidos: false,
+    circuloSoloInvalido
   };
 }
 
@@ -299,7 +310,8 @@ export function expandirApuestasGeneralCombinadas() {
 
 // Totales combinados
 export function calcularTotalesCombinados() {
-  const apuestas = expandirApuestasGeneralCombinadas();
+  const filas = obtenerFilasCombinadas();
+  const apuestas = expandirApuestasPorLinea(filas);
   let col3 = 0, col4 = 0, col5 = 0;
   for (const fila of apuestas) {
     col3 += Number(fila.circulo1) || 0;
@@ -314,4 +326,236 @@ export function calcularTotalesCombinados() {
     col5 = Number(filasFijas.value[2].circuloSolo) || 0;
   }
   return { col3, col4, col5 };
+}
+/**
+ * Expande TODAS las apuestas incrementativas y secuenciales posibles en las filas.
+ * Retorna un array con todas las apuestas expandidas.
+ */
+export function expandirTodasLasApuestas(filas) {
+  const usadas = new Set();
+  let apuestas = [];
+
+  // --- Incrementativas ---
+  const indices = filas
+    .map((fila, idx) => ({ idx, val: fila.cuadrado }))
+    .filter(f => f.val !== '' && f.val !== null && !isNaN(f.val));
+
+  // Busca todas las incrementativas posibles
+  for (let i = 0; i < indices.length - 1; i++) {
+    const idxInicio = indices[i].idx;
+    const idxFin = indices[i + 1].idx;
+    const actual = parseInt(indices[i].val, 10);
+    const siguiente = parseInt(indices[i + 1].val, 10);
+
+    if (
+      siguiente > actual &&
+      (siguiente - actual) % 10 === 0 &&
+      idxFin - idxInicio > 1
+    ) {
+      const baseCirculo1 = filas[idxInicio].circulo1;
+      const baseCirculo2 = filas[idxInicio].circulo2;
+      const finCirculo1 = filas[idxFin].circulo1;
+      const finCirculo2 = filas[idxFin].circulo2;
+
+      if (baseCirculo1 === finCirculo1 && baseCirculo2 === finCirculo2) {
+        for (let n = actual; n <= siguiente; n += 10) {
+          let apuesta = {
+            cuadrado: n.toString().padStart(2, '0'),
+            circulo1: baseCirculo1,
+            circulo2: baseCirculo2
+          };
+          if (filas[2] && filas[2].circuloSolo !== undefined && filas[2].circuloSolo !== '') {
+            apuesta.circuloSolo = filas[2].circuloSolo;
+          }
+          apuestas.push(apuesta);
+          usadas.add(`${n}-${baseCirculo1}-${baseCirculo2}`);
+        }
+      }
+    }
+  }
+
+  // --- Secuenciales ---
+  for (let i = 0; i < indices.length - 1; i++) {
+    const idxInicio = indices[i].idx;
+    const idxFin = indices[i + 1].idx;
+    const actual = parseInt(indices[i].val, 10);
+    const siguiente = parseInt(indices[i + 1].val, 10);
+
+    if (
+      siguiente > actual &&
+      (siguiente - actual) <= 19 &&
+      idxFin - idxInicio > 1
+    ) {
+      const baseCirculo1 = filas[idxInicio].circulo1;
+      const baseCirculo2 = filas[idxInicio].circulo2;
+      const finCirculo1 = filas[idxFin].circulo1;
+      const finCirculo2 = filas[idxFin].circulo2;
+
+      let hayIntermedioLleno = false;
+      for (let j = idxInicio + 1; j < idxFin; j++) {
+        if (filas[j].cuadrado !== '' && filas[j].cuadrado !== null && !isNaN(filas[j].cuadrado)) {
+          hayIntermedioLleno = true;
+          break;
+        }
+      }
+      if (!hayIntermedioLleno && baseCirculo1 === finCirculo1 && baseCirculo2 === finCirculo2) {
+        for (let n = actual; n <= siguiente; n++) {
+          let key = `${n}-${baseCirculo1}-${baseCirculo2}`;
+          if (!usadas.has(key)) {
+            let apuesta = {
+              cuadrado: n.toString().padStart(2, '0'),
+              circulo1: baseCirculo1,
+              circulo2: baseCirculo2
+            };
+            if (filas[2] && filas[2].circuloSolo !== undefined && filas[2].circuloSolo !== '') {
+              apuesta.circuloSolo = filas[2].circuloSolo;
+            }
+            apuestas.push(apuesta);
+            usadas.add(key);
+          }
+        }
+      }
+    }
+  }
+
+  // --- Agrega los llenos que no fueron parte de ninguna expansión ---
+  filas.forEach(fila => {
+    const key = `${parseInt(fila.cuadrado, 10)}-${fila.circulo1}-${fila.circulo2}`;
+    if (
+      fila.cuadrado !== '' &&
+      fila.cuadrado !== null &&
+      !isNaN(fila.cuadrado) &&
+      !usadas.has(key)
+    ) {
+      apuestas.push({ ...fila });
+    }
+  });
+
+  return apuestas;
+}
+/**
+ * Expande apuestas línea por línea, manteniendo el orden y sin eliminar apuestas repetidas.
+ * Si detecta una expansión (incrementativa o secuencial), la expande y avanza el índice.
+ * Si no, agrega la apuesta normal.
+ */
+export function expandirApuestasPorLinea(filas) {
+  const apuestas = [];
+  let i = 0;
+  while (i < filas.length) {
+    const filaActual = filas[i];
+    // Solo expandir si hay cuadrado y al menos una siguiente con cuadrado
+    if (
+      filaActual.cuadrado !== '' && filaActual.cuadrado !== null && !isNaN(filaActual.cuadrado) &&
+      i + 1 < filas.length
+    ) {
+      // Busca la siguiente fila con cuadrado
+      let j = i + 1;
+      while (
+        j < filas.length &&
+        (filas[j].cuadrado === '' || filas[j].cuadrado === null || isNaN(filas[j].cuadrado))
+      ) {
+        j++;
+      }
+      if (j < filas.length) {
+        const actual = parseInt(filaActual.cuadrado, 10);
+        const siguiente = parseInt(filas[j].cuadrado, 10);
+        // --- Incrementativa ---
+        if (
+          siguiente > actual &&
+          (siguiente - actual) % 10 === 0 &&
+          j - i > 1 &&
+          // NUEVA VALIDACIÓN: ambos extremos deben tener algún círculo con dato
+          (
+            ((filaActual.circulo1 !== '' && filaActual.circulo1 !== null) ||
+            (filaActual.circulo2 !== '' && filaActual.circulo2 !== null)) ||
+            (filas[2] && filas[2].circuloSolo !== '' && filas[2].circuloSolo !== null)
+          ) &&
+          (
+            ((filas[j].circulo1 !== '' && filas[j].circulo1 !== null) ||
+            (filas[j].circulo2 !== '' && filas[j].circulo2 !== null)) ||
+            (filas[2] && filas[2].circuloSolo !== '' && filas[2].circuloSolo !== null)
+          ) &&
+          filaActual.circulo1 === filas[j].circulo1 &&
+          filaActual.circulo2 === filas[j].circulo2
+        )
+        {
+          for (let n = actual; n <= siguiente; n += 10) {
+            let apuesta = {
+              cuadrado: n.toString().padStart(2, '0'),
+              circulo1: filaActual.circulo1,
+              circulo2: filaActual.circulo2
+            };
+            if (filas[2] && filas[2].circuloSolo !== undefined && filas[2].circuloSolo !== '') {
+              apuesta.circuloSolo = filas[2].circuloSolo;
+            }
+            apuestas.push(apuesta);
+          }
+          i = j + 1; // Salta toda la expansión
+          continue;
+        }
+        // --- Secuencial ---
+        if (
+          siguiente > actual &&
+          (siguiente - actual) <= 19 &&
+          j - i > 1 &&
+          // NUEVA VALIDACIÓN: ambos extremos deben tener algún círculo con dato
+          (
+            ((filaActual.circulo1 !== '' && filaActual.circulo1 !== null) ||
+            (filaActual.circulo2 !== '' && filaActual.circulo2 !== null)) ||
+            (filas[2] && filas[2].circuloSolo !== '' && filas[2].circuloSolo !== null)
+          ) &&
+          (
+            ((filas[j].circulo1 !== '' && filas[j].circulo1 !== null) ||
+            (filas[j].circulo2 !== '' && filas[j].circulo2 !== null)) ||
+            (filas[2] && filas[2].circuloSolo !== '' && filas[2].circuloSolo !== null)
+          ) &&
+          filaActual.circulo1 === filas[j].circulo1 &&
+          filaActual.circulo2 === filas[j].circulo2
+        )
+        {
+          // Verifica que no haya ningún cuadrado lleno entre los extremos
+          let hayIntermedioLleno = false;
+          for (let k = i + 1; k < j; k++) {
+            if (filas[k].cuadrado !== '' && filas[k].cuadrado !== null && !isNaN(filas[k].cuadrado)) {
+              hayIntermedioLleno = true;
+              break;
+            }
+          }
+          if (!hayIntermedioLleno) {
+            for (let n = actual; n <= siguiente; n++) {
+              let apuesta = {
+                cuadrado: n.toString().padStart(2, '0'),
+                circulo1: filaActual.circulo1,
+                circulo2: filaActual.circulo2
+              };
+              if (filas[2] && filas[2].circuloSolo !== undefined && filas[2].circuloSolo !== '') {
+                apuesta.circuloSolo = filas[2].circuloSolo;
+              }
+              apuestas.push(apuesta);
+            }
+            i = j + 1; // Salta toda la expansión
+            continue;
+          }
+        }
+      }
+    }
+    // Si no es parte de una expansión, agrega la apuesta normal si tiene cuadrado y algún círculo
+    if (
+      filaActual.cuadrado !== '' && filaActual.cuadrado !== null && !isNaN(filaActual.cuadrado) &&
+      (
+        (filaActual.circulo1 !== '' && filaActual.circulo1 !== null) ||
+        (filaActual.circulo2 !== '' && filaActual.circulo2 !== null) ||
+        (filas[2] && filas[2].circuloSolo !== '' && filas[2].circuloSolo !== null)
+      )
+    ) {
+      let apuesta = { ...filaActual };
+      // Si circuloSolo es válido, agrégalo a la apuesta
+      if (filas[2] && filas[2].circuloSolo !== undefined && filas[2].circuloSolo !== '') {
+        apuesta.circuloSolo = filas[2].circuloSolo;
+      }
+      apuestas.push(apuesta);
+    }
+    i++;
+  }
+  return apuestas;
 }

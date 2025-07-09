@@ -5,6 +5,7 @@
       type="text"
       class="nombre-input label"
       v-model="nombreUsuario"
+      :placeholder="uuidGenerado.slice(0, 6)"
     />
     <div class="icon-container">
       <img src="@/assets/icons/lapiz.svg" alt="Editar" class="lapiz-icon" />
@@ -14,6 +15,7 @@
 
 <script setup>
 import { useInputs } from '../scripts/Inputs.js'
+import { uuidGenerado } from '../scripts/añadir.js';
 
 const { nombreUsuario } = useInputs()
 </script>

@@ -1,7 +1,7 @@
 // src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { filasFijas, expandirApuestasGeneralCombinadas } from './operaciones';
+import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
@@ -18,6 +18,7 @@ export const horarioSeleccionado = ref(null);
 export const hayHorariosDisponibles = ref(true)
 export const modoEdicion = ref(false);
 export const idEdicion = ref('');
+export const uuidGenerado = ref('');
 
 let syncPending = false;
 let cachedBancoId = null; // Cache para el ID del banco
@@ -29,6 +30,11 @@ function generarUUID() {
   return window.crypto?.randomUUID?.() || 
          Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
+export function tomarUUID() {
+  uuidGenerado.value = generarUUID();
+  return uuidGenerado.value;
+}
+
 
 function guardarEnLocal(docAGuardar, esEdicion = false) {
   try {
@@ -108,13 +114,14 @@ export async function guardarDatos() {
       code: "NO_HORARIOS"
     }
   }
+  
   const { hora24, timestamp } = obtenerHoraCuba(); 
   try {
     const bancoId = await obtenerBancoPadre();
     if (!bancoId) {
       throw new Error("No se pudo determinar el banco padre");
     }
-    let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
+    let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : uuidGenerado.value;
     let uuid = firebaseId;
 
     // Si estamos editando online, obtener el UUID original
@@ -131,7 +138,8 @@ export async function guardarDatos() {
     }
 
 
-    const filasExpandidaCombinadas = expandirApuestasGeneralCombinadas();
+    const filasCombinadas = [...filasFijas.value, ...filasExtra.value];
+    const filasExpandidaCombinadas = expandirApuestasPorLinea(filasCombinadas);
 
     // Calcular el total sumando los valores de los círculos de cada apuesta expandida
     let totalGlobal = 0;
@@ -157,7 +165,7 @@ export async function guardarDatos() {
 
     // 5. Preparar documento final
       const docAGuardar = {
-      nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuid,
+      nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuidGenerado.value,
       totalGlobal,
       datos: datosAGuardar,
       id_listero: auth.currentUser?.uid || 'sin-autenticar',

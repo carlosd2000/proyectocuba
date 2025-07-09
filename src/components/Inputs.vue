@@ -103,7 +103,7 @@
 import Alert from '../assets/icons/alert.svg'
 import masIcon from '../assets/icons/mas.svg'
 import { useInputs } from '../scripts/Inputs.js'
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
