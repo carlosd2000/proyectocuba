@@ -1,26 +1,27 @@
-// scripts/syncTransaccionesRealtime.js
+// scripts/obtenerTransacciones.js
 import { db } from '../firebase/config';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import localforage from '../stores/localStorage';
 import { obtenerBancoPadre } from './FunctionBancoPadre';
 
-export function observarTransacciones(userId, callback) {
-  obtenerBancoPadre().then(bancoId => {
-    if (!bancoId) return;
+export async function obtenerTransacciones(userId) {
+  try {
+    const bancoId = await obtenerBancoPadre();
+    if (!bancoId) return [];
 
     const transRef = collection(db, `bancos/${bancoId}/transacciones`);
     const q = query(transRef, where("userId", "==", userId), orderBy("updatedAt", "desc"));
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const transacciones = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+    const snapshot = await getDocs(q);
+    const transacciones = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-      await localforage.setItem(`transacciones_${userId}`, transacciones);
-      callback(transacciones); // Actualiza la UI
-    });
-
-    return unsubscribe;
-  });
+    await localforage.setItem(`transacciones_${userId}`, transacciones);
+    return transacciones;
+  } catch (error) {
+    console.error('Error al obtener transacciones:', error);
+    return [];
+  }
 }

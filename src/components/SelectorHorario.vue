@@ -1,8 +1,6 @@
 <script setup>
 import { ref, computed, watch, defineEmits, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase/config'
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre'
 import { verificarHorarioActivo, verificarHorarioBasico, leerEstadosHorariosCache, actualizarCacheHorarios } from '../scripts/FunctionHorarioActivo.js'
 
@@ -20,7 +18,7 @@ const route = useRoute()
 
 const dropdownOpen = ref(false)
 const selectedValue = ref('1')
-const selectedIcon = ref(null)
+const selectedIcon = ref(Dia)
 
 const intervalId = ref(null)
 

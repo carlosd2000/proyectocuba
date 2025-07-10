@@ -124,19 +124,6 @@ export async function guardarDatos() {
     let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : uuidGenerado.value;
     let uuid = firebaseId;
 
-    // Si estamos editando online, obtener el UUID original
-    if (modoEdicion.value && navigator.onLine) {
-      try {
-        const docRef = doc(db, `bancos/${bancoId}/apuestas`, firebaseId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().uuid) {
-          uuid = docSnap.data().uuid;
-        }
-      } catch (error) {
-        console.error('Error obteniendo UUID original:', error);
-      }
-    }
-
 
     const filasCombinadas = [...filasFijas.value, ...filasExtra.value];
     const filasExpandidaCombinadas = expandirApuestasPorLinea(filasCombinadas);

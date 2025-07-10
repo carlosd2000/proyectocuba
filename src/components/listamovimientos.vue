@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { observarTransacciones } from '../scripts/obtenerTransacciones'
+import { obtenerTransacciones } from '../scripts/obtenerTransacciones'
 import { useAuthStore } from '@/stores/authStore'
 
 import Chevron_right from '../assets/icons/Chevron_right.svg'
@@ -15,7 +15,6 @@ import IconoDeposito from '../assets/icons/Deposito.svg'
 const router = useRouter()
 const route = useRoute()
 const transacciones = ref([]);
-let stopObservacion = null;
 
 function iconoPorTipo(tipo) {
   switch (tipo) {
@@ -34,16 +33,11 @@ function iramovimiento(tipo) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   const authStore = useAuthStore()
   const userId = authStore.userId
-  stopObservacion = observarTransacciones(userId, (nuevasTransacciones) => {
-    transacciones.value = nuevasTransacciones
-  })
-})
-
-onBeforeUnmount(() => {
-  if (stopObservacion) stopObservacion()
+  const data = await obtenerTransacciones(userId)
+  transacciones.value = data
 })
 </script>
 
