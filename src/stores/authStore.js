@@ -1,7 +1,20 @@
 import { defineStore } from 'pinia'
-import { auth } from '@/firebase/config'
-import { onAuthStateChanged } from 'firebase/auth'
-import { AuthService } from '@/firebase/auth' // Importa solo AuthService
+import { 
+  auth,
+  db
+} from '@/firebase/config'
+import { 
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth'
+import { 
+  doc, 
+  getDoc,
+  collection,
+  getDocs
+} from 'firebase/firestore'
+import authService from '@/firebase/auth'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -17,30 +30,37 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async loadUserProfile() {
-      if (this.user && !this.profile) {
-        try {
-          this.loading = true
-          this.profile = await AuthService.getUserProfile(this.user.uid)
-          
-          // Actualización: Usa AuthService.JerarquiaService
-          if (this.profile) {
-            this.contextoJerarquico = await AuthService.JerarquiaService.obtenerContexto(
-              this.user.uid,
-              this.profile.tipo,
-              this.profile.bancoId
-            )
-            localStorage.setItem('userProfile', JSON.stringify(this.profile))
-          }
-
-          return this.profile
-        } catch (error) {
-          console.error("Error cargando perfil:", error)
-          throw error
-        } finally {
-          this.loading = false
-        }
+      if (!this.user?.email) {
+        console.log("No hay usuario autenticado para cargar perfil")
+        return null
       }
-      return this.profile
+
+      try {
+        this.loading = true
+        this.error = null
+
+        // Usamos el email del usuario ya autenticado
+        const result = await authService.login(this.user.email, '')
+        
+        if (result.success) {
+          this.profile = result.profile
+          
+          // Obtener contexto jerárquico
+          this.contextoJerarquico = await authService.obtenerContextoJerarquico(
+            this.user.uid,
+            this.profile.tipo,
+            this.profile.bancoId
+          )
+          localStorage.setItem('userProfile', JSON.stringify(this.profile))
+        }
+        return this.profile
+      } catch (error) {
+        console.error("Error cargando perfil:", error)
+        this.error = error.message
+        throw error
+      } finally {
+        this.loading = false
+      }
     },
 
     async login(email, password) {
@@ -48,53 +68,135 @@ export const useAuthStore = defineStore('auth', {
         this.loading = true
         this.error = null
 
-        const result = await AuthService.login({ email, password })
-        if (!result.success) throw new Error(result.error)
-
-        this.user = result.user
-        this.profile = result.profile
-
-        if (result.profile) {
-          // Accede a JerarquiaService a través de AuthService
-          this.contextoJerarquico = await AuthService.JerarquiaService.obtenerContexto(
-            result.user.uid,
-            result.profile.tipo,
-            result.profile.bancoId
-          )
-          localStorage.setItem('userProfile', JSON.stringify(result.profile))
+        // Validación básica
+        if (!email || !password) {
+          throw new Error('Email y contraseña son requeridos')
         }
 
-        return { success: true }
+        // 1. Autenticación con Firebase Auth
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        this.user = userCredential.user
+        const uid = userCredential.user.uid
+
+        // 2. Buscar perfil en Firestore
+        // Primero en colección 'bancos'
+        const bancoRef = doc(db, 'bancos', uid)
+        const bancoSnap = await getDoc(bancoRef)
+        
+        if (bancoSnap.exists()) {
+          this.profile = { 
+            ...bancoSnap.data(), 
+            tipo: 'bancos',
+            bancoId: uid
+          }
+          this.contextoJerarquico = {
+            bancoId: uid,
+            rutaCompleta: [uid]
+          }
+          localStorage.setItem('userProfile', JSON.stringify(this.profile))
+          return { success: true }
+        }
+
+        // Si no es banco, buscar en otras colecciones
+        const collectionsToCheck = ['admin', 'hora']
+        for (const collectionName of collectionsToCheck) {
+          const docRef = doc(db, collectionName, uid)
+          const docSnap = await getDoc(docRef)
+          
+          if (docSnap.exists()) {
+            this.profile = { 
+              ...docSnap.data(), 
+              tipo: collectionName 
+            }
+            
+            // Obtener contexto jerárquico para no-bancos
+            if (collectionName !== 'admin') {
+              this.contextoJerarquico = await authService.obtenerContextoJerarquico(
+                uid,
+                collectionName,
+                this.profile.bancoId
+              )
+            }
+            
+            localStorage.setItem('userProfile', JSON.stringify(this.profile))
+            return { success: true }
+          }
+        }
+
+        // Si no se encontró en colecciones principales
+        // Buscar en subcolecciones de bancos
+        const bancosSnapshot = await getDocs(collection(db, 'bancos'))
+        for (const bancoDoc of bancosSnapshot.docs) {
+          const subcolecciones = ['colectorPrincipal', 'colectores', 'listeros']
+          
+          for (const subcoleccion of subcolecciones) {
+            const docRef = doc(db, `bancos/${bancoDoc.id}/${subcoleccion}/${uid}`)
+            const docSnap = await getDoc(docRef)
+            
+            if (docSnap.exists()) {
+              const data = docSnap.data()
+              this.profile = { 
+                ...data,
+                tipo: subcoleccion,
+                bancoId: data.bancoId || bancoDoc.id
+              }
+              
+              this.contextoJerarquico = await authService.obtenerContextoJerarquico(
+                uid,
+                subcoleccion,
+                this.profile.bancoId
+              )
+              
+              localStorage.setItem('userProfile', JSON.stringify(this.profile))
+              return { success: true }
+            }
+          }
+        }
+
+        throw new Error('Perfil no encontrado en Firestore')
+        
       } catch (error) {
+        console.error('Error en login:', error)
         this.error = error.message
-        return { success: false, error: error.message }
+        return { 
+          success: false, 
+          error: error.message,
+          errorCode: error.code || 'LOGIN_ERROR' 
+        }
       } finally {
         this.loading = false
       }
     },
 
-    // ... (mantén igual initializeAuthListener, logout y clearAuth)
     async initializeAuthListener() {
       return new Promise((resolve) => {
         onAuthStateChanged(auth, async (user) => {
-          if (user) {
+          if (user && user.email) {
             this.user = user
 
+            // Intentar cargar perfil desde cache
             const cachedProfile = localStorage.getItem('userProfile')
             if (cachedProfile) {
-              this.profile = JSON.parse(cachedProfile)
-              // Actualiza contexto desde cache
-              this.contextoJerarquico = await AuthService.JerarquiaService.obtenerContexto(
-                user.uid,
-                this.profile.tipo,
-                this.profile.bancoId
-              )
+              try {
+                this.profile = JSON.parse(cachedProfile)
+                this.contextoJerarquico = await authService.obtenerContextoJerarquico(
+                  user.uid,
+                  this.profile.tipo,
+                  this.profile.bancoId
+                )
+              } catch (e) {
+                console.error("Error parseando perfil cacheado:", e)
+                localStorage.removeItem('userProfile')
+              }
             }
 
-            try {
-              await this.loadUserProfile()
-            } catch (error) {
-              console.error("Error actualizando perfil:", error)
+            // Cargar perfil fresco si no hay cache o falló
+            if (!this.profile) {
+              try {
+                await this.loadUserProfile()
+              } catch (error) {
+                console.error("Error actualizando perfil:", error)
+              }
             }
           } else {
             this.clearAuth()
@@ -106,7 +208,7 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       try {
-        await AuthService.logout()
+        await signOut(auth)
         this.clearAuth()
         return { success: true }
       } catch (error) {
@@ -130,6 +232,8 @@ export const useAuthStore = defineStore('auth', {
     userType: (state) => state.profile?.tipo,
     userId: (state) => state.user?.uid,
     bancoId: (state) => state.contextoJerarquico.bancoId,
-    rutaJerarquica: (state) => state.contextoJerarquico.rutaCompleta
+    rutaJerarquica: (state) => state.contextoJerarquico.rutaCompleta,
+    isLoading: (state) => state.loading,
+    currentError: (state) => state.error
   }
 })
