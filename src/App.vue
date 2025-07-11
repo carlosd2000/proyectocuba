@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { watch, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ToastManager from './components/ToastManager.vue'
+import { cargarInfoBancoSiNoExiste } from './scripts/fieldValidator.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -11,6 +12,7 @@ const isAppReady = ref(false)
 onMounted(async () => {
   await authStore.initializeAuthListener();
   isAppReady.value = true;
+  cargarInfoBancoSiNoExiste()
 });
 
 // Redirección basada en autenticación

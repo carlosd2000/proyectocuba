@@ -100,105 +100,37 @@
 </template>
 
 <script setup>
-import Alert from '../assets/icons/alert.svg'
+import { watchEffect, onMounted } from 'vue'
 import masIcon from '../assets/icons/mas.svg'
 import { useInputs } from '../scripts/Inputs.js'
-import { ref, reactive, onMounted, watchEffect } from 'vue'
-import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase/config'
-import { useToastStore } from '../stores/toast'
+import {
+  camposInvalidos,
+  validarCampo,
+  hayErroresCriticos,
+  resetCamposInvalidos,
+} from '../scripts/fieldValidator.js'
 
 const emit = defineEmits(['update:hayCamposInvalidos'])
-const toastStore = useToastStore()
-const valorBote = ref(null)
-const boteActivo = ref(false)
-const camposInvalidos = reactive({
-  circulo1: new Set(),
-  circulo2: new Set(),
-  circuloSolo: false
-})
-
-watchEffect(() => {
-  const hayErrores =
-    !boteActivo.value && (
-    camposInvalidos.circuloSolo ||
-    camposInvalidos.circulo1.size > 0 ||
-    camposInvalidos.circulo2.size > 0
-  )
-
-  emit('update:hayCamposInvalidos', hayErrores)
-})
-
-onMounted(async () => {
-  const bancoId = await obtenerBancoPadre()
-  if (!bancoId) return
-
-  const docRef = doc(db, 'bancos', bancoId)
-  const docSnap = await getDoc(docRef)
-
-  if (docSnap.exists()) {
-    valorBote.value = docSnap.data().bote || 0
-    boteActivo.value = docSnap.data().boteActivo
-
-    // Guardar en localStorage
-    localStorage.setItem('valorBote', valorBote.value)
-    localStorage.setItem('boteActivo', boteActivo.value ? 'true' : 'false')
-  }
-})
-
-function validarCampo(valor, tipo, filaIndex = null) {
-  if (valorBote.value === null) return
-
-  const esInvalido = Number(valor) > valorBote.value
-  if (tipo === 'circuloSolo') {
-    camposInvalidos.circuloSolo = esInvalido
-  } else {
-    if (filaIndex !== null) {
-      if (esInvalido) {
-        camposInvalidos[tipo].add(filaIndex)
-      } else {
-        camposInvalidos[tipo].delete(filaIndex)
-      }
-    }
-  }
-
-  if (esInvalido) {
-    console.warn(`El valor ingresado (${valor}) supera el bote (${valorBote.value})`)
-    if (boteActivo.value){
-      toastStore.showToast(
-        `Tu tirada superó el límite !! Se juega $${valorBote.value} como valor máximo, el excedente se va directo al bote.`,
-        'double-message',
-        5000,
-        Alert,
-      )
-    }
-    else{
-      toastStore.showToast(
-        `Limite alcanzado !! El valor ingresado supera $${valorBote.value} al limite permitido para esta jugada.`,
-        'double-message',
-        5000,
-        Alert,
-      )
-    }
-  }
-}
-
-const props = defineProps({
-  datosEdicion: Object,
-  modoEdicion: Boolean,
-  idEdicion: String
-})
+const props = defineProps({ datosEdicion: Object, modoEdicion: Boolean, idEdicion: String })
 
 const {
   filasFijas,
   filasExtra,
   agregarFila,
   soloEnteros,
-  claseImagenSiHayEspacioGlobal,
+  claseImagenSiHayEspacioGlobal
 } = useInputs(props)
 
+watchEffect(() => {
+  const hayErrores = hayErroresCriticos()
+  emit('update:hayCamposInvalidos', hayErrores)
+})
+
+onMounted(() => {
+  resetCamposInvalidos()
+})
 </script>
+
 
 <style scoped>
 .input-con-imagen {
@@ -290,10 +222,6 @@ const {
   border: 1px solid #F3F3F3;
   border-radius: 30px;
 }
-.input-invalido {
-  border: 2px solid red !important;
-}
-
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

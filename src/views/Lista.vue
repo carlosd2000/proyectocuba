@@ -8,7 +8,6 @@ import WinerNumber from '../components/WinerNumber.vue';
 import Calendario from '../components/Calendario.vue';
 import Results from '../components/results.vue';
 import ListaComponent from '../components/ListaComponent.vue'
-import Pestañas from '../components/Pestañas.vue';
 import Footer from '../components/Footer.vue';
 import { useCandadoHorario } from '../scripts/useCandadoHorario.js'
 import useLista from '../scripts/Lista.js'
@@ -22,7 +21,7 @@ const fechaSeleccionada = ref(new Date())
 const opcionSeleccionada = ref('Lista') 
 const horarioSeleccionado = ref('Dia') 
 
-const bote = Number(localStorage.getItem('valorBote'))
+const bote = Number(localStorage.getItem('valorBote') || 100)
 
 const { candadoAbierto } = useCandadoHorario(fechaSeleccionada, horarioSeleccionado)
 

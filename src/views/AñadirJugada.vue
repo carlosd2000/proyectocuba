@@ -15,10 +15,6 @@ import Pagar from '../components/Pagar.vue';
 import { setModoEdicion, setHorario, tomarUUID } from '../scripts/añadir.js';
 import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
 
-async function ejemploUso() {
-  const bancoId = await obtenerBancoPadre();
-  console.log("Banco padre:", bancoId);
-}
 const onHorarioSeleccionado = (nuevoHorario) => {
   if (nuevoHorario === null) {
     hayHorariosDisponibles.value = false
@@ -53,6 +49,15 @@ const tipoJugada = computed(() => {
 const setMostrarEnviando = (valor) => {
   mostrarEnviando.value = valor;
 };
+
+const componenteActual = computed(() => {
+    switch(tipoJugada.value) {
+        case 'parlet': return InputsParlet;
+        case 'candado': return InputsCandado;
+        case 'centena': return InputsCentena;
+        default: return Inputs;
+    }
+});
 
 onMounted(async () => {
   if (idEditar.value) {
@@ -99,15 +104,6 @@ onMounted(async () => {
     setModoEdicion(false, null);
     horarioEdicion.value = 'Dia';
   }
-});
-
-const componenteActual = computed(() => {
-    switch(tipoJugada.value) {
-        case 'parlet': return InputsParlet;
-        case 'candado': return InputsCandado;
-        case 'centena': return InputsCentena;
-        default: return Inputs;
-    }
 });
 </script>
 

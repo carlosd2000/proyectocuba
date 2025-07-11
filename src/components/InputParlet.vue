@@ -46,9 +46,11 @@
           placeholder="$"
           class="circular-solo label"
           v-model="filasFijas[2].circuloSolo"
+          :class="camposInvalidos.circuloSolo ? 'input-invalido' : ''"
           min="0"
           step="1"
           @keypress="soloEnteros($event)"
+          @input="validarCampo(filasFijas[2].circuloSolo, 'circuloSolo')"
         />
       </div>
     </div>
@@ -56,22 +58,34 @@
 </template>
 
 <script setup>
+import { watchEffect, onMounted } from 'vue'
 import masIcon from '@/assets/icons/mas.svg'
 import { useInputParlet } from '../scripts/InputParlet.js'
+import {
+  camposInvalidos,
+  validarCampo,
+  hayErroresCriticos,
+  resetCamposInvalidos,
+} from '../scripts/fieldValidator.js'
 
-const props = defineProps({
-  datosEdicion: Object,
-  modoEdicion: Boolean,
-  idEdicion: String
-})
+const emit = defineEmits(['update:hayCamposInvalidos'])
+const props = defineProps({ datosEdicion: Object, modoEdicion: Boolean, idEdicion: String })
 
 const {
   filasFijas,
   filasExtra,
   agregarFila,
-  limpiarCampos,
   soloEnteros
 } = useInputParlet(props)
+
+watchEffect(() => {
+  const hayErrores = hayErroresCriticos()
+  emit('update:hayCamposInvalidos', hayErrores)
+})
+
+onMounted(() => {
+  resetCamposInvalidos()
+})
 </script>
 
 <style scoped>

@@ -141,3 +141,7 @@ p{
   padding: 0px;
   margin: 0px;
 }
+.input-invalido {
+  border: 2px solid #DD6565 !important;
+  color: #DD6565 !important;
+}

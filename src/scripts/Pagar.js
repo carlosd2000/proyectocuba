@@ -14,6 +14,7 @@ import { obtenerBancoPadre } from './FunctionBancoPadre.js';
 import { useToastStore } from '../stores/toast'
 import CheckIcon from '../assets/icons/Check.svg'
 import ErrorIcon from '../assets/icons/Error.svg'
+import Alert from '../assets/icons/alert.svg'
 
 async function ejemploUso() {
   const bancoId = await obtenerBancoPadre();
@@ -132,7 +133,7 @@ export function usePagar() {
             `Limite alcanzado !! El valor ingresado supera $${valorBote} al limite permitido para esta jugada.`,
             'double-message',
             4000,
-            ErrorIcon
+            Alert
           )
           mostrarEnviando.value = false
           return
