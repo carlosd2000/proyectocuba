@@ -1,342 +1,211 @@
 import { auth, db } from './config'
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth'
+import {
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  getDocs,
+  updateDoc,
+  serverTimestamp,
+  query,
+  where
+} from 'firebase/firestore'
 
-// ==================== JERARQUIA SERVICE ====================
-const JerarquiaService = {
-  async obtenerContexto(usuarioId, tipoUsuario, bancoIdFromProfile = null) {
-    const contexto = { 
-      bancoId: null, 
-      rutaCompleta: [] 
-    }
+// ==================== FUNCIONES PRIVADAS ====================
 
-    try {
-      switch (tipoUsuario) {
-        case 'admin':
-          contexto.bancoId = null
-          break
+const _obtenerBancoPadre = async (usuarioId, tipoUsuario) => {
+  const tiposPadre = {
+    colectorPrincipal: 'bancos',
+    colectores: 'colectorPrincipal',
+    listeros: 'colectores'
+  }
 
-        case 'bancos':
-          contexto.bancoId = usuarioId
-          contexto.rutaCompleta = [usuarioId]
-          break
+  try {
+    const padreTipo = tiposPadre[tipoUsuario]
+    const bancosSnapshot = await getDocs(collection(db, 'bancos'))
 
-        case 'colectorPrincipal':
-          contexto.bancoId = bancoIdFromProfile || await this._obtenerBancoPadre(usuarioId, 'colectorPrincipal')
-          if (contexto.bancoId) {
-            contexto.rutaCompleta = [contexto.bancoId, usuarioId]
-          }
-          break
+    for (const bancoDoc of bancosSnapshot.docs) {
+      const subcoleccionPath = `bancos/${bancoDoc.id}/${padreTipo === 'colectorPrincipal' ? 'colectorPrincipal' : 'colectores'}`
+      const userDocRef = doc(db, subcoleccionPath, usuarioId)
+      const docSnap = await getDoc(userDocRef)
 
-        case 'colectores':
-          contexto.bancoId = bancoIdFromProfile || await this._obtenerBancoPadre(usuarioId, 'colectores')
-          if (contexto.bancoId) {
-            const colectorPrincipalId = await this._obtenerPadreDirecto(usuarioId, 'colectores')
-            contexto.rutaCompleta = [
-              contexto.bancoId, 
-              colectorPrincipalId, 
-              usuarioId
-            ].filter(Boolean)
-          }
-          break
-
-        case 'listeros':
-          contexto.bancoId = bancoIdFromProfile || await this._obtenerBancoPadre(usuarioId, 'listeros')
-          if (contexto.bancoId) {
-            const colectorId = await this._obtenerPadreDirecto(usuarioId, 'listeros')
-            contexto.rutaCompleta = [
-              contexto.bancoId, 
-              colectorId, 
-              usuarioId
-            ].filter(Boolean)
-          }
-          break
+      if (docSnap.exists()) {
+        return bancoDoc.id
       }
-    } catch (error) {
-      console.error("Error obteniendo contexto jerárquico:", error)
-    }
 
-    return contexto
-  },
-
-  async _obtenerBancoPadre(usuarioId, tipoUsuario) {
-    const tiposPadre = {
-      colectorPrincipal: 'bancos',
-      colectores: 'colectorPrincipal',
-      listeros: 'colectores'
-    }
-
-    try {
-      const padreTipo = tiposPadre[tipoUsuario]
-      const bancosSnapshot = await getDocs(collection(db, 'bancos'))
-
-      for (const bancoDoc of bancosSnapshot.docs) {
-        // Buscar en la subcolección correspondiente
-        const subcoleccionPath = `bancos/${bancoDoc.id}/${padreTipo === 'colectorPrincipal' ? 'colectorPrincipal' : 'colectores'}`
-        const userDocRef = doc(db, subcoleccionPath, usuarioId)
-        const docSnap = await getDoc(userDocRef)
-
-        if (docSnap.exists()) {
+      if (tipoUsuario === 'listeros') {
+        const listerosPath = `bancos/${bancoDoc.id}/listeros`
+        const listeroDocRef = doc(db, listerosPath, usuarioId)
+        const listeroDocSnap = await getDoc(listeroDocRef)
+        if (listeroDocSnap.exists()) {
           return bancoDoc.id
         }
-
-        // Buscar también en la colección de listeros por si acaso
-        if (tipoUsuario === 'listeros') {
-          const listerosPath = `bancos/${bancoDoc.id}/listeros`
-          const listeroDocRef = doc(db, listerosPath, usuarioId)
-          const listeroDocSnap = await getDoc(listeroDocRef)
-          if (listeroDocSnap.exists()) {
-            return bancoDoc.id
-          }
-        }
       }
-      return null
-    } catch (error) {
-      console.error("Error obteniendo banco padre:", error)
-      return null
     }
-  },
+    return null
+  } catch (error) {
+    console.error("Error obteniendo banco padre:", error)
+    return null
+  }
+}
 
-  async _obtenerPadreDirecto(usuarioId, tipoUsuario) {
-    const tiposPadre = {
-      colectores: 'colectorPrincipal',
-      listeros: 'colectores'
+const _obtenerPadreDirecto = async (usuarioId, tipoUsuario) => {
+  const tiposPadre = {
+    colectores: 'colectorPrincipal',
+    listeros: 'colectores'
+  }
+
+  try {
+    const padreTipo = tiposPadre[tipoUsuario]
+    const q = query(
+      collection(db, 'bancos'),
+      where(`${padreTipo}.${usuarioId}`, '!=', null)
+    )
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.empty ? null : querySnapshot.docs[0].id
+  } catch (error) {
+    console.error("Error obteniendo padre directo:", error)
+    return null
+  }
+}
+
+// ==================== FUNCIONES PÚBLICAS ====================
+
+export const registrarUsuarioJerarquico = async ({
+  email,
+  password,
+  nombre,
+  tipo,
+  bancoId,
+  creadorDirectoId,
+  creadorDirectoTipo
+}) => {
+  try {
+    const tiposPermitidos = ['admin', 'bancos', 'colectorPrincipal', 'colectores', 'listeros']
+    if (!tiposPermitidos.includes(tipo)) {
+      throw new Error('Tipo de usuario no válido')
     }
 
-    try {
-      const padreTipo = tiposPadre[tipoUsuario]
-      const q = query(
-        collection(db, 'bancos'),
-        where(`${padreTipo}.${usuarioId}`, '!=', null)
-      )
-      const querySnapshot = await getDocs(q)
-      return querySnapshot.empty ? null : querySnapshot.docs[0].id
-    } catch (error) {
-      console.error("Error obteniendo padre directo:", error)
-      return null
+    if (tipo !== 'admin' && tipo !== 'bancos' && !bancoId) {
+      throw new Error(`Se requiere bancoId para tipo ${tipo}`)
+    }
+
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    const uid = userCredential.user.uid
+
+    let docRef
+    if (tipo === 'admin' || tipo === 'bancos') {
+      docRef = doc(db, tipo, uid)
+    } else {
+      const subcoleccion = tipo === 'colectorPrincipal' 
+        ? 'colectorPrincipal' 
+        : tipo === 'colectores' 
+        ? 'colectores' 
+        : 'listeros'
+      docRef = doc(db, `bancos/${bancoId}/${subcoleccion}/${uid}`)
+    }
+
+    const perfil = {
+      uid,
+      email,
+      nombre,
+      tipo,
+      bancoId: tipo === 'bancos' ? uid : bancoId,
+      creadorDirectoId: creadorDirectoId || null,
+      creadorDirectoTipo: creadorDirectoTipo || null,
+      fondo: 0,
+      createdAt: serverTimestamp()
+    }
+
+    await setDoc(docRef, perfil)
+
+    return { 
+      success: true, 
+      uid, 
+      perfil,
+      user: userCredential.user 
+    }
+  } catch (error) {
+    console.error('Error al registrar usuario:', error.message)
+    return { 
+      success: false, 
+      error: error.message,
+      errorCode: error.code || 'REGISTER_ERROR' 
     }
   }
 }
 
-// ==================== AUTH SERVICE ====================
-const AuthService = {
-  JerarquiaService,
-
-  capitalizeUsername(username) {
-    return username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()
-  },
-
-  async isUsernameTaken(nombre) {
-    try {
-      const capitalizedNombre = this.capitalizeUsername(nombre)
-      const tiposRaiz = ['admin', 'bancos']
-      const subcolecciones = [
-        { padre: 'bancos', hijo: 'colectorPrincipal' },
-        { padre: 'bancos', hijo: 'colectores' },
-        { padre: 'bancos', hijo: 'listeros' },
-        { padre: 'colectorPrincipal', hijo: 'colectores' },
-        { padre: 'colectorPrincipal', hijo: 'listeros' },
-        { padre: 'colectores', hijo: 'listeros' }
-      ]
-
-      // Verificar en colecciones raíz
-      for (const tipo of tiposRaiz) {
-        const ref = collection(db, tipo)
-        const q = query(ref, where('nombre', '==', capitalizedNombre))
-        const snapshot = await getDocs(q)
-        if (!snapshot.empty) return true
+export const login = async (email, password) => {
+  try {
+    if (!email) {
+      return {
+        success: false,
+        error: 'Email es requerido',
+        errorCode: 'auth/missing-email'
       }
+    }
 
-      // Verificar en subcolecciones
-      for (const path of subcolecciones) {
-        const padresSnapshot = await getDocs(collection(db, path.padre))
-        for (const padreDoc of padresSnapshot.docs) {
-          const refSub = collection(db, `${path.padre}/${padreDoc.id}/${path.hijo}`)
-          const qSub = query(refSub, where('nombre', '==', capitalizedNombre))
-          const subSnapshot = await getDocs(qSub)
-          if (!subSnapshot.empty) return true
+    let userCredential
+    if (password) {
+      userCredential = await signInWithEmailAndPassword(auth, email, password)
+    } else {
+      if (!auth.currentUser) throw new Error('No hay usuario autenticado')
+      userCredential = { user: auth.currentUser }
+    }
+
+    const uid = userCredential.user.uid
+
+    // 1. Buscar en bancos
+    const bancoRef = doc(db, 'bancos', uid)
+    const bancoSnap = await getDoc(bancoRef)
+    if (bancoSnap.exists()) {
+      return {
+        success: true,
+        user: userCredential.user,
+        profile: { 
+          ...bancoSnap.data(), 
+          tipo: 'bancos',
+          bancoId: uid
         }
       }
-
-      return false
-    } catch (error) {
-      console.error('Error verificando nombre:', error)
-      throw error
     }
-  },
 
-  async isEmailTaken(email) {
-    try {
-      const tiposRaiz = ['admin', 'bancos']
-      const subcolecciones = [
-        { padre: 'bancos', hijo: 'colectorPrincipal' },
-        { padre: 'bancos', hijo: 'colectores' },
-        { padre: 'bancos', hijo: 'listeros' },
-        { padre: 'colectorPrincipal', hijo: 'colectores' },
-        { padre: 'colectorPrincipal', hijo: 'listeros' },
-        { padre: 'colectores', hijo: 'listeros' }
-      ]
-
-      for (const tipo of tiposRaiz) {
-        const ref = collection(db, tipo)
-        const q = query(ref, where('email', '==', email))
-        const snapshot = await getDocs(q)
-        if (!snapshot.empty) return true
-      }
-
-      for (const path of subcolecciones) {
-        const padresSnapshot = await getDocs(collection(db, path.padre))
-        for (const padreDoc of padresSnapshot.docs) {
-          const refSub = collection(db, `${path.padre}/${padreDoc.id}/${path.hijo}`)
-          const qSub = query(refSub, where('email', '==', email))
-          const subSnapshot = await getDocs(qSub)
-          if (!subSnapshot.empty) return true
+    // 2. Buscar en otras colecciones
+    const collectionsToCheck = ['admin', 'hora']
+    for (const collectionName of collectionsToCheck) {
+      const docRef = doc(db, collectionName, uid)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        return {
+          success: true,
+          user: userCredential.user,
+          profile: { 
+            ...docSnap.data(), 
+            tipo: collectionName 
+          }
         }
       }
-
-      return false
-    } catch (error) {
-      console.error('Error verificando email:', error)
-      throw error
     }
-  },
 
-  async register({ email, password, userData }) {
-    try {
-      const capitalizedName = this.capitalizeUsername(userData.nombre)
-
-      if (await this.isUsernameTaken(userData.nombre)) {
-        return { 
-          success: false, 
-          error: 'Este nombre de usuario ya está en uso', 
-          code: 'name-already-in-use' 
-        }
-      }
-
-      if (await this.isEmailTaken(email)) {
-        return { 
-          success: false, 
-          error: 'Este correo ya está vinculado a otra cuenta', 
-          code: 'email-already-used-custom' 
-        }
-      }
-
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const newUserId = userCredential.user.uid
-
-      const userProfileData = {
-        ...userData,
-        nombre: capitalizedName,
-        email,
-        uid: newUserId,
-        fondo: 0,
-        createdAt: new Date().toISOString()
-      }
-
-      await this.createUserProfile(newUserId, userProfileData)
-
-      return { 
-        user: userCredential.user, 
-        success: true 
-      }
-    } catch (error) {
-      return this.handleAuthError(error)
-    }
-  },
-
-  async login({ email, password }) {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const userProfile = await this.getUserProfile(userCredential.user.uid)
-      
-      if (userProfile) {
-        const contexto = await JerarquiaService.obtenerContexto(
-          userCredential.user.uid,
-          userProfile.tipo,
-          userProfile.bancoId
-        )
-        userProfile.bancoId = contexto.bancoId
-        userProfile.rutaJerarquica = contexto.rutaCompleta
-      }
-
-      return { 
-        user: userCredential.user, 
-        profile: userProfile, 
-        success: true 
-      }
-    } catch (error) {
-      return this.handleAuthError(error)
-    }
-  },
-
-  async logout() {
-    try {
-      await signOut(auth)
-      return { success: true }
-    } catch (error) {
-      return this.handleAuthError(error)
-    }
-  },
-
-  async createUserProfile(userId, userData) {
-    try {
-      const tipo = userData.tipo
-      const bancoId = userData.bancoId
-
-      const baseProfileData = {
-        ...userData,
-        fondo: 0
-      }
-
-      if (tipo === 'admin' || tipo === 'bancos') {
-        await setDoc(doc(db, tipo, userId), baseProfileData)
-      } 
-      else if (tipo === 'colectorPrincipal') {
-        if (!bancoId) throw new Error("Falta bancoId para colectorPrincipal")
-        await setDoc(doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`), baseProfileData)
-      }
-      else if (tipo === 'colectores') {
-        if (!bancoId) throw new Error("Falta bancoId para colectores")
-        await setDoc(doc(db, `bancos/${bancoId}/colectores/${userId}`), baseProfileData)
-      } 
-      else if (tipo === 'listeros') {
-        if (!bancoId) throw new Error("Falta bancoId para listeros")
-        await setDoc(doc(db, `bancos/${bancoId}/listeros/${userId}`), baseProfileData)
-      } 
-      else {
-        throw new Error("Tipo de usuario inválido")
-      }
-
-      return { success: true }
-    } catch (error) {
-      console.error('Error creando perfil:', error)
-      throw error
-    }
-  },
-
-  async getUserProfile(userId) {
-    try {
-      // 1. Buscar en colecciones raíz
-      const tiposRaiz = ['admin', 'bancos']
-      for (const tipo of tiposRaiz) {
-        const docRef = doc(db, tipo, userId)
+    // 3. Buscar en subcolecciones
+    const bancosSnapshot = await getDocs(collection(db, 'bancos'))
+    for (const bancoDoc of bancosSnapshot.docs) {
+      const subcolecciones = ['colectorPrincipal', 'colectores', 'listeros']
+      for (const subcoleccion of subcolecciones) {
+        const docRef = doc(db, `bancos/${bancoDoc.id}/${subcoleccion}/${uid}`)
         const docSnap = await getDoc(docRef)
         if (docSnap.exists()) {
-          return { ...docSnap.data(), tipo }
-        }
-      }
-
-      // 2. Buscar en subcolecciones de bancos
-      const bancosSnapshot = await getDocs(collection(db, 'bancos'))
-      for (const bancoDoc of bancosSnapshot.docs) {
-        const subcolecciones = ['colectorPrincipal', 'colectores', 'listeros']
-        
-        for (const subcoleccion of subcolecciones) {
-          const docRef = doc(db, `bancos/${bancoDoc.id}/${subcoleccion}/${userId}`)
-          const docSnap = await getDoc(docRef)
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            return { 
+          const data = docSnap.data()
+          return {
+            success: true,
+            user: userCredential.user,
+            profile: { 
               ...data,
               tipo: subcoleccion,
               bancoId: data.bancoId || bancoDoc.id
@@ -344,61 +213,153 @@ const AuthService = {
           }
         }
       }
-
-      return null
-    } catch (error) {
-      console.error('Error obteniendo perfil:', error)
-      throw error
-    }
-  },
-
-  //MODIFICADO ===========================
-  // NUEVO: Actualizar el campo fondo del usuario
-  async updateUserfondo(userId, bancoId, tipo, nuevofondo) {
-    try {
-      let docRef = null
-      if (tipo === 'admin' || tipo === 'bancos') {
-        docRef = doc(db, tipo, userId)
-      } else if (tipo === 'colectorPrincipal') {
-        docRef = doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`)
-      } else if (tipo === 'colectores') {
-        docRef = doc(db, `bancos/${bancoId}/colectores/${userId}`)
-      } else if (tipo === 'listeros') {
-        docRef = doc(db, `bancos/${bancoId}/listeros/${userId}`)
-      } else {
-        throw new Error('Tipo de usuario inválido')
-      }
-      await updateDoc(docRef, { fondo: nuevofondo })
-      return { success: true }
-    } catch (error) {
-      console.error('Error actualizando fondo:', error)
-      return { success: false, error }
-    }
-  },
-
-  handleAuthError(error) {
-    const errorMessages = {
-      'auth/email-already-in-use': 'Este correo ya está registrado',
-      'auth/invalid-email': 'Correo electrónico inválido',
-      'auth/operation-not-allowed': 'Operación no permitida',
-      'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
-      'auth/user-not-found': 'Usuario no encontrado',
-      'auth/wrong-password': 'Contraseña incorrecta',
-      'auth/invalid-credential': 'Contraseña inválida o correo incorrecto',
-      'name-already-in-use': 'Este nombre de usuario ya está en uso',
-      'email-already-used-custom': 'Este correo ya está vinculado a otra cuenta'
     }
 
-    return {
-      success: false,
-      error: errorMessages[error.code] || error.message || 'Error en la autenticación',
-      code: error.code || 'unknown'
+    throw new Error('Perfil no encontrado en Firestore')
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error.message)
+    return { 
+      success: false, 
+      error: error.message,
+      errorCode: error.code || 'LOGIN_ERROR' 
     }
   }
 }
 
-// Exportación unificada
-export { 
-  AuthService,
-  JerarquiaService 
+export const getUserProfile = async (uid) => {
+  try {
+    const collections = [
+      { name: 'bancos', isSubcollection: false },
+      { name: 'admin', isSubcollection: false },
+      { name: 'hora', isSubcollection: false },
+      { name: 'colectorPrincipal', isSubcollection: true },
+      { name: 'colectores', isSubcollection: true },
+      { name: 'listeros', isSubcollection: true }
+    ]
+
+    for (const { name, isSubcollection } of collections) {
+      if (!isSubcollection) {
+        const docRef = doc(db, name, uid)
+        const docSnap = await getDoc(docRef)
+        if (docSnap.exists()) {
+          return { 
+            ...docSnap.data(),
+            tipo: name,
+            bancoId: name === 'bancos' ? uid : docSnap.data().bancoId
+          }
+        }
+      } else {
+        const bancosSnapshot = await getDocs(collection(db, 'bancos'))
+        for (const bancoDoc of bancosSnapshot.docs) {
+          const docRef = doc(db, `bancos/${bancoDoc.id}/${name}/${uid}`)
+          const docSnap = await getDoc(docRef)
+          if (docSnap.exists()) {
+            return { 
+              ...docSnap.data(),
+              tipo: name,
+              bancoId: bancoDoc.id
+            }
+          }
+        }
+      }
+    }
+
+    throw new Error('Perfil no encontrado')
+  } catch (error) {
+    console.error('Error en getUserProfile:', error)
+    throw error
+  }
 }
+
+export const updateUserfondo = async (userId, bancoId, tipo, nuevofondo) => {
+  try {
+    let docRef
+    if (tipo === 'admin' || tipo === 'bancos') {
+      docRef = doc(db, tipo, userId)
+    } else if (tipo === 'colectorPrincipal') {
+      docRef = doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`)
+    } else if (tipo === 'colectores') {
+      docRef = doc(db, `bancos/${bancoId}/colectores/${userId}`)
+    } else if (tipo === 'listeros') {
+      docRef = doc(db, `bancos/${bancoId}/listeros/${userId}`)
+    } else {
+      throw new Error('Tipo de usuario inválido')
+    }
+
+    await updateDoc(docRef, { 
+      fondo: nuevofondo
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error actualizando fondo:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+export const obtenerContextoJerarquico = async (usuarioId, tipoUsuario, bancoIdFromProfile = null) => {
+  const contexto = { 
+    bancoId: null, 
+    rutaCompleta: [] 
+  }
+
+  try {
+    switch (tipoUsuario) {
+      case 'admin':
+        contexto.bancoId = null
+        break
+      case 'bancos':
+        contexto.bancoId = usuarioId
+        contexto.rutaCompleta = [usuarioId]
+        break
+      case 'colectorPrincipal':
+        contexto.bancoId = bancoIdFromProfile || await _obtenerBancoPadre(usuarioId, 'colectorPrincipal')
+        if (contexto.bancoId) contexto.rutaCompleta = [contexto.bancoId, usuarioId]
+        break
+      case 'colectores':
+        contexto.bancoId = bancoIdFromProfile || await _obtenerBancoPadre(usuarioId, 'colectores')
+        if (contexto.bancoId) {
+          const colectorPrincipalId = await _obtenerPadreDirecto(usuarioId, 'colectores')
+          contexto.rutaCompleta = [contexto.bancoId, colectorPrincipalId, usuarioId].filter(Boolean)
+        }
+        break
+      case 'listeros':
+        contexto.bancoId = bancoIdFromProfile || await _obtenerBancoPadre(usuarioId, 'listeros')
+        if (contexto.bancoId) {
+          const colectorId = await _obtenerPadreDirecto(usuarioId, 'listeros')
+          contexto.rutaCompleta = [contexto.bancoId, colectorId, usuarioId].filter(Boolean)
+        }
+        break
+    }
+  } catch (error) {
+    console.error("Error obteniendo contexto jerárquico:", error)
+  }
+
+  return contexto
+}
+
+export const logout = async () => {
+  try {
+    await signOut(auth)
+    return { success: true }
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error.message)
+    return { success: false, error: error.message }
+  }
+}
+
+// ==================== EXPORTACIONES ====================
+
+export const AuthService = {
+  registrarUsuarioJerarquico,
+  login,
+  logout,
+  updateUserfondo,
+  getUserProfile,
+  obtenerContextoJerarquico,
+  
+  JerarquiaService: {
+    obtenerContexto: obtenerContextoJerarquico
+  }
+}
+
+export default AuthService
