@@ -16,13 +16,14 @@ const {
 } = usePagar()
 
 const props = defineProps({
-  hayHorariosDisponibles: { type: Boolean, default: true }
+  hayHorariosDisponibles: { type: Boolean, default: true },
+  hayCamposInvalidos: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:mostrar-enviando']);
 const isLoading = ref(false)
 
-const isButtonDisabled = computed(() => !props.hayHorariosDisponibles)
+const isButtonDisabled = computed(() => !props.hayHorariosDisponibles || props.hayCamposInvalidos)
 const toastStore = useToastStore()
 // Modifica la función lanzarToast para emitir el evento
 const customLanzarToast = async () => {
@@ -47,8 +48,8 @@ const customLanzarToast = async () => {
       if (!estado || estado.sobrepasado) {
         toastStore.showToast(
           'La apuesta está fuera de tiempo para este horario',
-          'error',
-          2000,
+          'warning',
+          4000,
           ErrorIcon
         )
         isLoading.value = false
@@ -61,8 +62,8 @@ const customLanzarToast = async () => {
       if (!horarioDisponible) {
         toastStore.showToast(
           'La apuesta está fuera de tiempo para este horario',
-          'error',
-          2000,
+          'warning',
+          4000,
           ErrorIcon
         )
         isLoading.value = false
@@ -77,7 +78,7 @@ const customLanzarToast = async () => {
       toastStore.showToast(
         resultado.message,
         'error',
-        2000,
+        3000,
         ErrorIcon
       )
     }
@@ -127,13 +128,7 @@ const customLanzarToast = async () => {
 </template>
 <style scoped>
 .pagar-button:disabled {
-  background-color: #cccccc !important;
-  cursor: not-allowed !important;
-  opacity: 0.7 !important;
-}
-
-.pagar-button.disabled {
-  background-color: #cccccc !important;
+  background-color: #C2C1F1 !important;
   cursor: not-allowed !important;
   opacity: 0.7 !important;
 }
