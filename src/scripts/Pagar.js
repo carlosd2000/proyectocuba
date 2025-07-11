@@ -131,7 +131,7 @@ export function usePagar() {
           toastStore.showToast(
             `Limite alcanzado !! El valor ingresado supera $${valorBote} al limite permitido para esta jugada.`,
             'double-message',
-            5000,
+            4000,
             ErrorIcon
           )
           mostrarEnviando.value = false
@@ -148,7 +148,7 @@ export function usePagar() {
               toastStore.showToast(
                 errorMessage.value, 
                 'error', 
-                2000, 
+                3000, 
                 ErrorIcon
               )
             return
@@ -160,30 +160,28 @@ export function usePagar() {
             toastStore.showToast(
               isOnline.value ? 'Jugada actualizada' : 'Cambios guardados (offline)',
               'success',
-              1500,
+              2000,
               CheckIcon
             )
-            setTimeout(() => {
-              limpiarCampos()
-              setNombre('')
-            }, 1500)
-          } 
-          else {
             limpiarCampos()
             setNombre('')
+          } 
+          else {
             toastStore.showToast(
               isOnline.value ? 'Jugada enviada' : 'Jugada guardada (offline)',
               'success',
-              1500,
+              2000,
               CheckIcon
             )
+            limpiarCampos()
+            setNombre('')
           }
           router.push(`/lista/${route.params.id}`)
         } else {
           toastStore.showToast(
             resultado.message || 'Error al guardar',
             'error',
-            2000,
+            3000,
             ErrorIcon
           )
         }
@@ -192,7 +190,7 @@ export function usePagar() {
         toastStore.showToast(
           'Ocurrió un error inesperado',
           'error',
-          2000,
+          3000,
           ErrorIcon
         )
       } 

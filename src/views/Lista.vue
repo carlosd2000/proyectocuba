@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import Header from '../components/Header.vue';
 import CardPrice from '../components/CardPrice.vue';
 import SelectorHorario from '../components/SelectorHorario.vue';
@@ -10,14 +11,46 @@ import ListaComponent from '../components/ListaComponent.vue'
 import Pestañas from '../components/Pestañas.vue';
 import Footer from '../components/Footer.vue';
 import { useCandadoHorario } from '../scripts/useCandadoHorario.js'
+import useLista from '../scripts/Lista.js'
 import CandadoAbierto from '../assets/icons/Candado open.svg'
 import CandadoCerrado from '../assets/icons/Candado_locked.svg'
+
+const router = useRouter()
+const route = useRoute()
 
 const fechaSeleccionada = ref(new Date())
 const opcionSeleccionada = ref('Lista') 
 const horarioSeleccionado = ref('Dia') 
 
+const bote = Number(localStorage.getItem('valorBote'))
+
 const { candadoAbierto } = useCandadoHorario(fechaSeleccionada, horarioSeleccionado)
+
+// Usamos useLista aquí para filtrar desde la vista principal
+const listaLogic = useLista(fechaSeleccionada, router, route)
+
+const apuestasFiltradas = computed(() => {
+  return listaLogic.apuestasCombinadas.value.filter(apuesta => {
+    const horarioCoincide = (apuesta.horario || '').toLowerCase() === horarioSeleccionado.value.toLowerCase()
+
+    const tieneDatoMayorABote = (apuesta.datos || []).some(d => {
+      const c1 = Number(d?.circulo1 ?? 0)
+      const c2 = Number(d?.circulo2 ?? 0)
+      const cs = Number(d?.circuloSolo ?? 0)
+      return c1 > bote || c2 > bote || cs > bote
+    })
+
+    if (opcionSeleccionada.value === 'Bote') {
+      return horarioCoincide && tieneDatoMayorABote
+    } else if (opcionSeleccionada.value === 'Lista') {
+      return horarioCoincide && !tieneDatoMayorABote
+    } else {
+      return false
+    }
+  })
+})
+
+
 function handleSelect(valor) {
   // Mapear valor numérico a texto
   switch (valor) {
@@ -71,7 +104,10 @@ function handleSelect(valor) {
       </main>
       <aside class="w-100 h-100 overflow-auto">
         <div v-if="opcionSeleccionada === 'Lista'" class="h-100 d-flex flex-column gap-2">
-          <ListaComponent :fecha="fechaSeleccionada" :horario="horarioSeleccionado" :candadoAbierto="candadoAbierto"/>
+          <ListaComponent :fecha="fechaSeleccionada" :horario="horarioSeleccionado" :candadoAbierto="candadoAbierto" :apuestas="apuestasFiltradas"/>
+        </div>
+          <div v-if="opcionSeleccionada === 'Bote'" class="h-100 d-flex flex-column gap-2">
+          <ListaComponent :fecha="fechaSeleccionada" :horario="horarioSeleccionado" :candadoAbierto="candadoAbierto" :apuestas="apuestasFiltradas"/>
         </div>
       </aside>
     </div>

@@ -44,6 +44,7 @@ const horarioEdicion = ref('Dia');
 const bancoId = ref(null);
 const mostrarEnviando = ref(false);
 const hayHorariosDisponibles = ref(true)
+const hayCamposInvalidos = ref(false)
 
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
@@ -132,6 +133,7 @@ const componenteActual = computed(() => {
         :modoEdicion="!!idEditar"
         :idEdicion="idEditar"
         :bancoId="bancoId"
+        @update:hayCamposInvalidos="hayCamposInvalidos = $event"
       />
       <div v-if="mostrarEnviando" class="modal-overlay gap-2">
         <img src="../assets/icons/Logo.svg" alt="Logo" />
@@ -139,7 +141,7 @@ const componenteActual = computed(() => {
       </div>
     </main>
     <footer>
-      <Pagar @update:mostrar-enviando="setMostrarEnviando" :hay-horarios-disponibles="hayHorariosDisponibles"/>
+      <Pagar @update:mostrar-enviando="setMostrarEnviando" :hay-horarios-disponibles="hayHorariosDisponibles" :hay-campos-invalidos="hayCamposInvalidos"/>
     </footer>
 </template>
 

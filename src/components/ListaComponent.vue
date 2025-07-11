@@ -3,32 +3,18 @@ import { toRef, reactive, computed } from 'vue'
 import useLista from '../scripts/Lista.js' // ajusta la ruta si es diferente
 import { useRouter, useRoute } from 'vue-router'
 
-const props = defineProps({
-  fecha: {
-    type: Date,
-    required: true
-  },
-  horario: {
-    type: String,
-    required: true
-  },
-  candadoAbierto: {
-    type: Boolean,
-    default: true
-  }
-})
-
 const router = useRouter()
 const route = useRoute()
 
+const props = defineProps({
+  fecha: Date,
+  horario: String,
+  candadoAbierto: Boolean,
+  apuestas: Array,
+})
+
 const fechaRef = toRef(props, 'fecha')
 const detallesVisibles = reactive(new Set()) // IDs con detalles visibles
-
-const apuestasFiltradas = computed(() =>
-  apuestasCombinadas.value.filter(a =>
-    (a.horario || '').toLowerCase() === props.horario.toLowerCase()
-  )
-)
 
 const toggleDetalles = (personaId) => {
     if (detallesVisibles.has(personaId)) {
@@ -60,12 +46,12 @@ const {
     <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
         Modo offline - mostrando datos cacheados
     </div>
-    <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
+    <div v-if="!props.apuestas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
         <h5 class="body">
             Aún no hay apuestas en la lista
         </h5>
     </div>
-    <div v-for="persona in apuestasFiltradas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
+    <div v-for="persona in props.apuestas" :key="persona.id" class="container-list" style="cursor: pointer;" :class="{ 'apuesta-pendiente': persona.estado === 'Pendiente' }">
         <header class="d-flex flex-row justify-content-between align-items-center h-100" @click="toggleDetalles(persona.id)">
             <div class="container-title d-flex justify-content-center align-items-center">
                 <h5 class="body">{{ persona.nombre }}</h5>
