@@ -21,16 +21,37 @@ export const boteActivo = ref(true)
 
 // Cargar info del banco si no está cargado en localStorage
 export async function cargarInfoBancoSiNoExiste() {
-  const bancoId = await obtenerBancoPadre()
-  const docSnap = await getDoc(doc(db, 'bancos', bancoId))
-  if (docSnap.exists()) {
-    const data = docSnap.data()
-    valorBote.value = data.bote ?? 0
-    boteActivo.value = data.boteActivo ?? false
-    localStorage.setItem('valorBote', valorBote.value)
-    localStorage.setItem('boteActivo', boteActivo.value ? 'true' : 'false')
+  // Leer respaldo del localStorage primero
+  const valorGuardado = localStorage.getItem('valorBote')
+  const activoGuardado = localStorage.getItem('boteActivo')
+
+  if (valorGuardado !== null) {
+    valorBote.value = Number(valorGuardado)
+  }
+
+  if (activoGuardado !== null) {
+    boteActivo.value = activoGuardado === 'true'
+  }
+
+  try {
+    const bancoId = await obtenerBancoPadre()
+    const docSnap = await getDoc(doc(db, 'bancos', bancoId))
+
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      valorBote.value = data.bote ?? 0
+      boteActivo.value = data.boteActivo ?? false
+
+      // Actualizar respaldo
+      localStorage.setItem('valorBote', valorBote.value)
+      localStorage.setItem('boteActivo', boteActivo.value ? 'true' : 'false')
+    }
+  } catch (error) {
+    console.warn('No se pudo cargar el banco desde Firestore:', error.message)
+    // No hacer nada más, ya tenemos los valores de localStorage
   }
 }
+
 
 // Validar campos
 export function validarCampo(valor, campo, index = null) {

@@ -1,7 +1,9 @@
+// useTotalGlobal.js
+
 import { db } from '@/firebase/config'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { useAuthStore } from '@/stores/authStore'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { AuthService } from '../firebase/auth'
 
 export function useTotalGlobal() {
@@ -9,31 +11,11 @@ export function useTotalGlobal() {
     const isLoading = ref(true)
     const error = ref(null)
 
-    const getCachedApuestas = () => {
-        try {
-            const cacheStr = localStorage.getItem('apuestasFirebaseCache')
-            if (!cacheStr) return []
-            
-            const cache = JSON.parse(cacheStr)
-            const hoy = new Date().toISOString().split('T')[0]
-            
-            if (cache.cacheDate === hoy) {
-                return cache.data || []
-            }
-            return []
-        } catch (error) {
-            console.error('Error leyendo caché de apuestas:', error)
-            return []
-        }
-    }
-
     const calculateLocalTotal = (listeroId) => {
         try {
-            // Solo sumar apuestas pendientes (las cacheadas ya están en Firebase)
             const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
                 .filter(a => a.id_listero === listeroId)
                 .map(a => Number(a.totalGlobal) || 0)
-            
             return pendientes.reduce((sum, val) => sum + val, 0)
         } catch (error) {
             console.error('Error calculando total local:', error)
@@ -45,21 +27,22 @@ export function useTotalGlobal() {
         try {
             isLoading.value = true
             error.value = null
+
             const authStore = useAuthStore()
             const bancoId = authStore.profile?.bancoId || authStore.profile?.idBancoPadre || authStore.profile?.creadorId
             const listeroId = authStore.userId
-            
+
             if (!bancoId || !listeroId) {
                 totalGlobal.value = 0
                 return
             }
 
-            // Obtener apuestas de Firebase
+            // Consulta a Firestore
             const apuestasRef = collection(db, `bancos/${bancoId}/apuestas`)
             const now = new Date()
             now.setHours(0, 0, 0, 0)
             const startOfDay = now.getTime()
-            const endOfDay = startOfDay + 24 * 60 * 60 * 1000
+            const endOfDay = startOfDay + 86400000
 
             let q
             if (horario) {
@@ -88,36 +71,36 @@ export function useTotalGlobal() {
                 }
             })
 
-            // Solo sumar apuestas pendientes locales (no cacheadas)
             const localTotal = calculateLocalTotal(listeroId)
             totalGlobal.value = firebaseTotal + localTotal
 
-            // Guardar en caché
-            const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${new Date().toISOString().split('T')[0]}`
+            // Guardar en caché POR HORARIO
+            const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${horario || 'todos'}_${new Date().toISOString().split('T')[0]}`
             localStorage.setItem(cacheKey, JSON.stringify({
                 total: totalGlobal.value,
                 timestamp: Date.now()
             }))
 
+            // Actualizar fondo del usuario
             const tipo = authStore.profile?.tipo
             await AuthService.updateUserfondo(listeroId, bancoId, tipo, totalGlobal.value)
+
         } catch (e) {
-            error.value = e
             console.error('Error en fetchTotalGlobal:', e)
-            
-            // Fallback a caché
+            error.value = e
+
+            // Fallback: cargar desde caché
             const authStore = useAuthStore()
             const bancoId = authStore.profile?.bancoId || authStore.profile?.idBancoPadre || authStore.profile?.creadorId
             const listeroId = authStore.userId
-            
+
             if (bancoId && listeroId) {
-                const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${new Date().toISOString().split('T')[0]}`
+                const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${horario || 'todos'}_${new Date().toISOString().split('T')[0]}`
                 const cachedData = JSON.parse(localStorage.getItem(cacheKey) || '{}')
-                
-                if (cachedData.total) {
+
+                if (cachedData.total != null) {
                     totalGlobal.value = cachedData.total
                 } else {
-                    // Calcular total basado solo en pendientes si no hay caché
                     totalGlobal.value = calculateLocalTotal(listeroId)
                 }
             } else {
@@ -127,25 +110,6 @@ export function useTotalGlobal() {
             isLoading.value = false
         }
     }
-
-    onMounted(() => {
-        const authStore = useAuthStore()
-        const bancoId = authStore.profile?.bancoId || authStore.profile?.idBancoPadre || authStore.profile?.creadorId
-        const listeroId = authStore.userId
-        
-        if (bancoId && listeroId) {
-            const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${new Date().toISOString().split('T')[0]}`
-            const cachedData = JSON.parse(localStorage.getItem(cacheKey) || '{}')
-            
-            if (cachedData.total) {
-                totalGlobal.value = cachedData.total
-                isLoading.value = false
-            } else {
-                totalGlobal.value = calculateLocalTotal(listeroId)
-                isLoading.value = false
-            }
-        }
-    })
 
     return {
         totalGlobal,

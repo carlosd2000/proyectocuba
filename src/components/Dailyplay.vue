@@ -1,80 +1,76 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useTotalGlobal } from '@/scripts/UseTotalGlobal.js'
+import { ref, onMounted, watch } from 'vue'
+import useTotalPorHorario from '../scripts/useTotalPorHorario.js'
 import SelectorHorario from './SelectorHorario.vue'
 import Calendario from './Calendario.vue'
 
-const horarioSeleccionado = ref('Dia') // Valor inicial
-const { totalGlobal, fetchTotalGlobal, isLoading } = useTotalGlobal()
+const horarioSeleccionado = ref('Dia')
+const fechaRef = ref(new Date())
 
-// Formatea el total para mostrarlo en la vista
+const { totalPorHorario, isLoading, recargarTotales } = useTotalPorHorario(fechaRef)
 const moneytime = ref('0')
 
 const handleSelect = (selectedValue) => {
-    // Convierte el valor del selector a nombre de horario
     let nombreHorario = 'Dia'
     if (selectedValue === '1') nombreHorario = 'Dia'
     else if (selectedValue === '2') nombreHorario = 'Tarde'
     else if (selectedValue === '3') nombreHorario = 'Noche'
     horarioSeleccionado.value = nombreHorario
-    fetchTotalGlobal(nombreHorario).then(() => {
-        moneytime.value = totalGlobal.value.toLocaleString()
-    })
+
+    actualizarMoneytime()
 }
 
-// Inicializa con el horario por defecto (Dia)
-onMounted(async () => {
-    await fetchTotalGlobal(horarioSeleccionado.value)
-    moneytime.value = totalGlobal.value.toLocaleString()
+const actualizarMoneytime = () => {
+    const valor = totalPorHorario.value[horarioSeleccionado.value] || 0
+    moneytime.value = valor.toLocaleString()
+}
+
+watch(() => totalPorHorario.value, () => {
+    actualizarMoneytime()
+})
+
+onMounted(() => {
+    actualizarMoneytime()
 })
 </script>
 
 <template>
     <div class="container m-0 p-0 d-flex flex-column align-items-start">
         <div class="d-flex justify-content-between align-items-center w-100" style="height: 36px;">
-            <SelectorHorario @update:selected="handleSelect"/>
-            <Calendario/>
+            <SelectorHorario @update:selected="handleSelect" />
+            <Calendario />
         </div>
+
         <div class="m-0 p-0 d-flex justify-content-between align-items-center">
-            <h2>
-                Jugada Diaria
-            </h2>
+            <h2>Jugada Diaria</h2>
         </div>
+
         <div>
             <h5 class="label">
                 {{ isLoading ? 'Cargando...' : '$' + moneytime }}
             </h5>
         </div>
+
         <div class="row p-0 m-0 d-flex justify-content-between w-100">
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
                 <img src="../assets/icons/Jugada.svg" alt="" >
-                <h5 class="navigation-label">
-                    Jugada
-                </h5>
+                <h5 class="navigation-label">Jugada</h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=parlet`)">
                 <img src="../assets/icons/Parlet.svg" alt="">
-                <h5 class="navigation-label">
-                    Parlet
-                </h5>
+                <h5 class="navigation-label">Parlet</h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=candado`)">
                 <img src="../assets/icons/Candado.svg" alt="">
-                <h5 class="navigation-label">
-                    Candado
-                </h5>
+                <h5 class="navigation-label">Candado</h5>
             </div>
             <div class="buttons-heith state-blue" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=centena`)">
                 <img src="../assets/icons/Centena.svg" alt="">
-                <h5 class="navigation-label">
-                    Centena
-                </h5>
+                <h5 class="navigation-label">Centena</h5>
             </div>
             <div class="buttons-heith black" @click="$router.push(`/lista/${$route.params.id}`)">
-                <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);" >
-                <h5 class="navigation-label" style="color: #FDFEF2" >
-                    Lista
-                </h5>
+                <img src="../assets/icons/Lista.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);">
+                <h5 class="navigation-label" style="color: #FDFEF2">Lista</h5>
             </div>
         </div>            
     </div>
@@ -111,5 +107,4 @@ onMounted(async () => {
 .state-blue{
     background: #F0F0FC;
 }
-
 </style>
