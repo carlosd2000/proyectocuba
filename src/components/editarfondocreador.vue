@@ -23,14 +23,23 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { useAuthStore } from '@/stores/authStore'
-import { useFondoCreador } from '@/scripts/useFondoCreador'
+import { useFondoCreador } from '../scripts/useFondoCreador'
 
 const authStore = useAuthStore()
-const creadorId = computed(() => authStore.userId)
-const bancoId = computed(() => authStore.bancoId)
-const userType = computed(() => authStore.userType)
+const creadorId = computed(() => {
+  console.log('creadorId:', authStore.userId)
+  return authStore.userId
+})
+const bancoId = computed(() => {
+  console.log('bancoId:', authStore.bancoId)
+  return authStore.bancoId
+})
+const userType = computed(() => {
+  console.log('userType:', authStore.userType)
+  return authStore.userType
+})
 
-const { agregarCambioFondo, fondosLocales } = useFondoCreador()
+const { agregarCambioFondo } = useFondoCreador()
 
 const usuarios = ref([])
 const usuarioSeleccionadoId = ref('')

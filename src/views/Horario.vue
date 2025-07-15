@@ -7,12 +7,13 @@ import { db } from '../firebase/config.js';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc para leer datos
 
 import mostrarhora from '../components/mostrarhora.vue';
-import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+import { useAuthStore } from '@/stores/authStore'
 import { obtenerHorasTurnos } from '../scripts/obtenerHorasTurnos.js'
 import toggleon from '@/assets/icons/Toggleon.svg';
 import toggleoff from '@/assets/icons/Toggleoff.svg';
 
 const turno = ref('Dia');
+const authStore = useAuthStore()
 
 // Valores de la base de datos para los placeholders
 const dbHoras = ref('');
@@ -64,7 +65,7 @@ const cambiarToggle = async (num) => {
 const cargarDatos = async () => {
     try {
         if (!bancoPadreId.value) {
-            bancoPadreId.value = await obtenerBancoPadre();
+            bancoPadreId.value = authStore.bancoId
         }
         if (!bancoPadreId.value) return;
 
@@ -111,7 +112,7 @@ const guardarHora = async (turnoNombre, horaSeleccionada) => {
     const timestampHora = Timestamp.fromDate(ahora)
 
     if (!bancoPadreId.value) {
-      bancoPadreId.value = await obtenerBancoPadre()
+      bancoPadreId.value = authStore.bancoId
     }
     if (!bancoPadreId.value) return
 
@@ -132,7 +133,7 @@ const guardarHora = async (turnoNombre, horaSeleccionada) => {
 
 // Cargar datos cuando cambie el turno
 onMounted(async () => {
-    bancoPadreId.value = await obtenerBancoPadre()
+    bancoPadreId.value = authStore.bancoId
     await cargarDatos()
     if (!bancoPadreId.value) return
 
@@ -156,7 +157,7 @@ const lanzarToast = () => {
 const actualizarActivoTurno = async (turnoNombre, estado) => {
     try {
         if (!bancoPadreId.value) {
-            bancoPadreId.value = await obtenerBancoPadre();
+            bancoPadreId.value = authStore.bancoId
         }
         if (!bancoPadreId.value) return;
 

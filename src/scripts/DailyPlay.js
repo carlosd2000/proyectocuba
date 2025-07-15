@@ -2,7 +2,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore'
 import { setHorario } from '../scripts/añadir.js'
-import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+import { useAuthStore } from '@/stores/authStore'
 
 export function useDailyPlay() {
   const db = getFirestore()
@@ -15,6 +15,7 @@ export function useDailyPlay() {
   const isOnline = ref(navigator.onLine)
   const route = useRoute()
   const router = useRouter()
+  const authStore = useAuthStore()
 
   // Sumar apuestas locales si está offline
   function calcularTotalLocal() {
@@ -66,7 +67,7 @@ export function useDailyPlay() {
   }
 
   onMounted(async () => {
-    bancoId.value = await obtenerBancoPadre()
+    bancoId.value = authStore.bancoId
     if (isOnline.value && bancoId.value) {
       setHorario(turnoSeleccionado.value)
       await obtenerTotalGlobal()

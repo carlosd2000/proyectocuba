@@ -37,7 +37,7 @@ const apuestasFiltradas = computed(() => {
       const c2 = Number(d?.circulo2 ?? 0)
       const cs = Number(d?.circuloSolo ?? 0)
       return c1 > bote || c2 > bote || cs > bote
-    })
+    }) || Number(apuesta.circuloSolo || 0) > bote 
 
     if (opcionSeleccionada.value === 'Bote') {
       return horarioCoincide && tieneDatoMayorABote

@@ -1,9 +1,10 @@
 // userDataService.js
 import { auth, db } from '@/firebase/config';
-import { obtenerBancoPadre } from '@/scripts/FunctionBancoPadre.js';
 import { AuthService } from '@/firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useAuthStore } from '@/stores/authStore';
+
+const authStore = useAuthStore()
 
 export const UserDataService = {
   /**
@@ -30,7 +31,7 @@ export const UserDataService = {
       // Obtener banco padre si el usuario no es admin o banco
       let bancoPadreId = null;
       if (userProfile.tipo !== 'admin' && userProfile.tipo !== 'bancos') {
-        bancoPadreId = await obtenerBancoPadre();
+        bancoPadreId = authStore.bancoId
       } else if (userProfile.tipo === 'bancos') {
         bancoPadreId = currentUser.uid; // Para bancos, su ID es su propio bancoId
       }

@@ -10,16 +10,10 @@ import {
 import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase/config';
-import { obtenerBancoPadre } from './FunctionBancoPadre.js';
 import { useToastStore } from '../stores/toast'
 import CheckIcon from '../assets/icons/Check.svg'
 import ErrorIcon from '../assets/icons/Error.svg'
 import Alert from '../assets/icons/alert.svg'
-
-async function ejemploUso() {
-  const bancoId = await obtenerBancoPadre();
-  console.log("Banco padre:", bancoId);
-}
 
 export function usePagar() {
     const router = useRouter()
@@ -27,7 +21,6 @@ export function usePagar() {
     const toastStore = useToastStore()
     const errorMessage = ref('')
     const isOnline = ref(navigator.onLine)
-    const bancoId = ref(null) // Nuevo: almacenar bancoId
     const mostrarEnviando = ref(false)
 
     async function obtenerApuestaPorId(bancoId, idApuesta) {
