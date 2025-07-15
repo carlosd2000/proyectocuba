@@ -3,7 +3,6 @@
 import { reactive, ref } from 'vue'
 import { getDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { obtenerBancoPadre } from './FunctionBancoPadre'
 
 // Importa el toastStore y el ícono de alerta
 import { useToastStore } from '../stores/toast'
@@ -20,7 +19,7 @@ export const valorBote = ref(0)
 export const boteActivo = ref(true)
 
 // Cargar info del banco si no está cargado en localStorage
-export async function cargarInfoBancoSiNoExiste() {
+export async function cargarInfoBancoSiNoExiste(bancoId) {
   // Leer respaldo del localStorage primero
   const valorGuardado = localStorage.getItem('valorBote')
   const activoGuardado = localStorage.getItem('boteActivo')
@@ -34,7 +33,6 @@ export async function cargarInfoBancoSiNoExiste() {
   }
 
   try {
-    const bancoId = await obtenerBancoPadre()
     const docSnap = await getDoc(doc(db, 'bancos', bancoId))
 
     if (docSnap.exists()) {

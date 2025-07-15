@@ -1,8 +1,9 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { doc, getDoc, getFirestore, Timestamp } from 'firebase/firestore'
-import { obtenerBancoPadre } from './FunctionBancoPadre.js'
+import { useAuthStore } from '@/stores/authStore'
 
 const db = getFirestore()
+const authStore = useAuthStore()
 
 export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
   const candadoAbierto = ref(false)
@@ -41,7 +42,7 @@ async function actualizarEstadoCandado() {
     return;
   }
 
-  const bancoId = await obtenerBancoPadre();
+  const bancoId = authStore.bancoId
   if (!bancoId) {
     candadoAbierto.value = false;
     horaCierre.value = null;

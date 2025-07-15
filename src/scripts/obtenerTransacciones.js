@@ -2,11 +2,12 @@
 import { db } from '../firebase/config';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import localforage from '../stores/localStorage';
-import { obtenerBancoPadre } from './FunctionBancoPadre';
+import { useAuthStore } from '@/stores/authStore'
 
 export async function obtenerTransacciones(userId) {
   try {
-    const bancoId = await obtenerBancoPadre();
+    const authStore = useAuthStore()
+    const bancoId = authStore.bancoId
     if (!bancoId) return [];
 
     const transRef = collection(db, `bancos/${bancoId}/transacciones`);

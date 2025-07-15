@@ -29,7 +29,9 @@ onMounted(async () => {
     }
 
     isAppReady.value = true;
-    cargarInfoBancoSiNoExiste()
+    if (authStore.bancoId) {
+      cargarInfoBancoSiNoExiste(authStore.bancoId)
+    }
   } catch (error) {
     console.error('Error inicializando aplicación:', error)
     isAppReady.value = true // Asegurar que la app se muestre incluso con error

@@ -1,15 +1,16 @@
 import { collection, getDocs, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { ref } from 'vue'
-import { obtenerBancoPadre } from './FunctionBancoPadre.js'
+import { useAuthStore } from '@/stores/authStore'
 
 // Estado reactivo para apuestas
 export const apuestas = ref([])
+const authStore = useAuthStore()
 
 // Obtener apuestas en tiempo real filtradas por id_listero
 export const obtenerApuestas = async (idListero) => {
   try {
-    const bancoId = await obtenerBancoPadre();
+    const bancoId = authStore.bancoId
     const q = query(
       collection(db, `bancos/${bancoId}/apuestas`),
       where("id_listero", "==", idListero)
@@ -55,7 +56,7 @@ export const eliminarApuesta = async (id, esPendiente = false) => {
 
     // Para apuestas normales (Firebase)
     if (navigator.onLine) {
-      const bancoId = await obtenerBancoPadre();
+      const bancoId = authStore.bancoId
       await deleteDoc(doc(db, `bancos/${bancoId}/apuestas`, id));
       return { success: true };
     } else {
@@ -91,7 +92,7 @@ export const sincronizarEliminaciones = async () => {
   if (eliminaciones.length === 0) return
 
   try {
-    const bancoId = await obtenerBancoPadre();
+    const bancoId = authStore.bancoId
     const resultados = await Promise.allSettled(
       eliminaciones.map(id => 
         deleteDoc(doc(db, `bancos/${bancoId}/apuestas`, id))
@@ -118,7 +119,7 @@ export const sincronizarEliminaciones = async () => {
 // Editar una apuesta
 export const editarApuesta = async (id, datosActualizados) => {
   try {
-    const bancoId = await obtenerBancoPadre();
+    const bancoId = authStore.bancoId
     await updateDoc(doc(db, `bancos/${bancoId}/apuestas`, id), datosActualizados)
     return { success: true }
   } catch (error) {

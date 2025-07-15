@@ -3,7 +3,7 @@ import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'fire
 import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones';
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
-import { obtenerBancoPadre } from './FunctionBancoPadre.js';
+import { useAuthStore } from '@/stores/authStore'
 
 // Variables reactivas
 export const nombreTemporal = ref('');
@@ -13,6 +13,8 @@ export const hayHorariosDisponibles = ref(true);
 export const modoEdicion = ref(false);
 export const idEdicion = ref('');
 export const uuidGenerado = ref('');
+
+const authStore = useAuthStore()
 
 let syncPending = false;
 let cachedBancoId = null;
@@ -107,7 +109,7 @@ export async function guardarDatos() {
 
   const { hora24, timestamp } = obtenerHoraCuba();
   try {
-    const bancoId = await obtenerBancoPadre();
+    const bancoId = authStore.bancoId;
     if (!bancoId) throw new Error("No se pudo determinar el banco padre");
 
     const uuid = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
@@ -246,7 +248,7 @@ export async function sincronizarPendientes() {
 
     for (const apuesta of pendientesArray) {
       try {
-        const bancoId = apuesta.bancoId || await obtenerBancoPadre();
+        const bancoId = apuesta.bancoId || authStore.bancoId;
         if (!bancoId) continue;
 
         const docRef = doc(db, `bancos/${bancoId}/apuestas`, apuesta.uuid);
@@ -286,7 +288,7 @@ export async function sincronizarMutaciones() {
   console.log('[SYNC] Iniciando sincronización de mutaciones...');
   
   try {
-    const bancoId = await obtenerBancoPadre();
+    const bancoId = authStore.bancoId
     if (!bancoId) {
       console.error('[SYNC] No se pudo obtener bancoId');
       return;

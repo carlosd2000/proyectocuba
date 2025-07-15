@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed  } from 'vue'
 import { usePagar } from '../scripts/Pagar.js'
+import { useAuthStore } from '@/stores/authStore'
 import { hayHorariosDisponibles, horarioSeleccionado } from '../scripts/añadir.js'
 import { verificarHorarioActivo } from '../scripts/FunctionHorarioActivo.js'
-import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js'
+
 import { useToastStore } from '../stores/toast'
 import ErrorIcon from '../assets/icons/Error.svg'
 const {
@@ -22,6 +23,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:mostrar-enviando']);
 const isLoading = ref(false)
+const authStore = useAuthStore()
 
 const isButtonDisabled = computed(() => !props.hayHorariosDisponibles || props.hayCamposInvalidos)
 const toastStore = useToastStore()
@@ -32,7 +34,7 @@ const customLanzarToast = async () => {
   isLoading.value = true
   emit('update:mostrar-enviando', true)
   try {
-    const bancoId = await obtenerBancoPadre()
+    const bancoId = authStore.bancoId
     let horarioKey = null
     switch (horarioSeleccionado.value) {
       case 'Dia': horarioKey = 'dia'; break

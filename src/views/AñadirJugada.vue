@@ -13,7 +13,8 @@ import InputsParlet from '../components/InputParlet.vue';
 import Horario from '../components/SelectorHorario.vue';
 import Pagar from '../components/Pagar.vue';
 import { setModoEdicion, setHorario, tomarUUID } from '../scripts/añadir.js';
-import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre.js';
+import { useAuthStore } from '../stores/authStore';
+
 
 const onHorarioSeleccionado = (nuevoHorario) => {
   if (nuevoHorario === null) {
@@ -41,6 +42,7 @@ const bancoId = ref(null);
 const mostrarEnviando = ref(false);
 const hayHorariosDisponibles = ref(true)
 const hayCamposInvalidos = ref(false)
+const authStore = useAuthStore()
 
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
@@ -79,7 +81,7 @@ onMounted(async () => {
       }
     } else {
       try {
-        bancoId.value = await obtenerBancoPadre();
+        bancoId.value = authStore.bancoId
         
         const docRef = doc(db, `bancos/${bancoId.value}/apuestas`, idEditar.value);
         const docSnap = await getDoc(docRef);

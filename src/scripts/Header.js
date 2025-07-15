@@ -3,7 +3,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { db } from '../firebase/config'
 import { doc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from '@/stores/authStore'
-import { obtenerBancoPadre } from './FunctionBancoPadre'
 
 export const cuentaRegresiva = ref('--:--:--')
 export const turnoActual = ref('')
@@ -86,7 +85,7 @@ export function useHeader() {
 
   const cargarHorasTurnos = async () => {
     try {
-      bancoPadreId.value = await obtenerBancoPadre()
+      bancoPadreId.value = authStore.bancoId
       if (!bancoPadreId.value) return
 
       for (const turno of turnos) {

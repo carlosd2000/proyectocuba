@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, defineEmits, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { obtenerBancoPadre } from '../scripts/FunctionBancoPadre'
+import { useAuthStore } from '@/stores/authStore'
 import { verificarHorarioActivo, verificarHorarioBasico, leerEstadosHorariosCache, actualizarCacheHorarios } from '../scripts/FunctionHorarioActivo.js'
 
 import Dia from '../assets/icons/Dia.svg'
@@ -15,13 +15,13 @@ const props = defineProps({
 
 const emit = defineEmits(['update:selected', 'no-horarios-disponibles'])
 const route = useRoute()
+const authStore = useAuthStore()
 
 const dropdownOpen = ref(false)
 const selectedValue = ref('1')
 const selectedIcon = ref(Dia)
 
 const intervalId = ref(null)
-
 const yaInicializado = ref(false)
 
 const allOptions = [
@@ -51,7 +51,7 @@ function valueToIcon(value) {
 }
 
 async function actualizarHorarios() {
-  const bancoId = await obtenerBancoPadre()
+  const bancoId = authStore.bancoId
   if (!bancoId) return
 
   const horarios = [

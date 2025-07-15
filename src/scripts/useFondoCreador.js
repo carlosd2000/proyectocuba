@@ -69,7 +69,7 @@ const iniciarSincronizacionCada5Min = () => {
   intervalId = setInterval(() => {
     if (navigator.onLine) sincronizarFondos()
     else window.addEventListener('online', sincronizarFondos, { once: true })
-  }, 5 * 60 * 1000)
+  }, 1 * 60 * 1000)
 }
 
 const detenerSincronizacion = () => {
@@ -82,13 +82,18 @@ const iniciar = async () => {
   iniciarSincronizacionCada5Min()
 }
 
+let fondoCreadorManager = null
+
 export function useFondoCreador() {
-  return {
-    agregarCambioFondo,
-    fondosLocales,
-    cambiosLocales,
-    sincronizarFondos,
-    iniciar,
-    detenerSincronizacion
+  if (!fondoCreadorManager) {
+    fondoCreadorManager = {
+      agregarCambioFondo,
+      fondosLocales,
+      cambiosLocales,
+      sincronizarFondos,
+      iniciar,
+      detenerSincronizacion
+    }
   }
+  return fondoCreadorManager
 }

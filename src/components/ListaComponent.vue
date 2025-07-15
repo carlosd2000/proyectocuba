@@ -31,8 +31,6 @@ const {
   personaSeleccionada,
   isOnline,
   isSyncing,
-  apuestasLocales,
-  apuestasCombinadas,
   cuadroClick,
   cerrarModal,
   editarPersona,
@@ -41,18 +39,6 @@ const {
   mostrarHora,
   obtenerIconoEstado
 } = useLista(fechaRef, router, route)
-
-// Filtramos las apuestas por horario
-const apuestasFiltradas = computed(() => {
-  return apuestasCombinadas.value.filter(apuesta => {
-    return apuesta.horario?.toLowerCase() === props.horario?.toLowerCase()
-  })
-})
-
-// Watcher para sincronizar cambios
-watch(apuestasCombinadas, (newVal) => {
-  props.apuestas.splice(0, props.apuestas.length, ...newVal)
-}, { deep: true })
 
 const handleEditClick = (persona, event) => {
   event.stopPropagation()
@@ -75,13 +61,13 @@ const handleEditClick = (persona, event) => {
     <span v-if="isSyncing" class="ms-2">Sincronizando...</span>
   </div>
   
-  <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
+  <div v-if="!props.apuestas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
     <h5 class="body">
       Aún no hay apuestas en la lista para este horario
     </h5>
   </div>
   
-  <div v-for="persona in apuestasFiltradas" 
+  <div v-for="persona in props.apuestas" 
        :key="`${persona.id}-${persona.estado}-${persona.sincronizadoEn || persona.creadoEn}`"
        class="container-list" 
        style="cursor: pointer;" 

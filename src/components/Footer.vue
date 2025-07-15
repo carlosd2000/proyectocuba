@@ -1,6 +1,4 @@
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
 import Home from '../assets/icons/Home.svg'
 import Home_Active from '../assets/icons/Home_Active.svg'
 import Lista from '../assets/icons/Lista.svg'
@@ -9,12 +7,10 @@ import Wallet from '../assets/icons/Wallet.svg'
 import Wallet_Active from '../assets/icons/Wallet_Active.svg'
 import User from '../assets/icons/User.svg'
 import User_Active from '../assets/icons/User_Active.svg'
+import { useAuthStore } from '@/stores/authStore'
 
-
-const route = useRoute()
-
-const mostrarJugada = computed(() => route.path.startsWith('/transacciones'))
-const mostrarTransferencias = computed(() => route.path.startsWith('/monitoreolisteros'))
+const authStore = useAuthStore()
+const userType = authStore.userType
 
 const props = defineProps({
     title: {
@@ -36,8 +32,11 @@ const props = defineProps({
             <h5 v-if="props.title !== 'Lista'" class="navigation-label">Lista</h5>
             <div v-else class="punto"></div>
         </div>
-        <div class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
+        <div v-if="userType === 'listeros'" class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
             <img src="../assets/icons/Plus.svg" alt="">
+        </div>
+        <div v-else class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
+            <img src="../assets/icons/Transferir.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);">
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/fondo/${$route.params.id}`)">
             <img :src="props.title === 'Fondo' ? Wallet_Active : Wallet" alt="">

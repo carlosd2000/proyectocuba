@@ -1,7 +1,9 @@
 // userBetsService.js
 import { db, auth } from '@/firebase/config';
-import { doc, collection, query, where, getDocs } from 'firebase/firestore';
-import { obtenerBancoPadre } from '@/scripts/FunctionBancoPadre.js';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useAuthStore } from '@/stores/authStore';
+
+const authStore = useAuthStore()
 
 export const UserBetsService = {
   /**
@@ -17,7 +19,7 @@ export const UserBetsService = {
       }
 
       // Obtener el banco padre del usuario
-      const bancoId = await obtenerBancoPadre();
+      const bancoId = authStore.bancoId
       if (!bancoId) {
         console.error("No se pudo determinar el banco padre");
         return [];
