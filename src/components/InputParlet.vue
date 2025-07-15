@@ -3,8 +3,8 @@
     <div class="main-container">
       <!-- Contenedor del scroll (filas) -->
       <div class="scroll-container">
-        <!-- Filas fijas -->
-        <div v-for="fila in 2" :key="'fija-' + fila" class="input-row">
+        <!-- Filas fijas - Mostrar 2 si es nuevo, 3 si es edición -->
+        <div v-for="fila in (modoEdicion ? 3 : 2)" :key="'fija-' + fila" class="input-row">
           <input
             type="number"
             class="cuadrado label"
@@ -39,7 +39,7 @@
         </div>
       </div>
 
-      <!-- Círculo solo - FIJO FUERA DEL SCROLL -->
+      <!-- Círculo solo - FIJO FUERA DEL SCROLL - SIEMPRE VISIBLE -->
       <div class="circulo-solo-fixed">
         <input
           type="number"
@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { watchEffect, onMounted } from 'vue'
+import { watchEffect, onMounted, computed } from 'vue'
 import masIcon from '@/assets/icons/mas.svg'
 import { useInputParlet } from '../scripts/InputParlet.js'
 import {
@@ -69,14 +69,21 @@ import {
 } from '../scripts/fieldValidator.js'
 
 const emit = defineEmits(['update:hayCamposInvalidos'])
-const props = defineProps({ datosEdicion: Object, modoEdicion: Boolean, idEdicion: String })
+const props = defineProps({ 
+  datosEdicion: Object, 
+  modoEdicion: Boolean, 
+  idEdicion: String 
+})
 
 const {
   filasFijas,
   filasExtra,
   agregarFila,
-  soloEnteros
+  soloEnteros,
+  limpiarCampos
 } = useInputParlet(props)
+
+const modoEdicion = computed(() => props.modoEdicion)
 
 watchEffect(() => {
   const hayErrores = hayErroresCriticos()
@@ -103,7 +110,7 @@ onMounted(() => {
   gap: 8px;
   width: 100%;
   overflow-y: auto;
-  width: calc(100% - 8px); /* Ajuste para mayor ancho */
+  width: calc(100% - 8px);
 }
 .btn-agregar-container {
   display: flex;
@@ -130,11 +137,10 @@ onMounted(() => {
   height: 48px;
 }
 
-/* Círculo solo - POSICIÓN FIJA */
 .circulo-solo-fixed {
   position: absolute;
   right: 0;
-  top: 112px; /* (48px + 8px) * 2 = 112px para tercera fila */
+  top: 112px; /* Posición para alinearse con la tercera fila */
   width: 64px;
   height: 48px;
   z-index: 2;
@@ -162,7 +168,6 @@ onMounted(() => {
   object-fit: contain;
 }
 
-/* Estilos para los inputs */
 .cuadrado {
   border: 1px solid #CDCDD1;
   border-radius: 30px;
@@ -175,7 +180,6 @@ onMounted(() => {
   border-radius: 30px;
 }
 
-/* Quitar flechas de los inputs number */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -184,5 +188,10 @@ input[type="number"]::-webkit-outer-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.input-invalido {
+  border: 1px solid #ff0000 !important;
+  background-color: #ffeeee !important;
 }
 </style>
