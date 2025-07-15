@@ -7,7 +7,7 @@ const emit = defineEmits(['cambiar-fecha'])
 
 const route = useRoute()
 
-const esVistaListeros = computed(() => route.path.startsWith('/listeros/'))
+const esVistaListeros = computed(() => route.path.startsWith('/home/'))
 
 const {
   fecha,
@@ -68,7 +68,7 @@ const abrirCalendario = () => {
 
       <!-- Real: input tipo date oculto para usar el selector -->
       <input
-        v-if="$route.path === '/listeros'"
+        v-if="$route.path === '/home'"
         ref="inputCalendario"
         type="date"
         v-model="fechaSeleccionadaString"

@@ -16,8 +16,8 @@ const router = createRouter({
       component: () => import('../views/Login.vue'),
     },
     {
-      path: '/listeros/:id',
-      name: 'listeros',
+      path: '/home/:id',
+      name: 'home',
       component: () => import('../views/Home.vue'),
       meta: { requiresAuth: true },
     },
@@ -30,19 +30,19 @@ const router = createRouter({
     {
       path: '/bancos/:id',
       name: 'bancos',
-      component: () => import('../views/Registros.vue'),
+      component: () => import('../views/Home.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/colectorprincipal/:id',
       name: 'colectorprincipal',
-      component: () => import('../views/Registros.vue'),
+      component: () => import('../views/Home.vue'),
       meta: { requiresAuth: true },
     },
     {
       path: '/colectores/:id',
       name: 'colectores',
-      component: () => import('../views/Registros.vue'),
+      component: () => import('../views/Home.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -73,6 +73,12 @@ const router = createRouter({
       path: '/fondo/:id',
       name: 'fondo',
       component: () => import('../views/Fondo.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/registrar/:id',
+      name: 'registrar',
+      component: () => import('../views/Registros.vue'),
       meta: { requiresAuth: true },
     }
   ],

@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 import { useFondo } from '../scripts/useFondo.js'
 
 const route = useRoute()
-const isListerosRoute = computed(() => route.path.startsWith('/listeros') || route.path.startsWith('/fondo'))
+const isListerosRoute = computed(() => route.path.startsWith('/home') || route.path.startsWith('/fondo'))
 const isFondoRoute = route.path.startsWith('/fondo')
 
 const { fondoActual } = useFondo()

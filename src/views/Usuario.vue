@@ -1,11 +1,16 @@
 <script setup>
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { AuthService } from '@/firebase/auth';
+import { useAuthStore } from '@/stores/authStore';
 import mifondo from '../components/mifondo.vue';
 import editarfondocreador from '../components/editarfondocreador.vue';
 import Footer from '../components/Footer.vue';
 
 const router = useRouter();
+const authStore = useAuthStore();
+
+const userType = computed(() => authStore.userType)
 
 const logout = async () => {
     try {
@@ -26,8 +31,9 @@ const logout = async () => {
         </button>
     </div>
     <button @click="$router.push(`/horario/${$route.params.id}`)" class="m-5">click para ir a horarios</button>
-    <editarfondocreador />
-    <mifondo />
+    <editarfondocreador class="m-5"/>
+    <mifondo class="m-5"/>
+    <button v-if="userType !== 'listeros'" @click="$router.push(`/registrar/${$route.params.id}`)" class="m-5">ir a registrar</button>
     <footer>
         <Footer title="Usuario" />
     </footer>
