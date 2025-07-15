@@ -61,25 +61,7 @@ const handleSubmit = async () => {
       // Redirección basada en el tipo de usuario según tu router
       let redirectPath = '/'
       
-      switch(authStore.userType) {
-        case 'admin':
-          redirectPath = `/adminview/${authStore.userId}`
-          break
-        case 'bancos':
-          redirectPath = `/bancos/${authStore.userId}`
-          break
-        case 'colectorPrincipal':
-          redirectPath = `/colectorprincipal/${authStore.userId}`
-          break
-        case 'colectores':
-          redirectPath = `/colectores/${authStore.userId}`
-          break
-        case 'listeros':
-          redirectPath = `/listeros/${authStore.userId}`
-          break
-        default:
-          redirectPath = `/usuario/${authStore.userId}`
-      }
+      redirectPath = `/home/${authStore.userId}`
 
       router.push(redirectPath)
     } else {

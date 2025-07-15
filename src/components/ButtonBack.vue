@@ -13,7 +13,7 @@ const authStore = useAuthStore()
 
 const regresar = () => {
   if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
-    router.push(`/${authStore.userType}/${authStore.userId}`)
+    router.push(`/home/${authStore.userId}`)
   } else {
     router.push('/')
   }

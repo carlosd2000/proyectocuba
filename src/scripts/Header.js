@@ -19,12 +19,12 @@ export function useHeader() {
   const horaActual = ref('--:--:--')
   const bancoPadreId = ref(null)
 
-  const back = computed(() => route.path.startsWith('/listeros'))
+  const back = computed(() => route.path.startsWith('/home'))
   const bell = computed(() => route.path.startsWith('/'))
 
   const irfondo = () => {
     if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
-      router.push(`/${authStore.userType}/${authStore.userId}`)
+      router.push(`/fondo/${authStore.userId}`)
     } else {
       router.push('/')
     }

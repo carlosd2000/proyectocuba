@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 const isAppReady = ref(false)
 
 let fondoManager = null
+let fondoCreadorManager = null
 
 onMounted(async () => {
   try {
@@ -21,6 +22,12 @@ onMounted(async () => {
     fondoManager = useFondo()
     await fondoManager.iniciar()
     
+    if (authStore.userType !== 'listeros') {
+      const { useFondoCreador } = await import('@/scripts/useFondoCreador.js')
+      fondoCreadorManager = useFondoCreador()
+      await fondoCreadorManager.iniciar()
+    }
+
     isAppReady.value = true;
     cargarInfoBancoSiNoExiste()
   } catch (error) {
@@ -31,9 +38,8 @@ onMounted(async () => {
 
 // Limpieza al desmontar
 onUnmounted(() => {
-  if (fondoManager) {
-    fondoManager.detenerSincronizacion()
-  }
+  if (fondoManager) fondoManager.detenerSincronizacion?.()
+  if (fondoCreadorManager) fondoCreadorManager.detenerSincronizacion?.()
 })
 
 // Redirección basada en autenticación
@@ -41,7 +47,7 @@ watch(() => authStore.user, (user) => {
   if (user && authStore.profile) {
     const redirectPath = authStore.userType === 'admin' 
       ? `/adminview/${authStore.userId}`
-      : `/${authStore.userType}/${authStore.userId}`
+      : `/home/${authStore.userId}`
     
     if (window.location.pathname === '/') {
       router.push(redirectPath)
