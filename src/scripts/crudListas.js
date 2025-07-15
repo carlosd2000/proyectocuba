@@ -59,19 +59,29 @@ export const eliminarApuesta = async (id, esPendiente = false) => {
       await deleteDoc(doc(db, `bancos/${bancoId}/apuestas`, id));
       return { success: true };
     } else {
-      // Guardar para sincronización posterior
-      const eliminaciones = getLocalStorageArray('eliminacionesPendientes');
-      if (!eliminaciones.includes(id)) {
-        eliminaciones.push(id);
-        localStorage.setItem('eliminacionesPendientes', JSON.stringify(eliminaciones));
+      // Guardar para sincronización posterior como mutación
+      const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
+      
+      // Verificar si ya existe una mutación para esta apuesta
+      const existe = mutaciones.some(m => m.idOriginal === id && m.tipo === 'ELIMINACION');
+      
+      if (!existe) {
+        mutaciones.push({
+          tipo: 'ELIMINACION',
+          idOriginal: id,
+          timestamp: Date.now(),
+          uuid: id // Usar el mismo ID
+        });
+        localStorage.setItem('mutacionesPendientes', JSON.stringify(mutaciones));
       }
+      
       return { success: true, offline: true };
     }
   } catch (error) {
     console.error('Error eliminando apuesta:', error);
     return { success: false, error };
   }
-}
+};
 
 // Sincronizar eliminaciones pendientes
 export const sincronizarEliminaciones = async () => {

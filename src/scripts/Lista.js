@@ -1,7 +1,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/crudListas.js'
-import { sincronizarPendientes } from '../scripts/añadir.js'
+import { sincronizarPendientes, sincronizarMutaciones, generarUUID } from '../scripts/añadir.js'
 import Cloud from '../assets/icons/Cloud.svg'
 import CloudFill from '../assets/icons/Cloud_fill.svg'
 import StropWatch from '../assets/icons/stopwatch.svg'
@@ -36,6 +36,7 @@ export default function useLista(fechaRef, router, route) {
         switch (persona.estado) {
             case 'Pendiente': return CloudFill
             case 'FueraDeTiempo': return StropWatch
+            case 'EditadoOffline': return CloudFill
             default: return Cloud
         }
     }
@@ -43,9 +44,14 @@ export default function useLista(fechaRef, router, route) {
     const guardarApuestasEnCache = (apuestasFirebase) => {
         try {
             const apuestasHoy = apuestasFirebase.filter(a => {
-                let fechaA = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
-                    a.creadoEn?.toDate ? a.creadoEn.toDate() :
-                    a.creadoEn ? new Date(a.creadoEn) : null
+                let fechaA
+                if (a.creadoEn?.seconds) {
+                    fechaA = new Date(a.creadoEn.seconds * 1000)
+                } else if (a.creadoEn?.toDate) {
+                    fechaA = a.creadoEn.toDate()
+                } else if (a.creadoEn) {
+                    fechaA = new Date(a.creadoEn)
+                }
                 return fechaA && esMismoDia(fechaA, fechaRef.value)
             })
 
@@ -88,14 +94,45 @@ export default function useLista(fechaRef, router, route) {
             const pendientes = JSON.parse(
                 localStorage.getItem('apuestasPendientes') || '[]'
             )
+            
+            // Manejo seguro de mutaciones
+            const mutacionesStr = localStorage.getItem('mutacionesPendientes') || '[]'
+            let mutaciones = []
+            try {
+                mutaciones = JSON.parse(mutacionesStr)
+                if (!Array.isArray(mutaciones)) {
+                    console.warn('mutaciones no era un array, reinicializando')
+                    mutaciones = []
+                    localStorage.setItem('mutacionesPendientes', '[]')
+                }
+            } catch (e) {
+                console.error('Error parseando mutaciones:', e)
+                mutaciones = []
+                localStorage.setItem('mutacionesPendientes', '[]')
+            }
+            
             const cacheadas = cargarApuestasDesdeCache()
             
+            // Aplicar mutaciones a la caché
+            const cacheConMutaciones = cacheadas.map(apuesta => {
+                const edicion = mutaciones.find(m => 
+                    m.tipo === 'EDICION' && m.idOriginal === apuesta.id
+                )
+                return edicion ? { ...apuesta, ...edicion.nuevosDatos, estado: 'EditadoOffline' } : apuesta
+            }).filter(apuesta => 
+                !mutaciones.some(m => 
+                    m.tipo === 'ELIMINACION' && m.idOriginal === apuesta.id
+                )
+            )
+
             apuestasLocales.value = [
                 ...pendientes.filter(a => !eliminacionesPermanentes[a.uuid]),
-                ...cacheadas.filter(a => !eliminacionesPermanentes[a.id])
+                ...cacheConMutaciones.filter(a => !eliminacionesPermanentes[a.id])
             ].map(a => ({
                 ...a,
-                estado: a.uuid ? 'Pendiente' : 'Cargado',
+                estado: a.uuid ? 'Pendiente' : 
+                       a.estado === 'EditadoOffline' ? 'EditadoOffline' : 
+                       'Cargado',
                 id: a.uuid || a.id,
                 uuid: a.uuid || a.id,
                 totalGlobal: Number(a.totalGlobal) || 0,
@@ -193,6 +230,8 @@ export default function useLista(fechaRef, router, route) {
                     
                     if (a.estado === 'Pendiente') return -1
                     if (b.estado === 'Pendiente') return 1
+                    if (a.estado === 'EditadoOffline') return -1
+                    if (b.estado === 'EditadoOffline') return 1
                     return fechaB - fechaA
                 } catch {
                     return 0
@@ -200,11 +239,12 @@ export default function useLista(fechaRef, router, route) {
             })
     })
 
+
     const updateOnlineStatus = () => {
         isOnline.value = navigator.onLine
         if (isOnline.value) {
             isSyncing.value = true
-            Promise.all([sincronizarPendientes(), sincronizarEliminaciones()])
+            Promise.all([sincronizarPendientes(), sincronizarEliminaciones(), sincronizarMutaciones()])
                 .then(async () => {
                     if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
                     unsubscribe = await obtenerApuestas(idListero)
@@ -234,70 +274,155 @@ export default function useLista(fechaRef, router, route) {
         mostrarModal.value = false
     }
 
-    const editarPersona = async () => {
-        const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal'
-        const esPendiente = personaSeleccionada.value.estado === 'Pendiente'
+const editarPersona = async () => {
+    try {
+        const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal';
+        const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
+        
+        // Siempre usar el ID original, nunca crear IDs temporales
+        const idEdicion = personaSeleccionada.value.id || personaSeleccionada.value.uuid;
+        
         router.push({
             path: `/anadirjugada/${route.params.id}`,
             query: {
                 tipo: tipoJugada,
-                editar: esPendiente ? personaSeleccionada.value.uuid : personaSeleccionada.value.id,
-                esPendiente: esPendiente.toString()
+                editar: idEdicion,
+                esPendiente: esPendiente.toString(),
+                // Añadir siempre el idOriginal para referencia
+                idOriginal: idEdicion,
+                // Añadir timestamp para forzar recarga
+                ts: Date.now()
             }
-        })
-        cerrarModal()
+        });
+        
+        cerrarModal();
+    } catch (error) {
+        console.error('Error en editarPersona:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo iniciar la edición: ' + error.message,
+            timer: 2000
+        });
+    }
+};
+
+const eliminarPersona = async () => {
+  try {
+    const id = personaSeleccionada.value.id || personaSeleccionada.value.uuid;
+    const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
+    const esEditadoOffline = personaSeleccionada.value.estado === 'EditadoOffline';
+
+    // Eliminación inmediata de todos los arrays reactivos
+    apuestas.value = apuestas.value.filter(a => a.id !== id);
+    apuestasLocales.value = apuestasLocales.value.filter(a => a.id !== id && a.uuid !== id);
+
+    if (!isOnline.value && !esPendiente) {
+      // Lógica para modo offline
+      const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
+      
+      // Eliminar cualquier mutación previa de edición para este ID
+      const mutacionesFiltradas = mutaciones.filter(m => 
+        !(m.idOriginal === id && m.tipo === 'EDICION')
+      );
+      
+      // Agregar nueva mutación de eliminación
+      mutacionesFiltradas.push({
+        tipo: 'ELIMINACION',
+        idOriginal: id,
+        timestamp: Date.now(),
+        uuid: id
+      });
+
+      localStorage.setItem('mutacionesPendientes', JSON.stringify(mutacionesFiltradas));
+
+      // Actualizar caché visual
+      const cacheStr = localStorage.getItem('apuestasFirebaseCache');
+      if (cacheStr) {
+        const cache = JSON.parse(cacheStr);
+        cache.data = cache.data.filter(a => a.id !== id);
+        localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache));
+      }
+    } else {
+      // Lógica para modo online - limpiar caché local
+      const cacheStr = localStorage.getItem('apuestasFirebaseCache');
+      if (cacheStr) {
+        const cache = JSON.parse(cacheStr);
+        cache.data = cache.data.filter(a => a.id !== id);
+        localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache));
+      }
     }
 
-    const eliminarPersona = async () => {
-        try {
-            const id = personaSeleccionada.value.id
-            const esPendiente = personaSeleccionada.value.estado === 'Pendiente'
-            
-            // Eliminar inmediatamente de la UI
-            if (esPendiente) {
-                apuestasLocales.value = apuestasLocales.value.filter(a => a.uuid !== id)
-                const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]')
-                const nuevasPendientes = pendientes.filter(p => p.uuid !== id)
-                localStorage.setItem('apuestasPendientes', JSON.stringify(nuevasPendientes))
-                const eliminacionesPermanentes = JSON.parse(localStorage.getItem('eliminacionesPermanentes') || '{}')
-                eliminacionesPermanentes[id] = true
-                localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesPermanentes))
-            } else {
-                apuestas.value = apuestas.value.filter(a => a.id !== id)
-                apuestasLocales.value = apuestasLocales.value.filter(a => a.id !== id)
-            }
+    // Forzar actualización de la lista combinada
+    apuestasCombinadas.value = [
+      ...apuestas.value,
+      ...apuestasLocales.value.filter(local => 
+        !apuestas.value.some(fb => fb.id === local.id)
+      )
+    ].filter(a => {
+      try {
+        const fechaA = a.creadoEn?.seconds ? new Date(a.creadoEn.seconds * 1000) :
+              a.creadoEn?.toDate ? a.creadoEn.toDate() :
+              a.creadoEn ? new Date(a.creadoEn) : null;
+        return fechaA && esMismoDia(fechaA, fechaRef.value);
+      } catch {
+        return false;
+      }
+    }).sort((a, b) => {
+      try {
+        const fechaA = a.creadoEn?.seconds ? a.creadoEn.seconds * 1000 :
+              a.creadoEn?.toDate ? a.creadoEn.toDate().getTime() :
+              a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+        
+        const fechaB = b.creadoEn?.seconds ? b.creadoEn.seconds * 1000 :
+              b.creadoEn?.toDate ? b.creadoEn.toDate().getTime() :
+              b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+        
+        if (a.estado === 'Pendiente') return -1;
+        if (b.estado === 'Pendiente') return 1;
+        if (a.estado === 'EditadoOffline') return -1;
+        if (b.estado === 'EditadoOffline') return 1;
+        return fechaB - fechaA;
+      } catch {
+        return 0;
+      }
+    });
 
-            // Cerrar modales inmediatamente
-            mostrarConfirmacionEliminar.value = false
-            mostrarModal.value = false
+    // Cerrar modales
+    mostrarConfirmacionEliminar.value = false;
+    mostrarModal.value = false;
 
-            // Procesar la eliminación en segundo plano
-            const { success } = await eliminarApuesta(id, esPendiente)
-            if (!success) throw new Error('No se pudo completar la eliminación')
+    // Procesar la eliminación en Firebase si estamos online
+    if (isOnline.value) {
+      const { success } = await eliminarApuesta(id, esPendiente || esEditadoOffline);
+      if (!success) throw new Error('No se pudo completar la eliminación');
 
-            Swal.fire({ 
-                icon: 'success', 
-                title: '¡Eliminada!', 
-                text: 'La apuesta fue removida', 
-                timer: 1500, 
-                showConfirmButton: false 
-            })
-        } catch (error) {
-            console.error('Error en eliminarPersona:', error)
-            if (personaSeleccionada.value?.estado === 'Pendiente') {
-                cargarApuestasLocales()
-            } else if (unsubscribe) {
-                unsubscribe()
-                unsubscribe = await obtenerApuestas(idListero)
-            }
-            Swal.fire({ 
-                icon: 'error', 
-                title: 'Error', 
-                text: 'No se pudo eliminar la apuesta', 
-                timer: 2000 
-            })
-        }
+      Swal.fire({ 
+        icon: 'success', 
+        title: '¡Eliminada!', 
+        text: 'La apuesta fue removida', 
+        timer: 1500, 
+        showConfirmButton: false 
+      });
+    } else {
+      Swal.fire({ 
+        icon: 'success', 
+        title: '¡Marcada para eliminar!', 
+        text: 'La apuesta será eliminada cuando vuelvas a estar online', 
+        timer: 1500, 
+        showConfirmButton: false 
+      });
     }
+  } catch (error) {
+    console.error('Error en eliminarPersona:', error);
+    Swal.fire({ 
+      icon: 'error', 
+      title: 'Error', 
+      text: 'No se pudo eliminar la apuesta', 
+      timer: 2000 
+    });
+  }
+};
 
     const confirmarEliminar = () => {
         mostrarConfirmacionEliminar.value = true
@@ -319,14 +444,17 @@ export default function useLista(fechaRef, router, route) {
 
         if (navigator.onLine) {
             isSyncing.value = true
-            sincronizarEliminaciones()
-                .then(sincronizarPendientes)
-                .then(() => {
-                    if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
-                    unsubscribe = obtenerApuestas(idListero)
-                    cargarApuestasLocales()
-                })
-                .finally(() => { isSyncing.value = false })
+            Promise.all([
+                sincronizarEliminaciones(),
+                sincronizarPendientes(),
+                sincronizarMutaciones()
+            ])
+            .then(() => {
+                if (unsubscribe && typeof unsubscribe === 'function') unsubscribe()
+                unsubscribe = obtenerApuestas(idListero)
+                cargarApuestasLocales()
+            })
+            .finally(() => { isSyncing.value = false })
         }
     })
 
