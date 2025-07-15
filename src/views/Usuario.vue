@@ -1,6 +1,8 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import { AuthService } from '@/firebase/auth';
+import mifondo from '../components/mifondo.vue';
+import editarfondocreador from '../components/editarfondocreador.vue';
 import Footer from '../components/Footer.vue';
 
 const router = useRouter();
@@ -24,6 +26,8 @@ const logout = async () => {
         </button>
     </div>
     <button @click="$router.push(`/horario/${$route.params.id}`)" class="m-5">click para ir a horarios</button>
+    <editarfondocreador />
+    <mifondo />
     <footer>
         <Footer title="Usuario" />
     </footer>

@@ -1,58 +1,24 @@
-<script>
+<script setup>
 import CuentaRegresiva from './CuentaRegresiva.vue'
 import { computed, onMounted } from 'vue'
-import { useTotalGlobal } from '@/scripts/UseTotalGlobal.js'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
+import { useFondo } from '../scripts/useFondo.js'
 
-export default {
-  components: { CuentaRegresiva },
-  setup() {
-    const route = useRoute()
-    const authStore = useAuthStore()
-    const isListerosRoute = computed(() => route.path.startsWith('/listeros') || route.path.startsWith('/fondo'))
-    const isFondoRoute = route.path.startsWith('/fondo')
-    const { totalGlobal, isLoading, fetchTotalGlobal } = useTotalGlobal()
+const route = useRoute()
+const isListerosRoute = computed(() => route.path.startsWith('/listeros') || route.path.startsWith('/fondo'))
+const isFondoRoute = route.path.startsWith('/fondo')
 
-    onMounted(() => {
-      fetchTotalGlobal()
-    })
-
-    const formattedPrice = computed(() => {
-      if (isLoading.value) {
-        // Intentar mostrar datos cacheados mientras carga
-        const bancoId = authStore.profile?.bancoId || authStore.profile?.idBancoPadre || authStore.profile?.creadorId
-        const listeroId = authStore.userId
-        
-        if (bancoId && listeroId) {
-          const cacheKey = `totalGlobal_${listeroId}_${bancoId}_${new Date().toISOString().split('T')[0]}`
-          const cachedData = JSON.parse(localStorage.getItem(cacheKey) || '{}')
-          if (cachedData.total) {
-            return `$${cachedData.total.toLocaleString()}`
-          }
-        }
-        return 'Cargando...'
-      }
-      return `$${totalGlobal.value.toLocaleString()}`
-    })
-
-    return {
-      isListerosRoute,
-      isFondoRoute,
-      formattedPrice
-    }
-  }
-}
+const { fondoActual } = useFondo()
 </script>
 
 <template>
   <div class="card-price w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
     <!-- Valor/Precio -->
     <h1 v-if="isListerosRoute" class="price-value">
-      {{ formattedPrice }}
+      {{ fondoActual  }}
     </h1>
     <h3 v-else class="price-value">
-      {{ formattedPrice }}
+      {{ fondoActual  }}
     </h3>
     <!-- Cuenta Regresiva -->
     <div v-if="!isFondoRoute">

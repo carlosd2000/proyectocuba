@@ -8,6 +8,7 @@ import Lista_Active from '../assets/icons/Lista_Active.svg'
 import Wallet from '../assets/icons/Wallet.svg'
 import Wallet_Active from '../assets/icons/Wallet_Active.svg'
 import User from '../assets/icons/User.svg'
+import User_Active from '../assets/icons/User_Active.svg'
 
 
 const route = useRoute()
@@ -44,7 +45,7 @@ const props = defineProps({
             <div v-else class="punto"></div>
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/usuario/${$route.params.id}`)">
-            <img :src="props.title === 'Usuario' ? User : User" alt="">
+            <img :src="props.title === 'Usuario' ? User_Active : User" alt="" width="25px">
             <h5 v-if="props.title !== 'Usuario'" class="navigation-label">Usuario</h5>
             <div v-else class="punto"></div>
         </div>

@@ -1,19 +1,40 @@
 <script setup>
 import { useAuthStore } from '@/stores/authStore'
-import { watch, ref, onMounted } from 'vue'
+import { watch, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ToastManager from './components/ToastManager.vue'
 import { cargarInfoBancoSiNoExiste } from './scripts/fieldValidator.js'
+
 
 const router = useRouter()
 const authStore = useAuthStore()
 const isAppReady = ref(false)
 
+let fondoManager = null
+
 onMounted(async () => {
-  await authStore.initializeAuthListener();
-  isAppReady.value = true;
-  cargarInfoBancoSiNoExiste()
+  try {
+    await authStore.initializeAuthListener();
+    
+    // Importación dinámica
+    const { useFondo } = await import('@/scripts/useFondo.js')
+    fondoManager = useFondo()
+    await fondoManager.iniciar()
+    
+    isAppReady.value = true;
+    cargarInfoBancoSiNoExiste()
+  } catch (error) {
+    console.error('Error inicializando aplicación:', error)
+    isAppReady.value = true // Asegurar que la app se muestre incluso con error
+  }
 });
+
+// Limpieza al desmontar
+onUnmounted(() => {
+  if (fondoManager) {
+    fondoManager.detenerSincronizacion()
+  }
+})
 
 // Redirección basada en autenticación
 watch(() => authStore.user, (user) => {

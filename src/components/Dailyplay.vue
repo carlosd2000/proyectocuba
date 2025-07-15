@@ -7,7 +7,7 @@ import Calendario from './Calendario.vue'
 const horarioSeleccionado = ref('Dia')
 const fechaRef = ref(new Date())
 
-const { totalPorHorario, isLoading, recargarTotales } = useTotalPorHorario(fechaRef)
+const { totalPorHorario, isLoading } = useTotalPorHorario(fechaRef)
 const moneytime = ref('0')
 
 const handleSelect = (selectedValue) => {
