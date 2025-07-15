@@ -91,43 +91,90 @@ export function claseImagenSiHayEspacioGlobal(indexGlobal, circuloKey = null) {
 export function useInputs(props = {}) {
   setTipoOrigen('tiros')
 
-  // Cargar datos de edición usando función compartida
-  const cargarDatosEdicion = () => {
-    if (!props || !props.datosEdicion) return
-    cargarDatosEdicionCompartida(
-      props,
-      nombreUsuario,
-      filasFijas,
-      filasExtra,
-      5 // longitud de filas fijas
-    )
-    if (props.datosEdicion?.circuloSolo) {
-      filasFijas.value[2].circuloSolo = props.datosEdicion.circuloSolo.toString()
+  // Cargar datos de edición mejorado para manejar offline
+const cargarDatosEdicion = () => {
+    if (!props) return;
+    
+    // 1. Buscar en datos directos (online)
+    if (props.datosEdicion) {
+        cargarDatosEdicionCompartida(props, nombreUsuario, filasFijas, filasExtra, 5);
+        if (props.datosEdicion?.circuloSolo) {
+            filasFijas.value[2].circuloSolo = props.datosEdicion.circuloSolo.toString();
+        }
+        return;
     }
-  }
+
+    // 2. Buscar en localStorage (offline)
+    if (props?.modoEdicion && props?.idEdicion) {
+        // Buscar en apuestas pendientes
+        const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+        const apuesta = pendientes.find(p => p.uuid === props.idEdicion || p.id === props.idEdicion);
+        
+        if (apuesta) {
+            cargarDatosEdicionCompartida(
+                { datosEdicion: apuesta },
+                nombreUsuario,
+                filasFijas,
+                filasExtra,
+                5
+            );
+            if (apuesta.circuloSolo) {
+                filasFijas.value[2].circuloSolo = apuesta.circuloSolo.toString();
+            }
+            return;
+        }
+
+        // Buscar en caché de Firebase
+        const cacheStr = localStorage.getItem('apuestasFirebaseCache');
+        if (cacheStr) {
+            const cache = JSON.parse(cacheStr);
+            const apuestaCache = cache.data?.find(a => a.id === props.idEdicion);
+            
+            if (apuestaCache) {
+                cargarDatosEdicionCompartida(
+                    { datosEdicion: apuestaCache },
+                    nombreUsuario,
+                    filasFijas,
+                    filasExtra,
+                    5
+                );
+                if (apuestaCache.circuloSolo) {
+                    filasFijas.value[2].circuloSolo = apuestaCache.circuloSolo.toString();
+                }
+            }
+        }
+    }
+};
 
   // Reactivo: actualiza si los datos de edición cambian dinámicamente
   watch(() => props?.datosEdicion, (nuevosDatos) => {
     if (props?.modoEdicion && nuevosDatos) {
-      cargarDatosEdicion()
+      cargarDatosEdicion();
     }
-  }, { deep: true, immediate: true })
+  }, { deep: true, immediate: true });
+
+  // Watch adicional para cambios en idOriginal (para ediciones offline)
+  watch(() => props?.query?.idOriginal, (idOriginal) => {
+    if (props?.modoEdicion && idOriginal) {
+      cargarDatosEdicion();
+    }
+  });
 
   // Sincroniza nombre con añadir.js
   watch(nombreUsuario, (nuevo) => {
-    setNombre(nuevo)
-  })
+    setNombre(nuevo);
+  });
 
   onMounted(() => {
-    if (props?.modoEdicion && props?.idEdicion) {
-      setModoEdicion(true, props.idEdicion)
+    if (props?.modoEdicion && (props?.idEdicion || props?.query?.idOriginal)) {
+      setModoEdicion(true, props.idEdicion || props.query.idOriginal);
     }
-  })
+  });
 
   onUnmounted(() => {
-    limpiarCampos()
-    setModoEdicion(false, '')
-  })
+    limpiarCampos();
+    setModoEdicion(false, '');
+  });
 
   return {
     filasFijas,
@@ -136,6 +183,6 @@ export function useInputs(props = {}) {
     limpiarCampos,
     nombreUsuario,
     soloEnteros,
-    claseImagenSiHayEspacioGlobal, // <-- Exporta la función global
-  }
+    claseImagenSiHayEspacioGlobal,
+  };
 }

@@ -1,4 +1,3 @@
-// src/scripts/añadir.js
 import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones';
@@ -6,63 +5,17 @@ import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { obtenerBancoPadre } from './FunctionBancoPadre.js';
 
-async function ejemploUso() {
-  const bancoId = await obtenerBancoPadre();
-  console.log("Banco padre:", bancoId);
-}
-
 // Variables reactivas
 export const nombreTemporal = ref('');
 export const tipoOrigen = ref('tiros');
 export const horarioSeleccionado = ref(null);
-export const hayHorariosDisponibles = ref(true)
+export const hayHorariosDisponibles = ref(true);
 export const modoEdicion = ref(false);
 export const idEdicion = ref('');
 export const uuidGenerado = ref('');
 
 let syncPending = false;
-let cachedBancoId = null; // Cache para el ID del banco
-
-/**
-Genera un UUID único para cada apuesta
- */
-function generarUUID() {
-  return window.crypto?.randomUUID?.() || 
-         Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-export function tomarUUID() {
-  uuidGenerado.value = generarUUID();
-  return uuidGenerado.value;
-}
-
-
-function guardarEnLocal(docAGuardar, esEdicion = false) {
-  try {
-    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-    
-    if (esEdicion) {
-      const index = pendientes.findIndex(p => p.uuid === docAGuardar.uuid);
-      if (index !== -1) {
-        pendientes[index] = docAGuardar;
-      } else {
-        pendientes.push(docAGuardar);
-      }
-    } else {
-      const existe = pendientes.some(p => p.uuid === docAGuardar.uuid);
-      if (!existe) {
-        pendientes.push(docAGuardar);
-      }
-    }
-    
-    localStorage.setItem('apuestasPendientes', JSON.stringify(pendientes));
-    // 🔽 Notifica a los listeners que cambió el localStorage
-    window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
-    return true;
-  } catch (error) {
-    console.error('Error guardando en localStorage:', error);
-    return false;
-  }
-}
+let cachedBancoId = null;
 
 // ================= CONFIGURACIÓN =================
 export function setNombre(nombre) {
@@ -82,19 +35,56 @@ export function setModoEdicion(editar, id) {
   idEdicion.value = id || '';
 }
 
+// ================= FUNCIONES AUXILIARES =================
+export function generarUUID() {
+  return window.crypto?.randomUUID?.() || 
+         Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+export function tomarUUID() {
+  uuidGenerado.value = generarUUID();
+  return uuidGenerado.value;
+}
+
+function guardarEnLocal(docAGuardar, esEdicion = false) {
+  try {
+    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    const pendientesArray = Array.isArray(pendientes) ? pendientes : [];
+    
+    if (esEdicion) {
+      const index = pendientesArray.findIndex(p => p.uuid === docAGuardar.uuid);
+      if (index !== -1) {
+        pendientesArray[index] = docAGuardar;
+      } else {
+        pendientesArray.push(docAGuardar);
+      }
+    } else {
+      const existe = pendientesArray.some(p => p.uuid === docAGuardar.uuid);
+      if (!existe) {
+        pendientesArray.push(docAGuardar);
+      }
+    }
+    
+    localStorage.setItem('apuestasPendientes', JSON.stringify(pendientesArray));
+    window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
+    return true;
+  } catch (error) {
+    console.error('Error guardando en localStorage:', error);
+    return false;
+  }
+}
+
 // ================= PROCESAMIENTO DE DATOS =================
 function procesarFilas(filas, tipo) {
   return filas.map((fila, index) => {
-    if (index === 2 && tipo === 'fija') {
-      const { circuloSolo, ...resto } = fila;
-      fila = resto;
-    }
+    // Eliminar circuloSolo de todas las filas
+    const { circuloSolo, ...filaLimpia } = fila;
 
     const filaProcesada = { tipo, fila: index + 1 };
     let tieneDatos = false;
 
-    for (const clave in fila) {
-      const valor = fila[clave];
+    for (const clave in filaLimpia) {
+      const valor = filaLimpia[clave];
       if (valor !== '' && valor !== null && !isNaN(valor)) {
         filaProcesada[clave] = Number(valor);
         tieneDatos = true;
@@ -112,37 +102,32 @@ export async function guardarDatos() {
       success: false, 
       message: "No hay horarios disponibles para enviar apuestas",
       code: "NO_HORARIOS"
-    }
+    };
   }
-  
-  const { hora24, timestamp } = obtenerHoraCuba(); 
+
+  const { hora24, timestamp } = obtenerHoraCuba();
   try {
     const bancoId = await obtenerBancoPadre();
-    if (!bancoId) {
-      throw new Error("No se pudo determinar el banco padre");
-    }
-    let firebaseId = modoEdicion.value && idEdicion.value ? idEdicion.value : uuidGenerado.value;
-    let uuid = firebaseId;
+    if (!bancoId) throw new Error("No se pudo determinar el banco padre");
 
+    const uuid = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
 
+    // Procesamiento de datos
     const filasCombinadas = [...filasFijas.value, ...filasExtra.value];
-    const filasExpandidaCombinadas = expandirApuestasPorLinea(filasCombinadas);
+    const filasExpandidas = expandirApuestasPorLinea(filasCombinadas);
 
-    // Calcular el total sumando los valores de los círculos de cada apuesta expandida
     let totalGlobal = 0;
-    for (const fila of filasExpandidaCombinadas) {
+    for (const fila of filasExpandidas) {
       if (fila.circulo1) totalGlobal += Number(fila.circulo1);
       if (fila.circulo2) totalGlobal += Number(fila.circulo2);
     }
-    // Si hay circuloSolo válido, súmalo:
+
     const circuloSolo = filasFijas.value[2]?.circuloSolo;
     const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
     if (circuloSoloValido) totalGlobal += Number(circuloSolo);
 
-    // 3. Procesar filas
-    const datosAGuardar = procesarFilas(filasExpandidaCombinadas, 'fija');
+    const datosAGuardar = procesarFilas(filasExpandidas, 'fija');
 
-    // 4. Validación
     if (datosAGuardar.length === 0 && !circuloSoloValido && totalGlobal === 0) {
       return { 
         success: false, 
@@ -150,85 +135,103 @@ export async function guardarDatos() {
       };
     }
 
-    // 5. Preparar documento final
-      const docAGuardar = {
-      nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuidGenerado.value.slice(0, 6),
+    // Preparar documento para guardar
+    const docAGuardar = {
+      id: uuid,
+      nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuid.slice(0, 6),
       totalGlobal,
       datos: datosAGuardar,
       id_listero: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
       horario: horarioSeleccionado.value,
-      uuid,
+      uuid: uuid,
       horaCuba24: hora24,
       timestampLocal: timestamp,
-      bancoId // Aseguramos que siempre tenga valor
+      bancoId,
+      estado: 'Cargado',
+      fueraDeTiempo: false,
+      creadoEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp()
     };
 
-    // 6. Agregar circuloSolo si es válido
     if (circuloSoloValido) {
       docAGuardar.circuloSolo = Number(circuloSolo);
     }
 
-    // 6.1 Guardar según conexión
+    // Manejo offline
     if (!navigator.onLine) {
       docAGuardar.creadoEn = new Date().toISOString();
-      docAGuardar.estado = 'Pendiente';
-      docAGuardar.bancoId = bancoId; // Asegurar que tenemos el bancoId para sincronizar luego
+      docAGuardar.actualizadoEn = new Date().toISOString();
       
-      const guardado = guardarEnLocal(docAGuardar, modoEdicion.value);
-      
+      if (modoEdicion.value) {
+        docAGuardar.estado = 'EditadoOffline';
+        const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
+        
+        const mutacionesFiltradas = mutaciones.filter(m => m.uuid !== uuid);
+        
+        mutacionesFiltradas.push({
+          tipo: 'EDICION',
+          uuid: uuid,
+          nuevosDatos: docAGuardar,
+          timestamp: Date.now()
+        });
+
+        localStorage.setItem('mutacionesPendientes', JSON.stringify(mutacionesFiltradas));
+        
+        const cacheStr = localStorage.getItem('apuestasFirebaseCache') || '{"data":[]}';
+        const cache = JSON.parse(cacheStr);
+        cache.data = cache.data.map(item => item.uuid === uuid ? docAGuardar : item);
+        localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache));
+      } 
+      else {
+        docAGuardar.estado = 'Pendiente';
+        guardarEnLocal(docAGuardar, false);
+      }
+
       return { 
-        success: guardado, 
+        success: true, 
         offline: true,
         uuid,
-        firebaseId,
-        hora: hora24,
-        esEdicion: modoEdicion.value
+        message: modoEdicion.value ?
+          'Cambios guardados localmente. Se sincronizarán automáticamente cuando vuelvas a estar online' :
+          'Apuesta guardada localmente. Se subirá a Firebase cuando vuelvas a estar online'
       };
     }
 
-    // 7. Lógica diferente para edición vs creación
-    const docPath = `bancos/${bancoId}/apuestas/${firebaseId}`;
+    // Manejo online
+    const docPath = `bancos/${bancoId}/apuestas/${uuid}`;
     
-    if (modoEdicion.value && idEdicion.value) {
-      await updateDoc(doc(db, docPath), docAGuardar);
+    if (modoEdicion.value) {
+      const { creadoEn, ...updateData } = docAGuardar;
+      await updateDoc(doc(db, docPath), updateData);
       
       return { 
         success: true, 
-        message: `Datos actualizados a las ${hora24}`,
-        horaExacta: hora24,
-        docId: firebaseId,
-        uuid
+        message: `Apuesta actualizada correctamente a las ${hora24}`,
+        docId: uuid
       };
     } 
     else {
       const docRef = doc(db, docPath);
-      docAGuardar.creadoEn = serverTimestamp();
       await setDoc(docRef, docAGuardar);
 
       return { 
         success: true, 
-        uuid,
-        firebaseId,
-        message: `Datos guardados a las ${hora24}`,
-        horaExacta: hora24,
-        docId: docRef.id
+        message: `Apuesta guardada correctamente a las ${hora24}`,
+        docId: uuid
       };
     }
   } catch (error) {
     console.error('Error al guardar:', error);
-    const { hora24 } = obtenerHoraCuba();
-    
     return { 
       success: false, 
-      message: `Error a las ${hora24}: ${error.message}`,
-      horaError: hora24
+      message: `Error: ${error.message}`,
+      error: error.message
     };
   }
 }
 
 // ================= SINCRONIZACIÓN =================
-// En añadir.js, modificar la función sincronizarPendientes
 export async function sincronizarPendientes() {
   if (!navigator.onLine || syncPending) return;
   
@@ -236,109 +239,138 @@ export async function sincronizarPendientes() {
   console.log('[SYNC] Iniciando sincronización de pendientes...');
   
   try {
-    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    const pendientesStr = localStorage.getItem('apuestasPendientes') || '[]';
+    const pendientes = JSON.parse(pendientesStr);
+    const pendientesArray = Array.isArray(pendientes) ? pendientes : [];
     const pendientesExitosos = [];
 
-    const horaServidorObj = await obtenerHoraServidor();
-    const horaServidor = horaServidorObj.toDate();
-
-    for (const apuesta of pendientes) {
+    for (const apuesta of pendientesArray) {
       try {
-        let bancoId = apuesta.bancoId;
-        if (!bancoId) {
-          bancoId = await obtenerBancoPadre();
-          if (!bancoId) {
-            console.warn(`[SYNC] No se pudo obtener bancoId para ${apuesta.uuid}, omitiendo`);
-            continue;
-          }
-        }
+        const bancoId = apuesta.bancoId || await obtenerBancoPadre();
+        if (!bancoId) continue;
+
         const docRef = doc(db, `bancos/${bancoId}/apuestas`, apuesta.uuid);
         const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          console.log(`[SYNC] Apuesta ${apuesta.uuid} ya existe, se omite`);
-          continue;
-        }
-
-        // 🔹 2. Obtener hora límite del horario
-        const horarioRef = doc(db, `bancos/${bancoId}/hora`, apuesta.horario.toLowerCase());
-        const horarioSnap = await getDoc(horarioRef);
-
-        let fueraDeTiempo = false;
-
-        if (horarioSnap.exists()) {
-          const horaLimite = horarioSnap.data().hora?.toDate();
-          if (horaLimite) {
-            // Crear nuevo Date con la fecha actual del servidor y la hora del cierre
-            const cierre = new Date(horaServidor);
-            cierre.setHours(horaLimite.getHours(), horaLimite.getMinutes(), 0, 0);
-            fueraDeTiempo = horaServidor > cierre;
-            console.log(`[SYNC] Apuesta ${apuesta.uuid} - Hora de cierre:`, cierre.toLocaleString());
-            console.log(`[SYNC] Apuesta ${apuesta.uuid} - Hora de servidor:`, horaServidor.toLocaleString());
-          }
-        }
+        
+        if (snap.exists()) continue;
 
         await setDoc(docRef, {
           ...apuesta,
-          creadoEn: apuesta.creadoEn ? new Date(apuesta.creadoEn) : serverTimestamp(),
+          creadoEn: serverTimestamp(),
           sincronizadoEn: serverTimestamp(),
-          estado: fueraDeTiempo ? 'FueraDeTiempo' : 'Cargado',
-          fueraDeTiempo
+          estado: 'Cargado'
         });
 
         pendientesExitosos.push(apuesta.uuid);
       } catch (error) {
         console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
-        break;
       }
     }
     
     if (pendientesExitosos.length > 0) {
-      const nuevosPendientes = pendientes.filter(p => !pendientesExitosos.includes(p.uuid));
-      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes))
-      window.dispatchEvent(new Event('apuestas-locales-actualizadas'))
-      console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas`);
+      const nuevosPendientes = pendientesArray.filter(p => !pendientesExitosos.includes(p.uuid));
+      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes));
+      window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
     }
   } catch (error) {
     console.error('[SYNC] Error general:', error);
   } finally {
     syncPending = false;
-    // Notifica a DailyPlay que debe recalcular el total local
+  }
+}
+
+export async function sincronizarMutaciones() {
+  if (!navigator.onLine || syncPending) return;
+  
+  syncPending = true;
+  console.log('[SYNC] Iniciando sincronización de mutaciones...');
+  
+  try {
+    const bancoId = await obtenerBancoPadre();
+    if (!bancoId) {
+      console.error('[SYNC] No se pudo obtener bancoId');
+      return;
+    }
+
+    const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
+    const mutacionesExitosas = [];
+
+    for (const mutacion of mutaciones) {
+      try {
+        if (mutacion.tipo === 'EDICION') {
+          const docRef = doc(db, `bancos/${bancoId}/apuestas`, mutacion.uuid);
+          const docSnap = await getDoc(docRef);
+          
+          if (!docSnap.exists()) {
+            console.log(`[SYNC] Documento ${mutacion.uuid} no existe, se omite`);
+            continue;
+          }
+
+          const { id, creadoEn, ...datosActualizados } = mutacion.nuevosDatos;
+          
+          await updateDoc(docRef, {
+            ...datosActualizados,
+            estado: 'Cargado',
+            fueraDeTiempo: false,
+            actualizadoEn: serverTimestamp(),
+            sincronizadoEn: serverTimestamp()
+          });
+        } 
+        else if (mutacion.tipo === 'ELIMINACION') {
+          const docRef = doc(db, `bancos/${bancoId}/apuestas`, mutacion.idOriginal);
+          const docSnap = await getDoc(docRef);
+          
+          if (!docSnap.exists()) {
+            console.log(`[SYNC] Documento a eliminar ${mutacion.idOriginal} no existe, se omite`);
+            continue;
+          }
+
+          await deleteDoc(docRef);
+          console.log(`[SYNC] Apuesta ${mutacion.idOriginal} eliminada`);
+        }
+        
+        mutacionesExitosas.push(mutacion.timestamp);
+      } catch (error) {
+        console.error(`[SYNC] Error en mutación ${mutacion.timestamp}:`, error);
+      }
+    }
+
+    if (mutacionesExitosas.length > 0) {
+      const nuevasMutaciones = mutaciones.filter(m => 
+        !mutacionesExitosas.includes(m.timestamp)
+      );
+      localStorage.setItem('mutacionesPendientes', JSON.stringify(nuevasMutaciones));
+    }
+
+    console.log(`[SYNC] ${mutacionesExitosas.length} mutaciones sincronizadas`);
+  } catch (error) {
+    console.error('[SYNC] Error general:', error);
+  } finally {
+    syncPending = false;
     window.dispatchEvent(new Event('apuestas-sincronizadas'));
   }
 }
 
-// ================= FUNCIONES AUXILIARES =================
-async function obtenerHoraServidor() {
-  const tempDocRef = doc(db, "temp", "serverTimeCheck");
-  await setDoc(tempDocRef, { timestamp: serverTimestamp() });
-  const docSnap = await getDoc(tempDocRef);
-  await deleteDoc(tempDocRef);
-
-  const rawTimestamp = docSnap.data().timestamp;
-  const date = rawTimestamp.toDate();
-  const fechaAjustada = new Date(date.getTime() + 3600000); // +1 hora
-
-  return {
-    toDate: () => fechaAjustada,
-    toMillis: () => fechaAjustada.getTime()
-  };
-}
-
-// ================= LISTENERS DE CONEXIÓN =================
+// ================= EVENT LISTENERS PARA SINCRONIZACIÓN =================
 if (typeof window !== 'undefined') {
-  // Sincronizar inmediatamente si hay conexión
+  window.addEventListener('online', async () => {
+    console.log('[SYNC] Conexión restablecida, iniciando sincronización...');
+    setTimeout(async () => {
+      try {
+        await Promise.all([sincronizarPendientes(), sincronizarMutaciones()]);
+        console.log('[SYNC] Sincronización completa');
+      } catch (error) {
+        console.error('[SYNC] Error en sincronización automática:', error);
+      }
+    }, 3000);
+  });
+
   if (navigator.onLine) {
     setTimeout(() => {
       if (!syncPending) {
-        sincronizarPendientes();
+        Promise.all([sincronizarPendientes(), sincronizarMutaciones()])
+          .catch(err => console.error('Error en sincronización inicial:', err));
       }
     }, 2000);
   }
-
-  // Listener para cambios de conexión
-  window.addEventListener('online', () => {
-    if (!syncPending) {
-      setTimeout(sincronizarPendientes, 1000);
-    }
-  });
 }
