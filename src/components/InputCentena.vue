@@ -3,13 +3,13 @@
     <div class="main-container">
       <!-- Contenedor del scroll (filas) -->
       <div class="scroll-container">
-        <!-- Fila fija -->
-        <div class="input-row">
+        <!-- Filas fijas - Mostrar 1 si es nuevo, 3 si es edición -->
+        <div v-for="fila in (modoEdicion ? 3 : 1)" :key="'fija-' + fila" class="input-row">
           <input
             type="number"
             class="cuadrado label"
             placeholder="000"
-            v-model="filasFijas[0].cuadrado"
+            v-model="filasFijas[fila - 1].cuadrado"
             min="0"
             step="1"
             @keypress="soloEnteros($event)"
@@ -32,9 +32,14 @@
           <div class="espacio-vacio"></div>
           <div class="espacio-vacio"></div>
         </div>
+        <div class="btn-agregar-container">
+          <button class="btn-agregar-fila" @click="agregarFila">
+            <img :src="masIcon" alt="Agregar fila" class="icono-mas">
+          </button>
+        </div>
       </div>
 
-      <!-- Círculo solo - FIJO FUERA DEL SCROLL -->
+      <!-- Círculo solo - FIJO FUERA DEL SCROLL - SIEMPRE VISIBLE -->
       <div class="circulo-solo-fixed">
         <input
           type="number"
@@ -48,17 +53,12 @@
           @input="validarCampo(filasFijas[2].circuloSolo, 'circuloSolo')"
         />
       </div>
-
-      <!-- Botón agregar -->
-      <button class="btn-agregar-fila" @click="agregarFila">
-        <img :src="masIcon" alt="Agregar fila" class="icono-mas">
-      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { watchEffect, onMounted } from 'vue'
+import { watchEffect, onMounted, computed } from 'vue'
 import masIcon from '@/assets/icons/mas.svg'
 import { useInputCentena } from '../scripts/InputCentena.js'
 import {
@@ -69,14 +69,21 @@ import {
 } from '../scripts/fieldValidator.js'
 
 const emit = defineEmits(['update:hayCamposInvalidos'])
-const props = defineProps({ datosEdicion: Object, modoEdicion: Boolean, idEdicion: String })
+const props = defineProps({ 
+  datosEdicion: Object, 
+  modoEdicion: Boolean, 
+  idEdicion: String 
+})
 
 const {
   filasFijas,
   filasExtra,
   agregarFila,
-  soloEnteros
+  soloEnteros,
+  limpiarCampos
 } = useInputCentena(props)
+
+const modoEdicion = computed(() => props.modoEdicion)
 
 watchEffect(() => {
   const hayErrores = hayErroresCriticos()
@@ -103,14 +110,16 @@ onMounted(() => {
   gap: 8px;
   width: 100%;
   overflow-y: auto;
-  width: calc(100% - 8px); /* Ajuste para mayor ancho */
+  width: calc(100% - 8px);
+}
+.btn-agregar-container {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .input-row {
   display: flex;
-  margin-bottom: 8px;
   gap: 10px;
-  padding-left: 8px;
   height: 48px;
   width: 100%;
 }
@@ -128,22 +137,17 @@ onMounted(() => {
   height: 48px;
 }
 
-/* Círculo solo - POSICIÓN FIJA */
 .circulo-solo-fixed {
   position: absolute;
   right: 0;
-  top: 56px; /* (48px + 8px) para primera fila */
+  top: 112px; /* Posición para alinearse con la tercera fila */
   width: 64px;
   height: 48px;
   z-index: 2;
 }
 
-/* Botón agregar */
 .btn-agregar-fila {
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  width: 64px;
+  width: 70px;
   height: 48px;
   background: #E0E0F8;
   border-radius: 60px;
@@ -153,9 +157,7 @@ onMounted(() => {
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s;
-  z-index: 10;
 }
-
 .btn-agregar-fila:hover {
   background: #D0D0F0;
 }
@@ -166,7 +168,6 @@ onMounted(() => {
   object-fit: contain;
 }
 
-/* Estilos para los inputs */
 .cuadrado {
   border: 1px solid #CDCDD1;
   border-radius: 30px;
@@ -179,7 +180,6 @@ onMounted(() => {
   border-radius: 30px;
 }
 
-/* Quitar flechas de los inputs number */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -188,5 +188,10 @@ input[type="number"]::-webkit-outer-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.input-invalido {
+  border: 1px solid #ff0000 !important;
+  background-color: #ffeeee !important;
 }
 </style>
