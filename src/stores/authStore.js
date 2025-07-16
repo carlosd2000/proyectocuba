@@ -15,6 +15,7 @@ import {
   getDocs
 } from 'firebase/firestore'
 import authService from '@/firebase/auth'
+import WalletService from '@/firebase/walletService'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -22,6 +23,7 @@ export const useAuthStore = defineStore('auth', {
     profile: null,
     loading: false,
     error: null,
+    wallet: null, // Nuevo estado para almacenar datos de la wallet
     contextoJerarquico: {
       bancoId: null,
       rutaCompleta: []
@@ -39,18 +41,34 @@ export const useAuthStore = defineStore('auth', {
         this.loading = true
         this.error = null
 
-        // Usamos el email del usuario ya autenticado
+        // 1. Autenticación y carga de perfil
         const result = await authService.login(this.user.email, '')
         
         if (result.success) {
           this.profile = result.profile
           
-          // Obtener contexto jerárquico
+          // 2. Obtener contexto jerárquico
           this.contextoJerarquico = await authService.obtenerContextoJerarquico(
             this.user.uid,
             this.profile.tipo,
             this.profile.bancoId
           )
+
+          // 3. Crear/Actualizar wallet del usuario
+          if (this.bancoId) { // Solo si no es admin
+            await WalletService.crearOActualizarWallet({
+              userId: this.user.uid,
+              bancoId: this.bancoId,
+              userType: this.profile.tipo
+            })
+
+            // 4. Cargar datos de la wallet
+            this.wallet = await WalletService.obtenerWallet(
+              this.user.uid, 
+              this.bancoId
+            )
+          }
+          
           localStorage.setItem('userProfile', JSON.stringify(this.profile))
         }
         return this.profile
@@ -93,6 +111,14 @@ export const useAuthStore = defineStore('auth', {
             bancoId: uid,
             rutaCompleta: [uid]
           }
+
+          // Crear/actualizar wallet para banco
+          await WalletService.crearOActualizarWallet({
+            userId: uid,
+            bancoId: uid,
+            userType: 'bancos'
+          })
+          
           localStorage.setItem('userProfile', JSON.stringify(this.profile))
           return { success: true }
         }
@@ -116,6 +142,15 @@ export const useAuthStore = defineStore('auth', {
                 collectionName,
                 this.profile.bancoId
               )
+
+              // Crear/actualizar wallet si no es admin
+              if (this.bancoId) {
+                await WalletService.crearOActualizarWallet({
+                  userId: uid,
+                  bancoId: this.bancoId,
+                  userType: collectionName
+                })
+              }
             }
             
             localStorage.setItem('userProfile', JSON.stringify(this.profile))
@@ -146,6 +181,13 @@ export const useAuthStore = defineStore('auth', {
                 subcoleccion,
                 this.profile.bancoId
               )
+              
+              // Crear/actualizar wallet para usuarios jerárquicos
+              await WalletService.crearOActualizarWallet({
+                userId: uid,
+                bancoId: this.bancoId,
+                userType: subcoleccion
+              })
               
               localStorage.setItem('userProfile', JSON.stringify(this.profile))
               return { success: true }
@@ -184,6 +226,14 @@ export const useAuthStore = defineStore('auth', {
                   this.profile.tipo,
                   this.profile.bancoId
                 )
+
+                // Cargar wallet desde cache o servidor
+                if (this.bancoId) {
+                  this.wallet = await WalletService.obtenerWallet(
+                    user.uid,
+                    this.bancoId
+                  )
+                }
               } catch (e) {
                 console.error("Error parseando perfil cacheado:", e)
                 localStorage.removeItem('userProfile')
@@ -220,10 +270,39 @@ export const useAuthStore = defineStore('auth', {
     clearAuth() {
       this.user = null
       this.profile = null
+      this.wallet = null
       this.contextoJerarquico = { bancoId: null, rutaCompleta: [] }
       this.loading = false
       this.error = null
       localStorage.removeItem('userProfile')
+    },
+
+    // Nueva acción para actualizar fondos
+    async actualizarFondosWallet({ tipo, monto, movimiento }) {
+      if (!this.user?.uid || !this.bancoId) {
+        throw new Error('Usuario no autenticado o sin banco asociado')
+      }
+
+      try {
+        const result = await WalletService.actualizarFondos({
+          userId: this.user.uid,
+          bancoId: this.bancoId,
+          tipo,
+          monto,
+          movimiento
+        })
+
+        // Refrescar datos de la wallet
+        this.wallet = await WalletService.obtenerWallet(
+          this.user.uid,
+          this.bancoId
+        )
+
+        return result
+      } catch (error) {
+        console.error('Error actualizando fondos:', error)
+        throw error
+      }
     }
   },
 
@@ -234,6 +313,8 @@ export const useAuthStore = defineStore('auth', {
     bancoId: (state) => state.contextoJerarquico.bancoId,
     rutaJerarquica: (state) => state.contextoJerarquico.rutaCompleta,
     isLoading: (state) => state.loading,
-    currentError: (state) => state.error
+    currentError: (state) => state.error,
+    // Nuevo getter para el fondo recaudado
+    fondoRecaudado: (state) => state.wallet?.fondo_recaudado || 0
   }
 })

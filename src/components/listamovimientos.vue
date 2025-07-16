@@ -1,8 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, defineProps } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { obtenerTransacciones } from '../scripts/obtenerTransacciones'
-import { useAuthStore } from '@/stores/authStore'
 
 import Chevron_right from '../assets/icons/Chevron_right.svg'
 import IconoRetiro from '../assets/icons/Retiro.svg'
@@ -14,7 +12,13 @@ import IconoDeposito from '../assets/icons/Deposito.svg'
 
 const router = useRouter()
 const route = useRoute()
-const transacciones = ref([]);
+
+const props = defineProps({
+  movimientos: {
+    type: Array,
+    default: () => []
+  }
+})
 
 function iconoPorTipo(tipo) {
   switch (tipo) {
@@ -24,26 +28,20 @@ function iconoPorTipo(tipo) {
     case 'Tiro de la Noche': return IconoNoche
     case 'Ganancia': return IconoGanancia
     case 'Deposito': return IconoDeposito
-    default: return '' // podrías usar un ícono por defecto aquí
+    default: return ''
   }
 }
+
 function iramovimiento(tipo) {
   if (tipo !== 'Deposito') {
     router.push(`/lista/${route.params.id}`)
   }
 }
-
-onMounted(async () => {
-  const authStore = useAuthStore()
-  const userId = authStore.userId
-  const data = await obtenerTransacciones(userId)
-  transacciones.value = data
-})
 </script>
 
 <template>
   <div class="contenedor p-1 d-flex flex-column align-items-center justify-content-center">
-      <li v-for="movimiento in transacciones" :key="movimiento.id" class="container-list d-flex flex-row justify-content-center align-items-center gap-3">
+      <li v-for="movimiento in movimientos" :key="movimiento.id" class="container-list d-flex flex-row justify-content-center align-items-center gap-3">
         <img :src="iconoPorTipo(movimiento.tipo)" alt="" width="20px" :class="movimiento.tipo === 'Deposito' ? 'verde' : ''">
         <div class="d-flex flex-row justify-content-between w-100">
           <div class="d-flex flex-column justify-content-center align-items-start">
@@ -51,11 +49,11 @@ onMounted(async () => {
               {{ ['Tiro de la Noche', 'Tiro de la Tarde', 'Tiro del Dia'].includes(movimiento.tipo) ? 'Tiro' : movimiento.tipo }}
             </h5>
             <h5 class="small">
-              {{ (movimiento.fecha).toLocaleString() }}
+              {{ movimiento.fecha.toLocaleString() }}
             </h5>
           </div>
           <h5 class="body-bold" :class="(movimiento.tipo === 'Deposito' || movimiento.tipo === 'Retiro') ? '' : (movimiento.monto >= 0 ? 'text-success' : 'text-danger')">
-            ${{ (movimiento.monto).toLocaleString() }}
+            ${{ movimiento.monto.toLocaleString() }}
           </h5>
         </div>
         <img :src="Chevron_right" alt="" style="cursor: pointer;" :style="{ visibility: movimiento.tipo !== 'Deposito' ? 'visible' : 'hidden' }" @click="iramovimiento(movimiento)" />
