@@ -313,20 +313,32 @@ const eliminarPersona = async () => {
     const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
     const esEditadoOffline = personaSeleccionada.value.estado === 'EditadoOffline';
 
-    // Eliminación inmediata de todos los arrays reactivos
+    // 1. Registrar eliminación permanente
+    const eliminacionesPermanentes = JSON.parse(
+      localStorage.getItem('eliminacionesPermanentes') || '{}'
+    );
+    eliminacionesPermanentes[id] = true;
+    localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesPermanentes));
+
+    // 2. Eliminar de apuestasPendientes si es offline
+    if (!isOnline.value && esPendiente) {
+      const apuestasPendientes = JSON.parse(
+        localStorage.getItem('apuestasPendientes') || '[]'
+      ).filter(a => a.uuid !== id);
+      localStorage.setItem('apuestasPendientes', JSON.stringify(apuestasPendientes));
+    }
+
+    // 3. Eliminación de arrays reactivos
     apuestas.value = apuestas.value.filter(a => a.id !== id);
     apuestasLocales.value = apuestasLocales.value.filter(a => a.id !== id && a.uuid !== id);
 
+    // 4. Manejo de mutaciones para sincronización
     if (!isOnline.value && !esPendiente) {
-      // Lógica para modo offline
       const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
-      
-      // Eliminar cualquier mutación previa de edición para este ID
       const mutacionesFiltradas = mutaciones.filter(m => 
         !(m.idOriginal === id && m.tipo === 'EDICION')
       );
       
-      // Agregar nueva mutación de eliminación
       mutacionesFiltradas.push({
         tipo: 'ELIMINACION',
         idOriginal: id,
@@ -335,25 +347,17 @@ const eliminarPersona = async () => {
       });
 
       localStorage.setItem('mutacionesPendientes', JSON.stringify(mutacionesFiltradas));
-
-      // Actualizar caché visual
-      const cacheStr = localStorage.getItem('apuestasFirebaseCache');
-      if (cacheStr) {
-        const cache = JSON.parse(cacheStr);
-        cache.data = cache.data.filter(a => a.id !== id);
-        localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache));
-      }
-    } else {
-      // Lógica para modo online - limpiar caché local
-      const cacheStr = localStorage.getItem('apuestasFirebaseCache');
-      if (cacheStr) {
-        const cache = JSON.parse(cacheStr);
-        cache.data = cache.data.filter(a => a.id !== id);
-        localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache));
-      }
     }
 
-    // Forzar actualización de la lista combinada
+    // 5. Actualizar caché visual
+    const cacheStr = localStorage.getItem('apuestasFirebaseCache');
+    if (cacheStr) {
+      const cache = JSON.parse(cacheStr);
+      cache.data = cache.data.filter(a => a.id !== id);
+      localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache));
+    }
+
+    // 6. Forzar actualización de la lista combinada (manteniendo tu lógica original)
     apuestasCombinadas.value = [
       ...apuestas.value,
       ...apuestasLocales.value.filter(local => 
