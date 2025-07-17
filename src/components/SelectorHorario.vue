@@ -5,8 +5,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { verificarHorarioActivo, verificarHorarioBasico, leerEstadosHorariosCache, actualizarCacheHorarios } from '../scripts/FunctionHorarioActivo.js'
 
 import Dia from '../assets/icons/Dia.svg'
-import Atardecer from '../assets/icons/Atardecer.svg'
-import Noche from '../assets/icons/Luna.svg'
+import Tarde from '../assets/icons/Tarde.svg'
+import Noche from '../assets/icons/Noche.svg'
 
 const props = defineProps({
   horarioEdicion: { type: String, default: 'Dia' },
@@ -26,7 +26,7 @@ const yaInicializado = ref(false)
 
 const allOptions = [
   { value: '1', icon: Dia, nombre: 'Dia' },
-  { value: '2', icon: Atardecer, nombre: 'Tarde' },
+  { value: '2', icon: Tarde, nombre: 'Tarde' },
   { value: '3', icon: Noche, nombre: 'Noche' }
 ]
 
@@ -44,7 +44,7 @@ function horarioToValue(nombre) {
 function valueToIcon(value) {
   switch (value) {
     case '1': return Dia
-    case '2': return Atardecer
+    case '2': return Tarde
     case '3': return Noche
     default: return Dia
   }
@@ -156,7 +156,7 @@ const selectOption = (option) => {
 const selectClass = computed(() => {
   switch (selectedValue.value) {
     case '1': return 'bg-dia'
-    case '2': return 'bg-atardecer'
+    case '2': return 'bg-Tarde'
     case '3': return 'bg-noche'
     default: return ''
   }
@@ -265,11 +265,11 @@ const isDisabled = computed(() => options.value.length === 0)
   height: 20px;
 }
 .bg-dia { background-color: #F9FCC9; }
-.bg-atardecer { background-color: #F9FCC9; }
+.bg-Tarde { background-color: #F9FCC9; }
 .bg-noche { background-color: #C2C1F1; }
 
 .bg-dia.active { background-color: #EFF779; }
-.bg-atardecer.active { background-color: #EFF779; }
+.bg-Tarde.active { background-color: #EFF779; }
 .bg-noche.active { background-color: #8584E4; }
 
 </style>

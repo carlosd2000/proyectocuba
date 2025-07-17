@@ -35,7 +35,7 @@ const props = defineProps({
         <div v-if="userType === 'listeros'" class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
             <img src="../assets/icons/Plus.svg" alt="">
         </div>
-        <div v-else class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/anadirjugada/${$route.params.id}?tipo=normal`)">
+        <div v-else class="button-center d-flex justify-content-center align-items-center" @click="$router.push(`/transferir/${$route.params.id}`)">
             <img src="../assets/icons/Transferir.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);">
         </div>
         <div class="buttons-heith d-flex flex-column justify-content-center align-items-center" @click="$router.push(`/fondo/${$route.params.id}`)">

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import mifondo from '../components/mifondo.vue';
 import editarfondocreador from '../components/editarfondocreador.vue';
 import Footer from '../components/Footer.vue';
+import localforage from 'localforage';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -21,8 +22,17 @@ const rutaJerarquica = computed(() => authStore.rutaJerarquica)
 const logout = async () => {
     try {
         await AuthService.logout();
-        localStorage.removeItem('userProfile');
+        // ✅ Limpia todo lo posible
         localStorage.clear();
+        sessionStorage.clear();
+        await localforage.clear(); // indexDB
+        
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+
+        // ✅ Redirige
         router.push('/');
     } catch (error) {
         console.error('Error al cerrar sesión:', error);

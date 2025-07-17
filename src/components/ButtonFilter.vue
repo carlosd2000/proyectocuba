@@ -152,13 +152,13 @@ function tiroSelected(option) {
                         </h5>
                     </button>
                     <button class="tipo btn" @click="tiroSelected('Tarde')" :class="{ activo: tiroSelectedOption === 'Tarde' }">
-                        <img src="../assets/icons/Atardecer.svg" alt="" width="20px">
+                        <img src="../assets/icons/Tarde.svg" alt="" width="20px">
                         <h5 class="navigation-label">
                             Tarde
                         </h5>
                     </button>
                     <button class="tipo btn" @click="tiroSelected('Noche')" :class="{ activo: tiroSelectedOption === 'Noche' }">
-                        <img src="../assets/icons/Luna.svg" alt="" width="20px">
+                        <img src="../assets/icons/Noche.svg" alt="" width="20px">
                         <h5 class="navigation-label">
                             Noche
                         </h5>

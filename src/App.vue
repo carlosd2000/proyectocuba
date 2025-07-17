@@ -4,7 +4,7 @@ import { watch, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ToastManager from './components/ToastManager.vue'
 import { cargarInfoBancoSiNoExiste } from './scripts/fieldValidator.js'
-
+import { useUsuariosCreados } from './scripts/useUsuariosCreados'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -12,6 +12,7 @@ const isAppReady = ref(false)
 
 let fondoManager = null
 let fondoCreadorManager = null
+let usuariosCreadosManager = null 
 
 onMounted(async () => {
   try {
@@ -26,6 +27,10 @@ onMounted(async () => {
       const { useFondoCreador } = await import('@/scripts/useFondoCreador.js')
       fondoCreadorManager = useFondoCreador()
       await fondoCreadorManager.iniciar()
+
+      // ✅ Inicia sincronización de usuarios
+      usuariosCreadosManager = useUsuariosCreados()
+      await usuariosCreadosManager.iniciar()
     }
 
     isAppReady.value = true;
@@ -42,6 +47,7 @@ onMounted(async () => {
 onUnmounted(() => {
   if (fondoManager) fondoManager.detenerSincronizacion?.()
   if (fondoCreadorManager) fondoCreadorManager.detenerSincronizacion?.()
+  usuariosCreadosManager?.detener?.()
 })
 
 // Redirección basada en autenticación

@@ -80,6 +80,12 @@ const router = createRouter({
       name: 'registrar',
       component: () => import('../views/Registros.vue'),
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/transferir/:id',
+      name: 'transferir',
+      component: () => import('../views/Transferir.vue'),
+      meta: { requiresAuth: true },
     }
   ],
 })

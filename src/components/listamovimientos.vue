@@ -7,8 +7,8 @@ import { useAuthStore } from '@/stores/authStore'
 import Chevron_right from '../assets/icons/Chevron_right.svg'
 import IconoRetiro from '../assets/icons/Retiro.svg'
 import IconoDia from '../assets/icons/Dia.svg'
-import IconoTarde from '../assets/icons/Atardecer.svg'
-import IconoNoche from '../assets/icons/Luna.svg'
+import IconoTarde from '../assets/icons/Tarde.svg'
+import IconoNoche from '../assets/icons/Noche.svg'
 import IconoGanancia from '../assets/icons/Ganancia.svg'
 import IconoDeposito from '../assets/icons/Deposito.svg'
 
@@ -36,7 +36,45 @@ function iramovimiento(tipo) {
 onMounted(async () => {
   const authStore = useAuthStore()
   const userId = authStore.userId
-  const data = await obtenerTransacciones(userId)
+  //const data = await obtenerTransacciones(userId)
+    const data = [
+    {
+      id: '1',
+      tipo: 'Deposito',
+      fecha: new Date('2025-07-15T10:30:00'),
+      monto: 50000,
+    },
+    {
+      id: '2',
+      tipo: 'Tiro del Dia',
+      fecha: new Date('2025-07-15T12:00:00'),
+      monto: -10000,
+    },
+    {
+      id: '3',
+      tipo: 'Tiro de la Tarde',
+      fecha: new Date('2025-07-15T17:00:00'),
+      monto: -15000,
+    },
+    {
+      id: '4',
+      tipo: 'Ganancia',
+      fecha: new Date('2025-07-15T20:00:00'),
+      monto: 18000,
+    },
+    {
+      id: '5',
+      tipo: 'Retiro',
+      fecha: new Date('2025-07-14T09:00:00'),
+      monto: -20000,
+    },
+    {
+      id: '6',
+      tipo: 'Tiro de la Noche',
+      fecha: new Date('2025-07-14T21:00:00'),
+      monto: -8000,
+    }
+  ]
   transacciones.value = data
 })
 </script>
@@ -93,3 +131,4 @@ img.verde{
   color: #dc3546ba;
 }
 </style>
+
