@@ -78,19 +78,17 @@ export const useAuthStore = defineStore('auth', {
       this.isInitialized = true
 
       return new Promise((resolve) => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, async (user) => {
           if (user) {
             this.user = user
             await this.loadUserProfile()
           } else {
             this.clearAuth()
-            localStorage.clear()
           }
           resolve()
         }, (error) => {
           console.error("Error en auth listener:", error)
           this.clearAuth()
-          localStorage.clear()
           resolve()
         })
       })
@@ -116,7 +114,6 @@ export const useAuthStore = defineStore('auth', {
         this.loading = true
         await signOut(auth)
         this.clearAuth()
-        window.location.href = '/'
         return { success: true }
       } catch (error) {
         this.error = error.message
@@ -133,7 +130,10 @@ export const useAuthStore = defineStore('auth', {
       this.contextoJerarquico = { bancoId: null, rutaCompleta: [] }
       this.error = null
       this.loading = false
-      localStorage.clear()
+      localStorage.removeItem('user')
+      localStorage.removeItem('userProfile')
+      localStorage.removeItem('jerarquia')
+      localStorage.removeItem('userWallet')
     },
 
     async actualizarFondos({ tipo, monto, movimiento }) {
