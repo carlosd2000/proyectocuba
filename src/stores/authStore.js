@@ -1,58 +1,61 @@
 import { defineStore } from 'pinia'
-import { 
-  auth,
-  db
-} from '@/firebase/config'
-import { 
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth'
-import { 
-  doc, 
-  getDoc,
-  collection,
-  getDocs
-} from 'firebase/firestore'
+import { auth, db } from '@/firebase/config'
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore'
 import authService from '@/firebase/auth'
+import WalletService from '@/firebase/walletService'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,
-    profile: null,
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    profile: JSON.parse(localStorage.getItem('userProfile')) || null,
+    wallet: JSON.parse(localStorage.getItem('userWallet')) || null,
     loading: false,
     error: null,
-    contextoJerarquico: {
+    contextoJerarquico: JSON.parse(localStorage.getItem('jerarquia')) || {
       bancoId: null,
       rutaCompleta: []
-    }
+    },
+    isInitialized: false
   }),
 
   actions: {
-    async loadUserProfile() {
-      if (!this.user?.email) {
-        console.log("No hay usuario autenticado para cargar perfil")
-        return null
-      }
+    async loadUserProfile(skipCache = false) {
+      if (!this.user?.email) return null
 
       try {
         this.loading = true
-        this.error = null
-
-        // Usamos el email del usuario ya autenticado
-        const result = await authService.login(this.user.email, '')
         
-        if (result.success) {
-          this.profile = result.profile
-          
-          // Obtener contexto jerárquico
-          this.contextoJerarquico = await authService.obtenerContextoJerarquico(
-            this.user.uid,
-            this.profile.tipo,
-            this.profile.bancoId
-          )
-          localStorage.setItem('userProfile', JSON.stringify(this.profile))
+        if (!skipCache && this.profile) {
+          return this.profile
         }
+
+        try {
+          const result = await authService.login(this.user.email, '')
+          if (result.success) {
+            this.profile = result.profile
+            this.contextoJerarquico = await authService.obtenerContextoJerarquico(
+              this.user.uid,
+              this.profile.tipo,
+              this.profile.bancoId
+            )
+
+            if (this.bancoId) {
+              await WalletService.crearOActualizarWallet({
+                userId: this.user.uid,
+                bancoId: this.bancoId,
+                userType: this.profile.tipo
+              })
+              this.wallet = await WalletService.obtenerWallet(this.user.uid, this.bancoId)
+            }
+
+            this.persistToCache()
+          }
+        } catch (onlineError) {
+          console.log("Modo offline, usando datos cacheados", onlineError)
+          if (!this.profile) throw onlineError
+        }
+
         return this.profile
       } catch (error) {
         console.error("Error cargando perfil:", error)
@@ -63,167 +66,94 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async login(email, password) {
-      try {
-        this.loading = true
-        this.error = null
-
-        // Validación básica
-        if (!email || !password) {
-          throw new Error('Email y contraseña son requeridos')
-        }
-
-        // 1. Autenticación con Firebase Auth
-        const userCredential = await signInWithEmailAndPassword(auth, email, password)
-        this.user = userCredential.user
-        const uid = userCredential.user.uid
-
-        // 2. Buscar perfil en Firestore
-        // Primero en colección 'bancos'
-        const bancoRef = doc(db, 'bancos', uid)
-        const bancoSnap = await getDoc(bancoRef)
-        
-        if (bancoSnap.exists()) {
-          this.profile = { 
-            ...bancoSnap.data(), 
-            tipo: 'bancos',
-            bancoId: uid
-          }
-          this.contextoJerarquico = {
-            bancoId: uid,
-            rutaCompleta: [uid]
-          }
-          localStorage.setItem('userProfile', JSON.stringify(this.profile))
-          return { success: true }
-        }
-
-        // Si no es banco, buscar en otras colecciones
-        const collectionsToCheck = ['admin', 'hora']
-        for (const collectionName of collectionsToCheck) {
-          const docRef = doc(db, collectionName, uid)
-          const docSnap = await getDoc(docRef)
-          
-          if (docSnap.exists()) {
-            this.profile = { 
-              ...docSnap.data(), 
-              tipo: collectionName 
-            }
-            
-            // Obtener contexto jerárquico para no-bancos
-            if (collectionName !== 'admin') {
-              this.contextoJerarquico = await authService.obtenerContextoJerarquico(
-                uid,
-                collectionName,
-                this.profile.bancoId
-              )
-            }
-            
-            localStorage.setItem('userProfile', JSON.stringify(this.profile))
-            return { success: true }
-          }
-        }
-
-        // Si no se encontró en colecciones principales
-        // Buscar en subcolecciones de bancos
-        const bancosSnapshot = await getDocs(collection(db, 'bancos'))
-        for (const bancoDoc of bancosSnapshot.docs) {
-          const subcolecciones = ['colectorPrincipal', 'colectores', 'listeros']
-          
-          for (const subcoleccion of subcolecciones) {
-            const docRef = doc(db, `bancos/${bancoDoc.id}/${subcoleccion}/${uid}`)
-            const docSnap = await getDoc(docRef)
-            
-            if (docSnap.exists()) {
-              const data = docSnap.data()
-              this.profile = { 
-                ...data,
-                tipo: subcoleccion,
-                bancoId: data.bancoId || bancoDoc.id
-              }
-              
-              this.contextoJerarquico = await authService.obtenerContextoJerarquico(
-                uid,
-                subcoleccion,
-                this.profile.bancoId
-              )
-              
-              localStorage.setItem('userProfile', JSON.stringify(this.profile))
-              return { success: true }
-            }
-          }
-        }
-
-        throw new Error('Perfil no encontrado en Firestore')
-        
-      } catch (error) {
-        console.error('Error en login:', error)
-        this.error = error.message
-        return { 
-          success: false, 
-          error: error.message,
-          errorCode: error.code || 'LOGIN_ERROR' 
-        }
-      } finally {
-        this.loading = false
-      }
+    persistToCache() {
+      if (this.user) localStorage.setItem('user', JSON.stringify(this.user))
+      if (this.profile) localStorage.setItem('userProfile', JSON.stringify(this.profile))
+      if (this.contextoJerarquico) localStorage.setItem('jerarquia', JSON.stringify(this.contextoJerarquico))
+      if (this.wallet) localStorage.setItem('userWallet', JSON.stringify(this.wallet))
     },
 
     async initializeAuthListener() {
+      if (this.isInitialized) return
+      this.isInitialized = true
+
       return new Promise((resolve) => {
         onAuthStateChanged(auth, async (user) => {
-          if (user && user.email) {
+          if (user) {
             this.user = user
-
-            // Intentar cargar perfil desde cache
-            const cachedProfile = localStorage.getItem('userProfile')
-            if (cachedProfile) {
-              try {
-                this.profile = JSON.parse(cachedProfile)
-                this.contextoJerarquico = await authService.obtenerContextoJerarquico(
-                  user.uid,
-                  this.profile.tipo,
-                  this.profile.bancoId
-                )
-              } catch (e) {
-                console.error("Error parseando perfil cacheado:", e)
-                localStorage.removeItem('userProfile')
-              }
-            }
-
-            // Cargar perfil fresco si no hay cache o falló
-            if (!this.profile) {
-              try {
-                await this.loadUserProfile()
-              } catch (error) {
-                console.error("Error actualizando perfil:", error)
-              }
-            }
+            await this.loadUserProfile()
           } else {
             this.clearAuth()
           }
+          resolve()
+        }, (error) => {
+          console.error("Error en auth listener:", error)
+          this.clearAuth()
           resolve()
         })
       })
     },
 
+    async login(email, password) {
+      try {
+        this.loading = true
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        this.user = userCredential.user
+        await this.loadUserProfile(true)
+        return { success: true }
+      } catch (error) {
+        this.error = error.message
+        return { success: false, error: error.message }
+      } finally {
+        this.loading = false
+      }
+    },
+
     async logout() {
       try {
+        this.loading = true
         await signOut(auth)
         this.clearAuth()
         return { success: true }
       } catch (error) {
         this.error = error.message
         return { success: false, error: error.message }
+      } finally {
+        this.loading = false
       }
     },
 
     clearAuth() {
       this.user = null
       this.profile = null
+      this.wallet = null
       this.contextoJerarquico = { bancoId: null, rutaCompleta: [] }
-      this.loading = false
       this.error = null
+      this.loading = false
+      localStorage.removeItem('user')
       localStorage.removeItem('userProfile')
+      localStorage.removeItem('jerarquia')
+      localStorage.removeItem('userWallet')
+    },
+
+    async actualizarFondos({ tipo, monto, movimiento }) {
+      if (!this.user?.uid || !this.bancoId) return
+      
+      try {
+        await WalletService.actualizarFondos({
+          userId: this.user.uid,
+          bancoId: this.bancoId,
+          tipo,
+          monto,
+          movimiento
+        })
+        
+        this.wallet = await WalletService.obtenerWallet(this.user.uid, this.bancoId)
+        this.persistToCache()
+      } catch (error) {
+        console.error("Error actualizando fondos:", error)
+        throw error
+      }
     }
   },
 
@@ -234,6 +164,7 @@ export const useAuthStore = defineStore('auth', {
     bancoId: (state) => state.contextoJerarquico.bancoId,
     rutaJerarquica: (state) => state.contextoJerarquico.rutaCompleta,
     isLoading: (state) => state.loading,
-    currentError: (state) => state.error
+    currentError: (state) => state.error,
+    fondoRecaudado: (state) => state.wallet?.fondo_recaudado || 0
   }
 })

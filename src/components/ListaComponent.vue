@@ -12,10 +12,12 @@ const props = defineProps({
   horario: String,
   candadoAbierto: Boolean,
   apuestas: Array,
+  opcionSeleccionada: String // Nuevo prop para saber si estamos en "Lista" o "Bote"
 })
 
 const fechaRef = toRef(props, 'fecha')
 const detallesVisibles = reactive(new Set())
+const valorBote = computed(() => Number(localStorage.getItem('valorBote')) || 100)
 
 const toggleDetalles = (personaId) => {
   if (detallesVisibles.has(personaId)) {
@@ -31,6 +33,8 @@ const {
   personaSeleccionada,
   isOnline,
   isSyncing,
+  apuestasLocales,
+  apuestasCombinadas,
   cuadroClick,
   cerrarModal,
   editarPersona,
@@ -39,6 +43,46 @@ const {
   mostrarHora,
   obtenerIconoEstado
 } = useLista(fechaRef, router, route)
+
+// Función para verificar si supera el bote
+const superaBote = (apuesta) => {
+  // Verificar círculo solo
+  if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > valorBote.value) {
+    return true
+  }
+  
+  // Verificar datos de apuesta
+  if (apuesta.datos) {
+    return apuesta.datos.some(d => {
+      const c1 = d.circulo1 ? Number(d.circulo1) : 0
+      const c2 = d.circulo2 ? Number(d.circulo2) : 0
+      return c1 > valorBote.value || c2 > valorBote.value
+    })
+  }
+  return false
+}
+
+// Filtramos las apuestas por horario Y por bote
+const apuestasFiltradas = computed(() => {
+  return apuestasCombinadas.value.filter(apuesta => {
+    // Primero filtramos por horario
+    const mismoHorario = apuesta.horario?.toLowerCase() === props.horario?.toLowerCase()
+    if (!mismoHorario) return false
+    
+    // Luego aplicamos filtro de bote según la opción
+    if (props.opcionSeleccionada === 'Bote') {
+      return superaBote(apuesta)
+    } else if (props.opcionSeleccionada === 'Lista') {
+      return !superaBote(apuesta)
+    }
+    return true
+  })
+})
+
+// Watcher para sincronizar cambios (se mantiene igual)
+watch(apuestasCombinadas, (newVal) => {
+  props.apuestas.splice(0, props.apuestas.length, ...newVal)
+}, { deep: true })
 
 const handleEditClick = (persona, event) => {
   event.stopPropagation()
@@ -55,19 +99,21 @@ const handleEditClick = (persona, event) => {
 }
 </script>
 
+<!-- El resto del template y estilos se mantiene EXACTAMENTE IGUAL -->
+
 <template>
   <div v-if="!isOnline" class="offline-banner bg-warning text-center p-1 mb-1">
     Modo offline - mostrando datos cacheados
     <span v-if="isSyncing" class="ms-2">Sincronizando...</span>
   </div>
   
-  <div v-if="!props.apuestas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
+  <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
     <h5 class="body">
       Aún no hay apuestas en la lista para este horario
     </h5>
   </div>
   
-  <div v-for="persona in props.apuestas" 
+  <div v-for="persona in apuestasFiltradas" 
        :key="`${persona.id}-${persona.estado}-${persona.sincronizadoEn || persona.creadoEn}`"
        class="container-list" 
        style="cursor: pointer;" 

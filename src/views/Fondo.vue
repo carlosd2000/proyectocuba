@@ -7,13 +7,16 @@ import ButtonFilter from '../components/ButtonFilter.vue';
 import ListaMovimientos from '../components/ListaMovimientos.vue';
 import { UserDataService } from '@/scripts/userDataService';
 import { useAuthStore } from '@/stores/authStore'
+import WalletService from '@/firebase/walletService';
 
 const authStore = useAuthStore()
 const isLoading = ref(true)
 const error = ref(null)
-const userfondo = ref(null)
+const userfondo = ref(0)
+const walletData = ref(null)
 const showDetails = ref(false)
 const typeViewOption = ref('movimientos')
+const movimientos = ref([])
 
 const unsubscribe = ref(null)
 
@@ -32,19 +35,35 @@ onMounted(async () => {
       await authStore.loadUserProfile()
     }
     
-    // Función para actualizar la fondo
-    const updateUserData = (userData) => {
-      if (userData) {
-        userfondo.value = userData.fondo || 0; // Asigna 0 si no hay fondo
+    // Función para actualizar los datos
+    const updateUserData = async (userData) => {
+      if (userData && authStore.profile) {
+        // Obtener datos de la wallet
+        const wallet = await WalletService.obtenerWallet(
+          authStore.userId, 
+          authStore.bancoId
+        )
+        
+        if (wallet) {
+          walletData.value = wallet
+          userfondo.value = wallet.fondo_recaudado || 0
+          
+          // Obtener movimientos
+          movimientos.value = await WalletService.obtenerMovimientos(
+            authStore.userId,
+            authStore.bancoId
+          )
+        }
       } else {
         console.log("Usuario cerró sesión");
-        userfondo.value = 0;
+        userfondo.value = 0
+        walletData.value = null
+        movimientos.value = []
       }
     };
     
     // Cargar datos iniciales
-    const initialData = await UserDataService.getCurrentUserData();
-    updateUserData(initialData);
+    await updateUserData(authStore.profile)
     
     // Escuchar cambios
     unsubscribe.value = UserDataService.onAuthStateChanged(updateUserData);
@@ -52,11 +71,12 @@ onMounted(async () => {
     
   } catch (e) {
     error.value = "Error cargando datos"
-    console.error("Error en Listeros:", e)
+    console.error("Error en Fondo:", e)
   } finally {
     isLoading.value = false
   }
 })
+
 onUnmounted(() => {
   if (unsubscribe.value) unsubscribe.value()
 })
@@ -91,7 +111,7 @@ onUnmounted(() => {
         <ButtonFilter/>
       </div>
       <div class="d-flex flex-column align-items-center w-100 h-100 overflow-y-auto">
-        <ListaMovimientos/>
+        <ListaMovimientos :movimientos="movimientos"/>
       </div>
     </main>
     <footer>

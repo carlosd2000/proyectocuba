@@ -12,8 +12,13 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
-// Inicializa el authStore
 const authStore = useAuthStore()
-authStore.initializeAuthListener().then(() => {
-    app.mount('#app')
-})  
+
+// Inicializa el authStore antes de montar la app
+authStore.initializeAuthListener().finally(() => {
+  // Verificar si está en adminview y redirigir si es necesario
+  if (window.location.pathname.includes('/adminview/') && authStore.userType !== 'admin') {
+    router.replace(`/home/${authStore.userId}`)
+  }
+  app.mount('#app')
+})

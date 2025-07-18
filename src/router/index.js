@@ -8,12 +8,13 @@ const router = createRouter({
       path: '/adminview/:id',      
       name: 'AdminView',      
       component: () => import('../views/AdminView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, adminOnly: true },
     },
     {
       path: '/',
       name: 'login',
       component: () => import('../views/Login.vue'),
+      meta: { requiresAuth: false }
     },
     {
       path: '/home/:id',
@@ -25,7 +26,7 @@ const router = createRouter({
       path: '/admin/:id',
       name: 'admin',
       component: () => import('../views/Registros.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, adminOnly: true },
     },
     {
       path: '/bancos/:id',
@@ -90,17 +91,35 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const requiresAdmin = to.matched.some(record => record.meta.adminOnly);
 
-  if (requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' });
-  } else if (to.name === 'login' && authStore.isAuthenticated) {
-    next('/adminview/' + authStore.userId); // Redirige al dashboard o vista principal
-  } else {
-    next();
+  // Si la ruta requiere autenticación
+  if (requiresAuth) {
+    if (!authStore.isAuthenticated) {
+      authStore.clearAuth();
+      return next({ name: 'login' });
+    }
+
+    // Si es ruta de admin pero el usuario no es admin
+    if (requiresAdmin && authStore.userType !== 'admin') {
+      return next(`/home/${authStore.userId}`);
+    }
+
+    // Redirigir siempre a /home si intentan acceder a /adminview y no son admin
+    if (to.name === 'AdminView' && authStore.userType !== 'admin') {
+      return next(`/home/${authStore.userId}`);
+    }
   }
+
+  // Si está autenticado y va a login, redirigir a home
+  if (to.name === 'login' && authStore.isAuthenticated) {
+    return next(`/home/${authStore.userId}`);
+  }
+
+  next();
 });
 
 export default router
