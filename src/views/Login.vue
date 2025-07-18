@@ -54,15 +54,12 @@ const handleSubmit = async () => {
         title: '¡Bienvenido!',
         text: 'Has iniciado sesión correctamente',
         icon: 'success',
-        timer: 1500,
+        timer: 1000,
         showConfirmButton: false
       })
 
       // Redirección basada en el tipo de usuario según tu router
-      let redirectPath = '/'
-      
-      redirectPath = `/home/${authStore.userId}`
-
+      const redirectPath = `/home/${authStore.userId}`
       router.push(redirectPath)
     } else {
       // Mapeo de errores específicos

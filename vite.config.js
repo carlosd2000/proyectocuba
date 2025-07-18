@@ -15,7 +15,7 @@ export default defineConfig({
     // Configuración de PWA
     VitePWA({ 
       registerType: 'autoUpdate',
-      includeAssets: ['bank.svg', 'apple-touch-icon.png', 'robots.txt'], // Archivos estáticos
+      includeAssets: ['registerSW.js','bank.svg', 'apple-touch-icon.png', 'robots.txt'], // Archivos estáticos
       manifest: {
         name: 'CharadaApp',
         short_name: 'Charada',

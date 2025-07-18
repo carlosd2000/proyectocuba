@@ -1,7 +1,9 @@
 <script setup>
 import Registro from '../components/Registro.vue';
 import { onMounted, computed } from 'vue';
-import editarfondocreador from '../components/editarfondocreador.vue';
+import { useAuthStore } from '@/stores/authStore';
+
+const authStore = useAuthStore();
 
 onMounted(async () => {
   if (authStore.isAuthenticated && !authStore.profile) {
@@ -12,7 +14,6 @@ onMounted(async () => {
 
 <template>
   <div class="col-12 m-0 p-0">
-    <editarfondocreador/>
     <div v-if="authStore.profile">
       <Registro/>
     </div>

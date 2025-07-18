@@ -32,7 +32,7 @@ const toggleDetails = () => {
       <div @click="toggleDetails" class="card-price flex-grow-1" :class="{ 'horizontal-layout': !isListerosRoute }">
         <!-- Valor/Precio -->
         <h1 v-if="isListerosRoute" class="price-value">
-          {{ fondoActual  }}
+          ${{ fondoActual  }}
         </h1>
         <h3 v-else class="price-value">
           {{ fondoActual  }}

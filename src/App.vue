@@ -1,10 +1,9 @@
 <script setup>
 import { useAuthStore } from '@/stores/authStore'
-import { watch, ref, onMounted, onUnmounted } from 'vue'
+import { ref, watchEffect, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ToastManager from './components/ToastManager.vue'
-import { cargarInfoBancoSiNoExiste } from './scripts/fieldValidator.js'
-import { useUsuariosCreados } from './scripts/useUsuariosCreados'
+import { cargarLibreriasIniciales } from './scripts/useAppInitializer.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -12,51 +11,52 @@ const isAppReady = ref(false)
 
 let fondoManager = null
 let fondoCreadorManager = null
-let usuariosCreadosManager = null 
+let usuariosCreadosManager = null
 
 onMounted(async () => {
   try {
-    await authStore.initializeAuthListener();
-    
-    // Importación dinámica
-    const { useFondo } = await import('@/scripts/useFondo.js')
-    fondoManager = useFondo()
-    await fondoManager.iniciar()
-    
-    if (authStore.userType !== 'listeros') {
-      const { useFondoCreador } = await import('@/scripts/useFondoCreador.js')
-      fondoCreadorManager = useFondoCreador()
-      await fondoCreadorManager.iniciar()
-
-      // ✅ Inicia sincronización de usuarios
-      usuariosCreadosManager = useUsuariosCreados()
-      await usuariosCreadosManager.iniciar()
+    await authStore.initializeAuthListener()
+    if (authStore.user) {
+      await authStore.loadUserProfile()
     }
-
-    isAppReady.value = true;
-    if (authStore.bancoId) {
-      cargarInfoBancoSiNoExiste(authStore.bancoId)
-    }
+    isAppReady.value = true
   } catch (error) {
-    console.error('Error inicializando aplicación:', error)
-    isAppReady.value = true // Asegurar que la app se muestre incluso con error
+    console.error('Error inicializando Auth:', error)
+    isAppReady.value = true
   }
-});
+})
 
-// Limpieza al desmontar
+// Elimina watchEffect y reemplázalo con un watch controlado:
+watch(
+  () => authStore.user && authStore.profile && authStore.bancoId, // Solo se dispara cuando TODO está listo
+  async (ready) => {
+    if (ready) {
+      const { 
+        fondoManager: fondo, 
+        fondoCreadorManager: fondoCreador, 
+        usuariosCreadosManager: usuarios 
+      } = await cargarLibreriasIniciales(authStore);
+      
+      fondoManager = fondo;
+      fondoCreadorManager = fondoCreador;
+      usuariosCreadosManager = usuarios;
+    }
+  },
+  { immediate: true }
+);
+
 onUnmounted(() => {
-  if (fondoManager) fondoManager.detenerSincronizacion?.()
-  if (fondoCreadorManager) fondoCreadorManager.detenerSincronizacion?.()
+  fondoManager?.detenerSincronizacion?.()
+  fondoCreadorManager?.detenerSincronizacion?.()
   usuariosCreadosManager?.detener?.()
 })
 
-// Redirección basada en autenticación
 watch(() => authStore.user, (user) => {
   if (user && authStore.profile) {
-    const redirectPath = authStore.userType === 'admin' 
+    const redirectPath = authStore.userType === 'admin'
       ? `/adminview/${authStore.userId}`
       : `/home/${authStore.userId}`
-    
+
     if (window.location.pathname === '/') {
       router.push(redirectPath)
     }

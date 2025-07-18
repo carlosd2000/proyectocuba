@@ -18,7 +18,6 @@ export function useFondo() {
   const userId = computed(() => authStore.userId)
   const userType = computed(() => authStore.userType)
   const bancoId = computed(() => authStore.bancoId)
-
   const rutaJerarquica = computed(() =>
     `bancos/${bancoId.value}/${userType.value}/${userId.value}`
   )
@@ -93,7 +92,7 @@ export function useFondo() {
       if (navigator.onLine) {
         sincronizar()
       }
-    }, 5 * 60 * 1000) // 5 minutos
+    }, 10 * 60 * 1000) // 5 minutos
     
     // Listener para cuando regrese la conexión
     window.addEventListener('online', sincronizar)
@@ -126,4 +125,20 @@ export function useFondo() {
     iniciar,
     detenerSincronizacion
   }
+}
+
+export function resetFondo() {
+  fondoBase.value = 0
+  cambiosPendientes.value = []
+  sincronizando.value = false
+  instanciaIniciada = false
+
+  if (intervalo) {
+    clearInterval(intervalo)
+    intervalo = null
+  }
+
+  // Borra datos locales también
+  localforage.removeItem('fondoBase')
+  localforage.removeItem('cambiosPendientes')
 }

@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
 import { useFondoCreador } from '../scripts/useFondoCreador'
 import Header from '../components/Header.vue';
 import CardPrice from '../components/CardPrice.vue';
@@ -10,11 +9,18 @@ import ButtonDouble from '../components/ButtonDouble.vue';
 
 const { agregarCambioFondo, cambiosLocales, fondosLocales } = useFondoCreador()
 
-const router = useRouter()
-const route = useRoute()
 const usuarioSeleccionado = ref('')
 const seleccion = ref("Depositar")
 const inputValor = ref(0)
+const transferenciaSend = ref(false)
+
+const textoPrimario = computed(() => 
+  transferenciaSend.value ? 'Ir a fondo' : 'Cancelar'
+)
+
+const textoSecundario = computed(() => 
+  transferenciaSend.value ? 'Nueva transferencia' : 'Crear transacción'
+)
 
 const fondoActual = computed(() => {
     if (!usuarioSeleccionado.value) return 0
@@ -32,23 +38,32 @@ const fondoActual = computed(() => {
 function handleSeleccion(valor) {
     seleccion.value = valor
 }
+function newTransferencia() {
+    transferenciaSend.value = false
+    usuarioSeleccionado.value = ''
+    inputValor.value = 0
+    seleccion.value = 'Depositar'
+}
 async function crearTransaccion() {
-    const usuario = usuarioSeleccionado.value
+    if (transferenciaSend.value === false) {
+        const usuario = usuarioSeleccionado.value
 
-    if (!usuario) return
+        if (!usuario) return
 
-    const tipoUsuario = usuario.tipo
-    const uid = usuario.uid
-    const valor = Math.abs(inputValor.value)
-    if (seleccion.value === 'Depositar') {
-        await agregarCambioFondo(uid, 'creador-agrega', tipoUsuario, valor)
-    } else if (seleccion.value === 'Recolectar') {
-        await agregarCambioFondo(uid, 'creador-quita', tipoUsuario, -valor)
+        const tipoUsuario = usuario.tipo
+        const uid = usuario.uid
+        const valor = Math.abs(inputValor.value)
+        if (seleccion.value === 'Depositar') {
+            await agregarCambioFondo(uid, 'creador-agrega', tipoUsuario, valor)
+        } else if (seleccion.value === 'Recolectar') {
+            await agregarCambioFondo(uid, 'creador-quita', tipoUsuario, -valor)
+        }
+
+        transferenciaSend.value = true
     }
-
-    inputValor.value = 0 // limpiar campo
-    usuarioSeleccionado.value = '' // limpiar selección
-    router.push(`/fondo/${route.params.id}`)
+    else {
+        newTransferencia()
+    }
 }
 </script>
 <template>
@@ -56,7 +71,7 @@ async function crearTransaccion() {
         <header>
             <Header/>
         </header>
-        <main class="container-main">
+        <main v-if="!transferenciaSend" class="container-main d-flex flex-column align-items-center gap-3">
             <CardPrice/>
             <div class="d-flex flex-row justify-content-start align-items-center w-100">
                 <h1>
@@ -96,18 +111,41 @@ async function crearTransaccion() {
                 </div>
             </div>
         </main>
+        <main v-else class="container-main d-flex flex-column align-items-start gap-4" style="max-width: 400px;">
+            <img src="../assets/img/Ilustracion.svg" alt="">
+            <h1>
+                Transferencia lista!
+            </h1>
+            <h5 class="body">
+                tu resumen de transferencia
+            </h5>
+            <div class="d-flex flex-row justify-content-start align-items-center gap-2 w-100">
+                <img src="../assets/icons/User.svg" alt="" width="24">
+                <h5 class="body">
+                    {{ usuarioSeleccionado?.tipo || 'No seleccionado' }} ID
+                </h5>
+                <h5 class="body-bold">
+                    #{{ usuarioSeleccionado?.uid || 'No seleccionado' }}
+                </h5>
+            </div>
+            <div class="d-flex flex-row justify-content-start align-items-center gap-2 w-100">
+                <img src="../assets/icons/Deposito.svg" alt="" width="24">
+                <h5 class="body">
+                    Valor 
+                </h5>
+                <h5 class="body-bold">
+                    ${{ inputValor }}
+                </h5>
+            </div>
+        </main>
         <footer>
-            <ButtonDouble fistbutton="Cancelar" secondbutton="Crear transacción" :isEnabled="!!usuarioSeleccionado  && inputValor > 0 && !!seleccion" @accionSegundoBoton="crearTransaccion"/>
+            <ButtonDouble :fistbutton="textoPrimario" :secondbutton="textoSecundario" :isEnabled="!!usuarioSeleccionado  && inputValor > 0 && !!seleccion" @accionSegundoBoton="crearTransaccion"/>
         </footer>
     </div>
 </template>
 <style scoped>
 .container-main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     padding: 0px 16px 24px 16px;
-    gap: 10px;
     width: 100%;
     max-width: 400px;
     height: calc(100vh - 7% - 88px); /* Ajusta 60px según la altura real del footer */

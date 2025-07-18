@@ -96,7 +96,7 @@
 
             <!-- Botón Cerrar Sesión -->
             <div class="text-end mt-2">
-              <button @click="cerrarSesion" type="button" class="btn btn-link text-danger p-0">Cerrar sesión</button>
+              <button @click="$router.push(`/usuario/${$route.params.id}`)" type="button" class="btn btn-link text-danger p-0">Cerrar sesión</button>
             </div>
           </form>
         </div>

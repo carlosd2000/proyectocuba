@@ -69,7 +69,7 @@ const iniciarSincronizacionCada5Min = () => {
   intervalId = setInterval(() => {
     if (navigator.onLine) sincronizarFondos()
     else window.addEventListener('online', sincronizarFondos, { once: true })
-  }, 1 * 60 * 1000)
+  }, 10 * 60 * 1000)
 }
 
 const detenerSincronizacion = () => {
@@ -96,4 +96,15 @@ export function useFondoCreador() {
     }
   }
   return fondoCreadorManager
+}
+export function resetFondoCreador() {
+  fondosLocales.value = {}
+  cambiosLocales.value = {}
+  sincronizando.value = false
+  if (intervalId) {
+    clearInterval(intervalId)
+    intervalId = null
+  }
+  localforage.removeItem('fondosCreador')
+  localforage.removeItem('cambiosFondosCreador')
 }

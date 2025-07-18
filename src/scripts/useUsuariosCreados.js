@@ -8,10 +8,9 @@ const usuariosCreados = ref([])
 let intervalo = null
 
 const cargarUsuariosCreados = async (authStore) => {
-  const creadorId = authStore.userId
+  const userId = authStore.userId
   const bancoId = authStore.bancoId
   const userType = authStore.userType
-
   const tiposPorRol = {
     bancos: ['colectoresPrincipales', 'colectores', 'listeros'],
     colectorPrincipal: ['colectores', 'listeros'],
@@ -21,11 +20,14 @@ const cargarUsuariosCreados = async (authStore) => {
   const tipos = tiposPorRol[userType] || []
 
   const nuevosUsuarios = []
-
+  
   for (const tipo of tipos) {
     const colRef = collection(db, `bancos/${bancoId}/${tipo}`)
-    const q = query(colRef, where('creadorId', '==', creadorId))
+    const q = query(colRef, where('creadorDirectoId', '==', userId))
     const snap = await getDocs(q)
+
+    console.log(`[Firestore] Consultando subcolección "${tipo}" en bancos/${bancoId}/${tipo}`)
+    console.log(`[Firestore] Resultados encontrados (${tipo}):`, snap.size)
 
     snap.forEach(docSnap => {
       const data = docSnap.data()
@@ -73,4 +75,10 @@ export function useUsuariosCreados() {
     }
   }
   return singleton
+}
+export function resetUsuariosCreados() {
+  usuariosCreados.value = []
+  if (intervalo) clearInterval(intervalo)
+  intervalo = null
+  localforage.removeItem('usuariosCreados')
 }

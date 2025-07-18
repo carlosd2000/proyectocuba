@@ -271,31 +271,6 @@ export const getUserProfile = async (uid) => {
   }
 }
 
-export const updateUserfondo = async (userId, bancoId, tipo, nuevofondo) => {
-  try {
-    let docRef
-    if (tipo === 'admin' || tipo === 'bancos') {
-      docRef = doc(db, tipo, userId)
-    } else if (tipo === 'colectorPrincipal') {
-      docRef = doc(db, `bancos/${bancoId}/colectorPrincipal/${userId}`)
-    } else if (tipo === 'colectores') {
-      docRef = doc(db, `bancos/${bancoId}/colectores/${userId}`)
-    } else if (tipo === 'listeros') {
-      docRef = doc(db, `bancos/${bancoId}/listeros/${userId}`)
-    } else {
-      throw new Error('Tipo de usuario inválido')
-    }
-
-    await updateDoc(docRef, { 
-      fondo: nuevofondo
-    })
-    return { success: true }
-  } catch (error) {
-    console.error('Error actualizando fondo:', error)
-    return { success: false, error: error.message }
-  }
-}
-
 export const obtenerContextoJerarquico = async (usuarioId, tipoUsuario, bancoIdFromProfile = null) => {
   const contexto = { 
     bancoId: null, 
@@ -353,7 +328,6 @@ export const AuthService = {
   registrarUsuarioJerarquico,
   login,
   logout,
-  updateUserfondo,
   getUserProfile,
   obtenerContextoJerarquico,
   
