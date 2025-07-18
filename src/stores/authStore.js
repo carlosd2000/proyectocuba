@@ -77,22 +77,20 @@ export const useAuthStore = defineStore('auth', {
       if (this.isInitialized) return
       this.isInitialized = true
 
-      if (this.user && this.profile) {
-        console.log("Usuario autenticado desde caché")
-        return
-      }
-
       return new Promise((resolve) => {
-        onAuthStateChanged(auth, async (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
           if (user) {
             this.user = user
             await this.loadUserProfile()
           } else {
             this.clearAuth()
+            localStorage.clear()
           }
           resolve()
         }, (error) => {
           console.error("Error en auth listener:", error)
+          this.clearAuth()
+          localStorage.clear()
           resolve()
         })
       })
@@ -115,12 +113,16 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       try {
+        this.loading = true
         await signOut(auth)
         this.clearAuth()
+        window.location.href = '/'
         return { success: true }
       } catch (error) {
         this.error = error.message
         return { success: false, error: error.message }
+      } finally {
+        this.loading = false
       }
     },
 
@@ -129,10 +131,9 @@ export const useAuthStore = defineStore('auth', {
       this.profile = null
       this.wallet = null
       this.contextoJerarquico = { bancoId: null, rutaCompleta: [] }
-      localStorage.removeItem('user')
-      localStorage.removeItem('userProfile')
-      localStorage.removeItem('jerarquia')
-      localStorage.removeItem('userWallet')
+      this.error = null
+      this.loading = false
+      localStorage.clear()
     },
 
     async actualizarFondos({ tipo, monto, movimiento }) {

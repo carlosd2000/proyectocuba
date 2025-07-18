@@ -89,9 +89,11 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
   if (requiresAuth && !authStore.isAuthenticated) {
+    authStore.clearAuth();
+    localStorage.clear();
     next({ name: 'login' });
   } else if (to.name === 'login' && authStore.isAuthenticated) {
-    next('/adminview/' + authStore.userId); // Redirige al dashboard o vista principal
+    next('/adminview/' + authStore.userId);
   } else {
     next();
   }
