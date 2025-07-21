@@ -75,7 +75,7 @@ function handleSelect(valor) {
           </div>
           <Calendario @cambiar-fecha="fechaSeleccionada = $event" />
         </div>
-        <Results/>
+        <Results :apuestas="listaLogic.apuestasCombinadas.value" :fecha="fechaSeleccionada" :horario="horarioSeleccionado"/>
         <div class="d-flex flex-row justify-content-between align-items-center w-100">
           <div class="button-list" :class="{ activo: opcionSeleccionada === 'Lista' }" @click="opcionSeleccionada = 'Lista'">
             <img src="../assets/icons/Lista icon.svg" alt="">
