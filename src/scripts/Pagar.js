@@ -1,12 +1,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import {
-  filasFijas,
-  filasExtra,
-  calcularTotalesCombinados,
-  limpiarCampos,
-  validarFilas
-} from '../scripts/operaciones.js'
+import { filasFijas, filasExtra, calcularTotalesCombinados, limpiarCampos, validarFilas} from '../scripts/operaciones.js'
 import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase/config';

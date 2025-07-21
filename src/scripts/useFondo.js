@@ -29,6 +29,28 @@ export function useFondo() {
     return fondoBase.value + totalCambios
   })
 
+  const ajustarFondoPorApuesta = async (tipoOperacion, monto, montoAnterior = 0) => {
+    let ajuste = 0;
+    
+    switch(tipoOperacion) {
+      case 'CREACION':
+        ajuste = monto;
+        break;
+      case 'ELIMINACION':
+        ajuste = -monto;
+        break;
+      case 'EDICION':
+        ajuste = monto - montoAnterior; // Si nuevo monto es mayor, resta la diferencia
+        break;
+    }
+
+    if (ajuste !== 0) {
+      const tipo = `apuesta-${tipoOperacion.toLowerCase()}`;
+      await agregarCambioLocal(tipo, ajuste);
+    }
+    return ajuste;
+  }
+
   const cargarLocal = async () => {
     try {
       const fondo = await localforage.getItem('fondoBase')
@@ -123,7 +145,8 @@ export function useFondo() {
     rutaJerarquica,
     fondoRef,
     iniciar,
-    detenerSincronizacion
+    detenerSincronizacion,
+    ajustarFondoPorApuesta,
   }
 }
 
