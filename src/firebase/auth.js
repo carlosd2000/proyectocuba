@@ -177,7 +177,7 @@ export const login = async (email, password) => {
     }
 
     // 2. Buscar en otras colecciones
-    const collectionsToCheck = ['admin', 'hora']
+    const collectionsToCheck = ['admin']
     for (const collectionName of collectionsToCheck) {
       const docRef = doc(db, collectionName, uid)
       const docSnap = await getDoc(docRef)
@@ -231,7 +231,6 @@ export const getUserProfile = async (uid) => {
     const collections = [
       { name: 'bancos', isSubcollection: false },
       { name: 'admin', isSubcollection: false },
-      { name: 'hora', isSubcollection: false },
       { name: 'colectorPrincipal', isSubcollection: true },
       { name: 'colectores', isSubcollection: true },
       { name: 'listeros', isSubcollection: true }
@@ -271,47 +270,6 @@ export const getUserProfile = async (uid) => {
   }
 }
 
-export const obtenerContextoJerarquico = async (usuarioId, tipoUsuario, bancoIdFromProfile = null) => {
-  const contexto = { 
-    bancoId: null, 
-    rutaCompleta: [] 
-  }
-
-  try {
-    switch (tipoUsuario) {
-      case 'admin':
-        contexto.bancoId = null
-        break
-      case 'bancos':
-        contexto.bancoId = usuarioId
-        contexto.rutaCompleta = [usuarioId]
-        break
-      case 'colectorPrincipal':
-        contexto.bancoId = bancoIdFromProfile || await _obtenerBancoPadre(usuarioId, 'colectorPrincipal')
-        if (contexto.bancoId) contexto.rutaCompleta = [contexto.bancoId, usuarioId]
-        break
-      case 'colectores':
-        contexto.bancoId = bancoIdFromProfile || await _obtenerBancoPadre(usuarioId, 'colectores')
-        if (contexto.bancoId) {
-          const colectorPrincipalId = await _obtenerPadreDirecto(usuarioId, 'colectores')
-          contexto.rutaCompleta = [contexto.bancoId, colectorPrincipalId, usuarioId].filter(Boolean)
-        }
-        break
-      case 'listeros':
-        contexto.bancoId = bancoIdFromProfile || await _obtenerBancoPadre(usuarioId, 'listeros')
-        if (contexto.bancoId) {
-          const colectorId = await _obtenerPadreDirecto(usuarioId, 'listeros')
-          contexto.rutaCompleta = [contexto.bancoId, colectorId, usuarioId].filter(Boolean)
-        }
-        break
-    }
-  } catch (error) {
-    console.error("Error obteniendo contexto jerárquico:", error)
-  }
-
-  return contexto
-}
-
 export const logout = async () => {
   try {
     await signOut(auth)
@@ -329,11 +287,6 @@ export const AuthService = {
   login,
   logout,
   getUserProfile,
-  obtenerContextoJerarquico,
-  
-  JerarquiaService: {
-    obtenerContexto: obtenerContextoJerarquico
-  }
 }
 
 export default AuthService

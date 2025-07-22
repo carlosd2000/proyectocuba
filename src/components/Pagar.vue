@@ -4,7 +4,6 @@ import { usePagar } from '../scripts/Pagar.js'
 import { useAuthStore } from '@/stores/authStore'
 import { hayHorariosDisponibles, horarioSeleccionado } from '../scripts/añadir.js'
 import { verificarHorarioActivo } from '../scripts/FunctionHorarioActivo.js'
-
 import { useToastStore } from '../stores/toast'
 import ErrorIcon from '../assets/icons/Error.svg'
 const {
@@ -83,6 +82,10 @@ const customLanzarToast = async () => {
         3000,
         ErrorIcon
       )
+    }
+    if (resultado?.success && resultado.totalGlobal) {
+      // Aquí podrías mostrar un mensaje adicional si lo deseas
+      console.log(`Fondo ajustado por apuesta de $${resultado.totalGlobal}`)
     }
   } catch (error) {
     console.error('Error en lanzarToast:', error)

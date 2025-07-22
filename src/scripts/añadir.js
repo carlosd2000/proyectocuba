@@ -4,6 +4,7 @@ import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones'
 import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { useAuthStore } from '@/stores/authStore'
+import { useFondo } from './useFondo'
 
 // Variables reactivas
 export const nombreTemporal = ref('');
@@ -109,10 +110,14 @@ export async function guardarDatos() {
 
   const { hora24, timestamp } = obtenerHoraCuba();
   try {
+    const { ajustarFondoPorApuesta } = useFondo()
     const bancoId = authStore.bancoId;
     if (!bancoId) throw new Error("No se pudo determinar el banco padre");
 
-    const uuid = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
+    const uuid = modoEdicion.value && idEdicion.value
+      ? idEdicion.value
+      : (uuidGenerado.value || tomarUUID());
+
 
     // Procesamiento de datos
     const filasCombinadas = [...filasFijas.value, ...filasExtra.value];
@@ -136,14 +141,16 @@ export async function guardarDatos() {
         message: 'No hay datos válidos para guardar'
       };
     }
-
+    if (!modoEdicion.value) {
+      await ajustarFondoPorApuesta('CREACION', totalGlobal)
+    }
     // Preparar documento para guardar
     const docAGuardar = {
       id: uuid,
       nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuid.slice(0, 6),
       totalGlobal,
       datos: datosAGuardar,
-      id_listero: auth.currentUser?.uid || 'sin-autenticar',
+      id_usuario: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
       horario: horarioSeleccionado.value,
       uuid: uuid,
@@ -204,15 +211,32 @@ export async function guardarDatos() {
     const docPath = `bancos/${bancoId}/apuestas/${uuid}`;
     
     if (modoEdicion.value) {
+      // Obtener el monto anterior antes de actualizar
+      let montoAnterior = 0;
+      try {
+        const docRef = doc(db, `bancos/${bancoId}/apuestas`, idEdicion.value);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          montoAnterior = docSnap.data().totalGlobal || 0;
+        }
+      } catch (error) {
+        console.error('Error obteniendo monto anterior:', error);
+      }
+
+      // Ajustar el fondo ANTES de guardar
+      await ajustarFondoPorApuesta('EDICION', totalGlobal, montoAnterior);
+
       const { creadoEn, ...updateData } = docAGuardar;
       await updateDoc(doc(db, docPath), updateData);
       
       return { 
         success: true, 
         message: `Apuesta actualizada correctamente a las ${hora24}`,
-        docId: uuid
+        docId: uuid,
+        totalGlobal,
+        montoAnterior // Devolver también para referencia
       };
-    } 
+    }
     else {
       const docRef = doc(db, docPath);
       await setDoc(docRef, docAGuardar);

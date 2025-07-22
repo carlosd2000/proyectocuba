@@ -19,7 +19,6 @@ const userType = computed(() => authStore.userType)
 const creatorId = computed(() => authStore.profile?.creadorDirectoId)
 const creatorType = computed(() => authStore.profile?.creadorDirectoTipo)
 const bancoId = computed(() => authStore.bancoId)
-const rutaJerarquica = computed(() => authStore.rutaJerarquica)
 
 const logout = async () => {
     try {
@@ -67,7 +66,7 @@ const logout = async () => {
     <button @click="$router.push(`/horario/${$route.params.id}`)" class="m-5">click para ir a horarios</button>
     <mifondo class="m-3"/>
     <button v-if="userType !== 'listeros'" @click="$router.push(`/registrar/${$route.params.id}`)" class="m-5">ir a registrar</button>
-    <h5 class="body mx-3">usuario "{{ userId }}" con el tipo "{{ userType }}", creado por "{{ creatorId }}" con el tipo "{{ creatorType }}", pertenece al banco "{{ bancoId }}" y su ruta jerárquica es "{{ rutaJerarquica }}"</h5>
+    <h5 class="body mx-3">usuario "{{ userId }}" con el tipo "{{ userType }}", creado por "{{ creatorId }}" con el tipo "{{ creatorType }}", pertenece al banco "{{ bancoId }}"</h5>
     <footer>
         <Footer title="Usuario" />
     </footer>

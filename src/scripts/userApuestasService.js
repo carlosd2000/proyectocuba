@@ -29,7 +29,7 @@ export const UserBetsService = {
       const apuestasRef = collection(db, `bancos/${bancoId}/apuestas`);
       
       // Crear query para filtrar por id_listero
-      const q = query(apuestasRef, where("id_listero", "==", userId));
+      const q = query(apuestasRef, where("id_usuario", "==", userId));
       
       // Ejecutar la consulta
       const querySnapshot = await getDocs(q);

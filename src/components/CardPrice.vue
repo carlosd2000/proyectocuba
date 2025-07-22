@@ -2,13 +2,14 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import CuentaRegresiva from './CuentaRegresiva.vue'
 import BtnTransferir from './BtnTransferir.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useFondo } from '../scripts/useFondo.js'
 import { useAuthStore } from '../stores/authStore';
 
 const authStore = useAuthStore()
 
 const route = useRoute()
+const router = useRouter()
 const isListerosRoute = computed(() => route.path.startsWith('/home') || route.path.startsWith('/fondo') || route.path.startsWith('/transferir'))
 const isFondoRoute = route.path.startsWith('/fondo')
 
@@ -22,7 +23,10 @@ watch(showDetails, (newValue) => {
   emit('update:showDetails', newValue)
 })
 const toggleDetails = () => {
-  showDetails.value = !showDetails.value
+  router.push(`/fondo/${route.params.id}`)
+  if (authStore.userType !== 'listeros') {
+    showDetails.value = !showDetails.value
+  }
 }
 </script>
 

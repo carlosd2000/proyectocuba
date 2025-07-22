@@ -37,51 +37,6 @@ function iramovimiento(tipo) {
     router.push(`/lista/${route.params.id}`)
   }
 }
-
-onMounted(async () => {
-  const authStore = useAuthStore()
-  const userId = authStore.userId
-  //const data = await obtenerTransacciones(userId)
-    const data = [
-    {
-      id: '1',
-      tipo: 'Deposito',
-      fecha: new Date('2025-07-15T10:30:00'),
-      monto: 50000,
-    },
-    {
-      id: '2',
-      tipo: 'Tiro del Dia',
-      fecha: new Date('2025-07-15T12:00:00'),
-      monto: -10000,
-    },
-    {
-      id: '3',
-      tipo: 'Tiro de la Tarde',
-      fecha: new Date('2025-07-15T17:00:00'),
-      monto: -15000,
-    },
-    {
-      id: '4',
-      tipo: 'Ganancia',
-      fecha: new Date('2025-07-15T20:00:00'),
-      monto: 18000,
-    },
-    {
-      id: '5',
-      tipo: 'Retiro',
-      fecha: new Date('2025-07-14T09:00:00'),
-      monto: -20000,
-    },
-    {
-      id: '6',
-      tipo: 'Tiro de la Noche',
-      fecha: new Date('2025-07-14T21:00:00'),
-      monto: -8000,
-    }
-  ]
-  transacciones.value = data
-})
 </script>
 
 <template>
