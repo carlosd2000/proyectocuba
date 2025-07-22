@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import CuentaRegresiva from './CuentaRegresiva.vue'
-import ButtonBlack from '../components/ButtonBlack.vue'
+import BtnTransferir from './BtnTransferir.vue'
 import { useRoute } from 'vue-router'
 import { useFondo } from '../scripts/useFondo.js'
 import { useAuthStore } from '../stores/authStore';
@@ -54,7 +54,7 @@ const toggleDetails = () => {
         </div>
       </div>
       <div v-if="authStore.userType !== 'listeros' && isFondoRoute" class="d-flex justify-content-center align-items-center">
-        <ButtonBlack title="Transferir"/>
+        <BtnTransferir title="Transferir"/>
       </div>
     </div>
     <div v-if="authStore.userType !== 'listeros' && isFondoRoute" class="d-flex justify-content-center align-items-center w-100">
