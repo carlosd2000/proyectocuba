@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useFondoCreador } from '../scripts/useFondoCreador'
+import { useFondo } from '../scripts/useFondo';
 import Header from '../components/Header.vue';
 import CardPrice from '../components/CardPrice.vue';
 import SelectorId from '../components/SelectorId.vue';
@@ -8,6 +9,7 @@ import FilterOpcionsButtons from '../components/FilterOpcionsButtons.vue';
 import ButtonDouble from '../components/ButtonDouble.vue';
 
 const { agregarCambioFondo, cambiosLocales, fondosLocales } = useFondoCreador()
+const { agregarCambioLocal } = useFondo();
 
 const usuarioSeleccionado = ref('')
 const seleccion = ref("Depositar")
@@ -55,8 +57,10 @@ async function crearTransaccion() {
         const valor = Math.abs(inputValor.value)
         if (seleccion.value === 'Depositar') {
             await agregarCambioFondo(uid, 'creador-agrega', tipoUsuario, valor)
+            await agregarCambioLocal('deposito-creador', -valor)
         } else if (seleccion.value === 'Recolectar') {
             await agregarCambioFondo(uid, 'creador-quita', tipoUsuario, -valor)
+            await agregarCambioLocal('recolecta-creador', valor)
         }
 
         transferenciaSend.value = true

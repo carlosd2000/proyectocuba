@@ -9,12 +9,12 @@ export const apuestas = ref([])
 const authStore = useAuthStore()
 
 // Obtener apuestas en tiempo real filtradas por id_listero
-export const obtenerApuestas = async (idListero) => {
+export const obtenerApuestas = async (idUsuario) => {
   try {
     const bancoId = authStore.bancoId
     const q = query(
       collection(db, `bancos/${bancoId}/apuestas`),
-      where("id_listero", "==", idListero)
+      where("id_usuario", "==", idUsuario)
     );
 
     const querySnapshot = await getDocs(q);

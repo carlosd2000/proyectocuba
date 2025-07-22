@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
-import { auth, db } from '@/firebase/config'
+import { auth } from '@/firebase/config'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore'
 import authService from '@/firebase/auth'
 import WalletService from '@/firebase/walletService'
 
@@ -12,10 +11,6 @@ export const useAuthStore = defineStore('auth', {
     wallet: JSON.parse(localStorage.getItem('userWallet')) || null,
     loading: false,
     error: null,
-    contextoJerarquico: JSON.parse(localStorage.getItem('jerarquia')) || {
-      bancoId: null,
-      rutaCompleta: []
-    },
     isInitialized: false
   }),
 
@@ -31,14 +26,13 @@ export const useAuthStore = defineStore('auth', {
         }
 
         try {
-          const result = await authService.login(this.user.email, '')
+          const result = {
+            success: true,
+            profile: await authService.getUserProfile(this.user.uid)
+          }
+
           if (result.success) {
             this.profile = result.profile
-            this.contextoJerarquico = await authService.obtenerContextoJerarquico(
-              this.user.uid,
-              this.profile.tipo,
-              this.profile.bancoId
-            )
 
             if (this.bancoId) {
               await WalletService.crearOActualizarWallet({
@@ -69,7 +63,6 @@ export const useAuthStore = defineStore('auth', {
     persistToCache() {
       if (this.user) localStorage.setItem('user', JSON.stringify(this.user))
       if (this.profile) localStorage.setItem('userProfile', JSON.stringify(this.profile))
-      if (this.contextoJerarquico) localStorage.setItem('jerarquia', JSON.stringify(this.contextoJerarquico))
       if (this.wallet) localStorage.setItem('userWallet', JSON.stringify(this.wallet))
     },
 
@@ -127,12 +120,10 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.profile = null
       this.wallet = null
-      this.contextoJerarquico = { bancoId: null, rutaCompleta: [] }
       this.error = null
       this.loading = false
       localStorage.removeItem('user')
       localStorage.removeItem('userProfile')
-      localStorage.removeItem('jerarquia')
       localStorage.removeItem('userWallet')
     },
 
@@ -161,8 +152,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.user,
     userType: (state) => state.profile?.tipo,
     userId: (state) => state.user?.uid,
-    bancoId: (state) => state.contextoJerarquico.bancoId,
-    rutaJerarquica: (state) => state.contextoJerarquico.rutaCompleta,
+    bancoId: (state) => state.profile?.bancoId,
     isLoading: (state) => state.loading,
     currentError: (state) => state.error,
     fondoRecaudado: (state) => state.wallet?.fondo_recaudado || 0

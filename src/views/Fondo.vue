@@ -89,7 +89,7 @@ onUnmounted(() => {
     </header>    
     <div v-if="showDetails" class="degradado-overlay"></div>
     <main class="container-main">
-      <CardPrice :price="userfondo" @update:showDetails="handleShowDetails"/>
+      <CardPrice @update:showDetails="handleShowDetails"/>
       <div class="pb-2 border-bottom">
         <div v-if="authStore.userType !== 'listeros'" class="p-2 d-flex flex-row justify-content-center align-items-center gap-3 w-100">
           <div class="d-flex align-items-center gap-2" @click="typeView('movimientos')">

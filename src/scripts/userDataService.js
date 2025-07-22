@@ -78,12 +78,12 @@ export const UserDataService = {
    */
   async getTotalGlobalListero() {
     const authStore = useAuthStore();
-    const listeroId = authStore.userId;
-    if (!listeroId) return 0;
+    const userId = authStore.userId;
+    if (!userId) return 0;
 
     // Busca todas las apuestas donde idistero == listeroId
     const apuestasRef = collection(db, 'apuestas');
-    const q = query(apuestasRef, where('idistero', '==', listeroId));
+    const q = query(apuestasRef, where('id_usuario', '==', userId));
     const snapshot = await getDocs(q);
 
     let total = 0;

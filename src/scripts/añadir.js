@@ -114,7 +114,10 @@ export async function guardarDatos() {
     const bancoId = authStore.bancoId;
     if (!bancoId) throw new Error("No se pudo determinar el banco padre");
 
-    const uuid = modoEdicion.value && idEdicion.value ? idEdicion.value : generarUUID();
+    const uuid = modoEdicion.value && idEdicion.value
+      ? idEdicion.value
+      : (uuidGenerado.value || tomarUUID());
+
 
     // Procesamiento de datos
     const filasCombinadas = [...filasFijas.value, ...filasExtra.value];
@@ -147,7 +150,7 @@ export async function guardarDatos() {
       nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuid.slice(0, 6),
       totalGlobal,
       datos: datosAGuardar,
-      id_listero: auth.currentUser?.uid || 'sin-autenticar',
+      id_usuario: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
       horario: horarioSeleccionado.value,
       uuid: uuid,

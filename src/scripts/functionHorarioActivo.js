@@ -1,87 +1,68 @@
 // FunctionHorarioActivo.js
-import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
-
 /**
- * Verifica si un horario está activo considerando solo la hora (no la fecha)
- * @param {string} bancoId - ID del banco
- * @param {string} horario - Nombre del horario ('dia', 'tarde', 'noche')
- * @returns {Promise<boolean>} - True si el horario está disponible
+ * Verifica si un horario está activo y no sobrepasado usando solo localStorage.
+ * No hace ninguna consulta a Firestore.
  */
 export async function verificarHorarioActivo(bancoId, horario) {
     try {
-        const horarioRef = doc(db, `bancos/${bancoId}/hora/${horario}`);
-        const horarioSnap = await getDoc(horarioRef);
+        const fechaKey = new Date().toISOString().slice(0, 10)
+        const cacheCompleto = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
+        const datosHorario = cacheCompleto[fechaKey]?.[horario]
 
-        let activo = false;
-        let sobrepasado = false;
-
-        if (!horarioSnap.exists()) {
-            guardarEstadoEnCache(horario, activo, sobrepasado);
-            return false;
+        if (!datosHorario) {
+            console.warn(`No se encontró cache para ${horario}`)
+            guardarEstadoEnCache(horario, false, false)
+            return false
         }
 
-        const horarioData = horarioSnap.data();
-
-        if (!horarioData.activo) {
-            guardarEstadoEnCache(horario, false, false);
-            return false;
+        const activo = datosHorario.activo
+        if (!activo) {
+            guardarEstadoEnCache(horario, false, false)
+            return false
         }
 
-        activo = true;
+        const [horaStr, minutoStr] = datosHorario.hora.split(':')
+        const horaLimiteMin = parseInt(horaStr) * 60 + parseInt(minutoStr)
 
-        if (horarioData.hora) {
-            const ahora = new Date();
-            ahora.setHours(ahora.getHours() + 1);
-            const horaLimite = horarioData.hora.toDate();
-            const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
-            const horaLimiteMinutos = horaLimite.getHours() * 60 + horaLimite.getMinutes();
+        const ahora = new Date()
+        ahora.setHours(ahora.getHours() + 1) // ajuste por zona si aplica
+        const horaActualMin = ahora.getHours() * 60 + ahora.getMinutes()
 
-            if (horaActual >= horaLimiteMinutos) {
-                sobrepasado = true;
-                // NO cambies activo aquí, solo marca sobrepasado
-            }
-        }
+        const sobrepasado = horaActualMin >= horaLimiteMin
+        guardarEstadoEnCache(horario, activo, sobrepasado)
 
-        guardarEstadoEnCache(horario, true, sobrepasado);
-        // Para /anadirjugada, retorna false si está sobrepasado
-        return !sobrepasado;
-        
+        return activo && !sobrepasado
     } catch (error) {
-        // Si hay error, no modificar el cache
-        console.error(`Error verificando horario ${horario}:`, error);
-        return false;
+        console.error(`Error verificando horario ${horario}:`, error)
+        return false
     }
 }
 
-// Función auxiliar para guardar el estado en cache
 function guardarEstadoEnCache(horario, activo, sobrepasado) {
-    let cache = JSON.parse(localStorage.getItem('horariosCache') || '{}');
-    cache[horario] = { activo, sobrepasado };
-    localStorage.setItem('horariosCache', JSON.stringify(cache));
+    const cache = JSON.parse(localStorage.getItem('horariosCache') || '{}')
+    cache[horario] = { activo, sobrepasado }
+    localStorage.setItem('horariosCache', JSON.stringify(cache))
 }
 
-// Función para leer el cache
 export function leerEstadosHorariosCache() {
-    return JSON.parse(localStorage.getItem('horariosCache') || '{}');
+    return JSON.parse(localStorage.getItem('horariosCache') || '{}')
 }
 
-/**
- * Verificación básica (solo campo activo)
- */
 export async function verificarHorarioBasico(bancoId, horario) {
     try {
-        const horarioRef = doc(db, `bancos/${bancoId}/hora/${horario}`);
-        const horarioSnap = await getDoc(horarioRef);
-        return horarioSnap.exists() && horarioSnap.data().activo === true;
+        const fechaKey = new Date().toISOString().slice(0, 10)
+        const cache = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
+        const datos = cache[fechaKey]?.[horario]
+        return datos?.activo === true
     } catch (error) {
-        console.error(`Error verificando horario básico ${horario}:`, error);
-        return false;
+        console.error(`Error verificando horario básico ${horario}:`, error)
+        return false
     }
 }
+
 export async function actualizarCacheHorarios(bancoId) {
-    const horarios = ['dia', 'tarde', 'noche'];
+    const horarios = ['dia', 'tarde', 'noche']
     for (const horario of horarios) {
-        await verificarHorarioActivo(bancoId, horario);
+        await verificarHorarioActivo(bancoId, horario)
     }
 }
