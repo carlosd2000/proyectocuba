@@ -90,7 +90,16 @@ function quitarFiltro(tipo) {
     if (tipo === 'fecha') filterSelectedOption.value = 'Todas'
     if (tipo === 'tipo') typeSelectedOption.value = 'Todas'
     if (tipo === 'tiro') tiroSelectedOption.value = 'Todas'
+
+    // Guardar inmediatamente los cambios en localStorage
+    filtrosOriginales.value = {
+        fecha: filterSelectedOption.value,
+        tipo: typeSelectedOption.value,
+        tiro: tiroSelectedOption.value
+    }
+    localStorage.setItem('filtrosGuardados', JSON.stringify(filtrosOriginales.value))
 }
+
 function cerrarModal() {
     // Restaurar los valores originales guardados al abrir el modal
     filterSelectedOption.value = valoresBackup.fecha

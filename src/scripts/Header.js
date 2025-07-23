@@ -27,6 +27,24 @@ export function useHeader() {
     }
   }
 
+  const cargarDesdeHoraCierreCache = () => {
+    const fechaKey = new Date().toISOString().slice(0, 10)
+    const cache = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
+    const dataLocal = cache[fechaKey] || {}
+
+    for (const turno of turnos) {
+      const datos = dataLocal[turno]
+      if (datos?.activo === true && typeof datos.hora === 'string') {
+        const [h, m] = datos.hora.split(':').map(Number)
+        const hora = new Date()
+        hora.setHours(h, m, 0, 0)
+        globalHorasTurno[turno] = hora
+      } else {
+        globalHorasTurno[turno] = null
+      }
+    }
+  }
+
   const calcularTiempoRestante = (ahora) => {
     horaActual.value = ahora.toLocaleTimeString('es-ES', { hour12: false })
 
@@ -34,10 +52,10 @@ export function useHeader() {
     let nuevoTurnoActual = ''
 
     for (const [turno, horaObj] of Object.entries(globalHorasTurno)) {
-      if (!horaObj || typeof horaObj.getHours !== 'function') continue
+      if (!horaObj) continue
 
       const targetHoy = new Date(ahora)
-      targetHoy.setHours(horaObj.getHours(), horaObj.getMinutes(), horaObj.getSeconds(), 0)
+      targetHoy.setHours(horaObj.getHours(), horaObj.getMinutes(), 0, 0)
 
       const targetManana = new Date(targetHoy)
       targetManana.setDate(targetHoy.getDate() + 1)
@@ -72,19 +90,8 @@ export function useHeader() {
     }
   }
 
-  const cargarDesdeLocalStorage = () => {
-    const dataLocal = JSON.parse(localStorage.getItem('horasTurnos') || '{}')
-    for (const turno of turnos) {
-      if (dataLocal[turno]) {
-        globalHorasTurno[turno] = new Date(dataLocal[turno])
-      } else {
-        globalHorasTurno[turno] = null
-      }
-    }
-  }
-
   onMounted(() => {
-    cargarDesdeLocalStorage()
+    cargarDesdeHoraCierreCache()
 
     if (!intervalId) {
       intervalId = setInterval(() => {
