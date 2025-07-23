@@ -42,35 +42,18 @@ const customLanzarToast = async () => {
       default: horarioKey = 'dia'
     }
 
-    if (!navigator.onLine) {
-      // OFFLINE: revisa el cache local
-      const cache = JSON.parse(localStorage.getItem('horariosCache') || '{}')
-      const estado = cache[horarioKey]
-      if (!estado || estado.sobrepasado) {
-        toastStore.showToast(
-          'La apuesta está fuera de tiempo para este horario',
-          'warning',
-          4000,
-          ErrorIcon
-        )
-        isLoading.value = false
-        emit('update:mostrar-enviando', false)
-        return
-      }
-    } else {
-      // ONLINE: consulta en tiempo real
-      const horarioDisponible = await verificarHorarioActivo(bancoId, horarioKey)
-      if (!horarioDisponible) {
-        toastStore.showToast(
-          'La apuesta está fuera de tiempo para este horario',
-          'warning',
-          4000,
-          ErrorIcon
-        )
-        isLoading.value = false
-        emit('update:mostrar-enviando', false)
-        return
-      }
+    // ONLINE: consulta en tiempo real
+    const horarioDisponible = await verificarHorarioActivo(bancoId, horarioKey)
+    if (!horarioDisponible) {
+      toastStore.showToast(
+        'La apuesta está fuera de tiempo para este horario',
+        'warning',
+        4000,
+        ErrorIcon
+      )
+      isLoading.value = false
+      emit('update:mostrar-enviando', false)
+      return
     }
 
     // Si pasa la validación, continúa

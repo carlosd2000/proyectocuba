@@ -3,51 +3,7 @@ import Header from '../components/Header.vue'
 import Dailyplay from '../components/Dailyplay.vue'
 import ToolsButton from '../components/ToolsButton.vue'
 import Footer from '../components/Footer.vue'
-import { onMounted, onUnmounted, ref } from 'vue'
-import { UserDataService } from '@/scripts/userDataService';
-import { useAuthStore } from '@/stores/authStore'
 import CardPrice from '../components/CardPrice.vue'
-
-const authStore = useAuthStore()
-const isLoading = ref(true)
-const error = ref(null)
-const userfondo = ref(null)
-
-const unsubscribe = ref(null)
-
-onMounted(async () => {
-  try {
-    if (authStore.isAuthenticated && !authStore.profile) {
-      await authStore.loadUserProfile()
-    }
-    
-    // Función para actualizar la fondo
-    const updateUserData = (userData) => {
-      if (userData) {
-        userfondo.value = userData.fondo || 0; // Asigna 0 si no hay fondo
-      } else {
-        console.log("Usuario cerró sesión");
-        userfondo.value = 0;
-      }
-    };
-    
-    // Cargar datos iniciales
-    const initialData = await UserDataService.getCurrentUserData();
-    updateUserData(initialData);
-    
-    // Escuchar cambios
-    const unsubscribe = UserDataService.onAuthStateChanged(updateUserData);
-    
-  } catch (e) {
-    error.value = "Error cargando datos"
-    console.error("Error en Listeros:", e)
-  } finally {
-    isLoading.value = false
-  }
-})
-onUnmounted(() => {
-  if (unsubscribe.value) unsubscribe.value()
-})
 </script>
 
 <template>
@@ -56,7 +12,7 @@ onUnmounted(() => {
       <Header/>
     </header>
     <main class="container-main">
-      <CardPrice :price="userfondo"/>
+      <CardPrice/>
       <dailyplay moneytime="999"/>
       <div class="line w-100"></div>
       <ToolsButton title="Herramientas" />

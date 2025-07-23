@@ -1,14 +1,43 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import Calendario from '../assets/icons/Calendario.svg'
+import Lista2 from '../assets/icons/Lista2.svg'
+import Ganancia from '../assets/icons/Ganancia.svg'
+import Deposito from '../assets/icons/Deposito.svg'
+import Dia from '../assets/icons/Dia.svg'
+import Tarde from '../assets/icons/Tarde.svg'
+import Noche from '../assets/icons/Noche.svg'
 
 const activeModal = ref(false)
+const filtrosOriginales = ref({
+    fecha: 'Todas',
+    tipo: 'Todas',
+    tiro: 'Todas'
+})
 const filterSelectedOption = ref("Todas")
 const typeSelectedOption = ref("Todas")
 const tiroSelectedOption = ref("Todas")
-const isButtonDisabled = ref(true)
+
+let valoresBackup = {
+    fecha: 'Todas',
+    tipo: 'Todas',
+    tiro: 'Todas'
+}
+
+const isButtonDisabled = computed(() => {
+    return (
+        filterSelectedOption.value === filtrosOriginales.value.fecha &&
+        typeSelectedOption.value === filtrosOriginales.value.tipo &&
+        tiroSelectedOption.value === filtrosOriginales.value.tiro
+    )
+})
 
 function handleClick() {
-    console.log('click')
+    valoresBackup = {
+        fecha: filterSelectedOption.value,
+        tipo: typeSelectedOption.value,
+        tiro: tiroSelectedOption.value
+    }
     activeModal.value = true
 }
 function filterSelected(option) {
@@ -20,13 +49,97 @@ function typeSelected(option) {
 function tiroSelected(option) {
     tiroSelectedOption.value = option
 }
+const filtrosActivos = computed(() => {
+    const activos = []
+    if (filterSelectedOption.value !== 'Todas') {
+        activos.push({ tipo: 'fecha', valor: filterSelectedOption.value })
+    }
+    if (typeSelectedOption.value !== 'Todas') {
+        activos.push({ tipo: 'tipo', valor: typeSelectedOption.value })
+    }
+    if (tiroSelectedOption.value !== 'Todas') {
+        activos.push({ tipo: 'tiro', valor: tiroSelectedOption.value })
+    }
+    return activos
+})
+function filterimg(valor) {
+    switch (valor) {
+        case 'Hoy':
+            return Calendario
+        case '7 dias':
+            return Calendario
+        case '30 dias':
+            return Calendario
+        case 'Lista':
+            return Lista2
+        case 'Ganancias':
+            return Ganancia
+        case 'Colector':
+            return Deposito
+        case 'Dia':
+            return Dia
+        case 'Tarde':
+            return Tarde
+        case 'Noche':
+            return Noche
+        default:
+            return ''
+    }
+}
+function quitarFiltro(tipo) {
+    if (tipo === 'fecha') filterSelectedOption.value = 'Todas'
+    if (tipo === 'tipo') typeSelectedOption.value = 'Todas'
+    if (tipo === 'tiro') tiroSelectedOption.value = 'Todas'
+}
+function cerrarModal() {
+    // Restaurar los valores originales guardados al abrir el modal
+    filterSelectedOption.value = valoresBackup.fecha
+    typeSelectedOption.value = valoresBackup.tipo
+    tiroSelectedOption.value = valoresBackup.tiro
+    activeModal.value = false
+}
+
+onMounted(() => {
+    const saved = localStorage.getItem('filtrosGuardados')
+    if (saved) {
+        const parsed = JSON.parse(saved)
+        filtrosOriginales.value = { ...parsed }
+        filterSelectedOption.value = parsed.fecha
+        typeSelectedOption.value = parsed.tipo
+        tiroSelectedOption.value = parsed.tiro
+    }
+})
+
+function aplicarFiltros() {
+    filtrosOriginales.value = {
+        fecha: filterSelectedOption.value,
+        tipo: typeSelectedOption.value,
+        tiro: tiroSelectedOption.value
+    }
+    localStorage.setItem('filtrosGuardados', JSON.stringify(filtrosOriginales.value))
+    activeModal.value = false
+}
+
 </script>
 <template>
-    <div class="ButtonFilter d-flex flex-row justify-content-center align-items-center" @click="handleClick()">
-        <img src="../assets/icons/Filtro.svg" alt="">
-        <h5 class="body text-white">
-            Filtrar
-        </h5>
+    <div class="d-flex flex-row justify-content-between align-items-center w-100">
+        <div class="ButtonFilter Filter d-flex flex-row justify-content-center align-items-center" @click="handleClick()">
+            <img src="../assets/icons/Filtro.svg" alt="">
+            <h5 class="body text-white">
+                Filtrar
+            </h5>
+        </div>
+        <div
+            v-for="filtro in filtrosActivos"
+            :key="filtro.tipo"
+            class="ButtonFilter d-flex flex-row justify-content-center align-items-center gap-1 px-3"
+        >
+            <img :src="filterimg(filtro.valor)" alt="" class="filter-img" width="20px">
+            <h5 class="small">
+                {{ filtro.valor }}
+            </h5>
+            <img src="../assets/icons/Cerrar.svg" alt="" @click="quitarFiltro(filtro.tipo)">
+        </div>
     </div>
     <div v-if="activeModal" class="container-modal w-100 h-100 bg-transparent">
         <div class="container-modal-content d-flex flex-column justify-content-center align-items-center w-100">
@@ -34,7 +147,7 @@ function tiroSelected(option) {
                 <h2>
                     Filtrar
                 </h2>
-                <img src="../assets/icons/Cerrar.svg" alt="" @click="activeModal = false">
+                <img src="../assets/icons/Cerrar.svg" alt="" @click="cerrarModal()">
             </div>
             <div class="d-flex flex-column gap-3">
                 <div class="d-flex flex-row justify-content-start align-items-center gap-3">
@@ -165,7 +278,7 @@ function tiroSelected(option) {
                     </button>
                 </div>
             </div>
-            <div class="button-aplicar" :class="{ 'disabled': isButtonDisabled }">
+            <div class="button-aplicar" :class="{ 'disabled': isButtonDisabled }" @click="!isButtonDisabled && aplicarFiltros()">
                 <h5 class="label text-white">
                     Aplicar Filtros
                 </h5>
@@ -258,11 +371,14 @@ button.tipo{
     gap: 8px;
     height: 36px;
     width: auto;
-    background: #6665DD;
     border-radius: 30px;
+    background: #F3F3F3;
     flex: none;
     flex-grow: 0;
     cursor: pointer;
+}
+.Filter {
+    background: #6665DD;
 }
 .btn.activo{
     background: #6665DD;

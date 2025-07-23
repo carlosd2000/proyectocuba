@@ -139,7 +139,7 @@ const handleEditClick = (persona, event) => {
         <div class="col-1 d-flex justify-content-center align-items-start h-100">
           <div
             class="container-edit-button my-2"
-            :class="{ 'disabled': !candadoAbierto && persona.estado !== 'Pendiente' && persona.estado !== 'EditadoOffline' }"
+            :class="{ 'disabled': !candadoAbierto}"
             @click="handleEditClick(persona, $event)"
           >
             <img src="../assets/icons/Editar.svg" alt="">

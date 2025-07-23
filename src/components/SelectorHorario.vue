@@ -63,37 +63,26 @@ async function actualizarHorarios() {
   const activos = []
   const esRutaAñadirJugada = route.path.startsWith('/anadirjugada')
 
-  if (navigator.onLine) {
-    // Actualiza el cache de todos los horarios siempre que estés online
-    await actualizarCacheHorarios(bancoId);
 
-    for (const h of horarios) {
-      const estaActivo = esRutaAñadirJugada
-        ? await verificarHorarioActivo(bancoId, h.firebaseKey)
-        : await verificarHorarioBasico(bancoId, h.firebaseKey)
-      if (estaActivo) {
+  // 🔁 Siempre actualiza el cache local para reflejar la hora actual vs hora cierre
+  await actualizarCacheHorarios(bancoId)
+
+  // ✅ Luego lee del cache local (ya actualizado)
+  const cache = leerEstadosHorariosCache()
+
+  for (const h of horarios) {
+    const estado = cache[h.firebaseKey]
+    if (!estado) continue
+
+    if (esRutaAñadirJugada) {
+      if (estado.activo && !estado.sobrepasado) {
         const op = allOptions.find(o => o.nombre === h.nombre)
         if (op) activos.push(op)
       }
-    }
-  } else {
-    // Offline: lee del cache
-    const cache = leerEstadosHorariosCache()
-    for (const h of horarios) {
-      const estado = cache[h.firebaseKey]
-      if (!estado) continue
-      if (esRutaAñadirJugada) {
-        // En /anadirjugada: solo activos y no sobrepasados
-        if (estado.activo && !estado.sobrepasado) {
-          const op = allOptions.find(o => o.nombre === h.nombre)
-          if (op) activos.push(op)
-        }
-      } else {
-        // En cualquier otra ruta: solo activos (sin importar sobrepasado)
-        if (estado.activo) {
-          const op = allOptions.find(o => o.nombre === h.nombre)
-          if (op) activos.push(op)
-        }
+    } else {
+      if (estado.activo) {
+        const op = allOptions.find(o => o.nombre === h.nombre)
+        if (op) activos.push(op)
       }
     }
   }

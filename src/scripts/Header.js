@@ -1,7 +1,6 @@
+// header.js
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { db } from '../firebase/config'
-import { doc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from '@/stores/authStore'
 
 export const cuentaRegresiva = ref('--:--:--')
@@ -12,16 +11,15 @@ let intervalId = null
 export function useHeader() {
   const route = useRoute()
   const router = useRouter()
-  const authStore = useAuthStore()
 
   const turnos = ['dia', 'tarde', 'noche']
   const horaActual = ref('--:--:--')
-  const bancoPadreId = ref(null)
 
   const back = computed(() => route.path.startsWith('/home'))
   const bell = computed(() => route.path.startsWith('/'))
 
   const irfondo = () => {
+    const authStore = useAuthStore()
     if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
       router.push(`/fondo/${authStore.userId}`)
     } else {
@@ -79,41 +77,14 @@ export function useHeader() {
     for (const turno of turnos) {
       if (dataLocal[turno]) {
         globalHorasTurno[turno] = new Date(dataLocal[turno])
+      } else {
+        globalHorasTurno[turno] = null
       }
-    }
-  }
-
-  const cargarHorasTurnos = async () => {
-    try {
-      bancoPadreId.value = authStore.bancoId
-      if (!bancoPadreId.value) return
-
-      for (const turno of turnos) {
-        const docRef = doc(db, `bancos/${bancoPadreId.value}/hora`, turno)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          if (data.activo === true && data.hora && typeof data.hora.toDate === 'function') {
-            const fechaHora = data.hora.toDate()
-            globalHorasTurno[turno] = fechaHora
-
-            const guardado = JSON.parse(localStorage.getItem('horasTurnos') || '{}')
-            guardado[turno] = fechaHora.toISOString()
-            localStorage.setItem('horasTurnos', JSON.stringify(guardado))
-          } else {
-            globalHorasTurno[turno] = null
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('No se pudieron cargar los horarios:', error)
-      cargarDesdeLocalStorage()
     }
   }
 
   onMounted(() => {
     cargarDesdeLocalStorage()
-    cargarHorasTurnos()
 
     if (!intervalId) {
       intervalId = setInterval(() => {
