@@ -4,15 +4,16 @@ import {
   setDoc, 
   getDoc, 
   updateDoc,
+  serverTimestamp,
   collection,
-  query,
-  where,
-  getDocs,
-  serverTimestamp
+  runTransaction
 } from 'firebase/firestore'
+import { TransactionsService } from './transactionsService'
 
 export const WalletService = {
-  // Crear o actualizar wallet al iniciar sesión
+  /**
+   * Crea o actualiza una wallet y su estructura de transacciones
+   */
   async crearOActualizarWallet({ userId, bancoId, userType }) {
     try {
       if (!bancoId) {
@@ -27,25 +28,21 @@ export const WalletService = {
         id_dueño: userId,
         dueño_tipo: userType,
         bancoId,
-        retiro: 0,
-        deposito: 0,
-        ganancias: [],
-        tiro_dia: [],
-        tiro_tarde: [],
-        tiro_noche: [],
         fondo_recaudado: 0,
         updatedAt: serverTimestamp()
       }
 
       if (!walletSnap.exists()) {
-        // Crear nueva wallet
         await setDoc(walletRef, {
           ...walletData,
           createdAt: serverTimestamp()
         })
-        return { success: true, message: 'Wallet creada' }
+
+        // Inicializar estructura de transacciones
+        await TransactionsService.inicializarEstructura(userId, bancoId)
+
+        return { success: true, message: 'Wallet creada con estructura de transacciones' }
       } else {
-        // Actualizar solo los campos necesarios
         await updateDoc(walletRef, {
           dueño_tipo: userType,
           updatedAt: serverTimestamp()
@@ -58,7 +55,78 @@ export const WalletService = {
     }
   },
 
-  // Obtener wallet del usuario
+  /**
+   * Transferencia segura entre wallets con transacción atómica
+   */
+  async transferirFondos({ emisorId, receptorId, bancoId, monto }) {
+    try {
+      // Validar monto positivo
+      if (Number(monto) <= 0) {
+        throw new Error('El monto debe ser mayor que cero')
+      }
+
+      // Usar transacción atómica para evitar inconsistencias
+      await runTransaction(db, async (transaction) => {
+        // 1. Verificar y actualizar wallet del emisor
+        const emisorRef = doc(db, `bancos/${bancoId}/wallets/${emisorId}`)
+        const emisorSnap = await transaction.get(emisorRef)
+        
+        if (!emisorSnap.exists()) {
+          throw new Error('Wallet del emisor no existe')
+        }
+
+        const fondoEmisor = emisorSnap.data().fondo_recaudado || 0
+        
+        // 2. Verificar y actualizar wallet del receptor
+        const receptorRef = doc(db, `bancos/${bancoId}/wallets/${receptorId}`)
+        const receptorSnap = await transaction.get(receptorRef)
+        
+        if (!receptorSnap.exists()) {
+          // Crear wallet si no existe
+          transaction.set(receptorRef, {
+            id_dueño: receptorId,
+            dueño_tipo: 'colectores', // Tipo por defecto para receptores
+            bancoId,
+            fondo_recaudado: 0,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          })
+        }
+
+        const fondoReceptor = receptorSnap.exists() 
+          ? receptorSnap.data().fondo_recaudado || 0
+          : 0
+
+        // 3. Actualizar saldos (sin validar fondos insuficientes)
+        transaction.update(emisorRef, {
+          fondo_recaudado: fondoEmisor - Number(monto),
+          updatedAt: serverTimestamp()
+        })
+
+        transaction.update(receptorRef, {
+          fondo_recaudado: fondoReceptor + Number(monto),
+          updatedAt: serverTimestamp()
+        })
+      })
+
+      // 4. Registrar las transacciones (fuera de la transacción atómica)
+      await TransactionsService.transferirFondos({
+        emisorId,
+        receptorId,
+        bancoId,
+        monto
+      })
+
+      return { success: true, message: 'Transferencia realizada con éxito' }
+    } catch (error) {
+      console.error('Error en transferencia:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * Obtiene los datos completos de una wallet
+   */
   async obtenerWallet(userId, bancoId) {
     try {
       if (!bancoId) return null
@@ -67,7 +135,12 @@ export const WalletService = {
       const walletSnap = await getDoc(walletRef)
       
       if (walletSnap.exists()) {
-        return walletSnap.data()
+        const { resultados } = await TransactionsService.getGroupedTransactions(userId, bancoId)
+        
+        return {
+          ...walletSnap.data(),
+          fondo_recaudado: walletSnap.data().fondo_recaudado || 0
+        }
       }
       return null
     } catch (error) {
@@ -76,158 +149,81 @@ export const WalletService = {
     }
   },
 
-  // Actualizar fondos
-  async actualizarFondos({ userId, bancoId, tipo, monto, movimiento }) {
+  /**
+   * Obtiene movimientos formateados (versión corregida)
+   */
+  async obtenerMovimientos(userId, bancoId) {
     try {
-      const walletRef = doc(db, `bancos/${bancoId}/wallets/${userId}`)
-      const walletSnap = await getDoc(walletRef)
+      if (!bancoId) return []
+      
+      // Obtener todas las transacciones diarias
+      const transacciones = await TransactionsService.getDailyTransactions(userId, bancoId)
+      
+      // Filtrar solo transacciones de valores (depósitos/retiros) y mapear
+      const movimientos = transacciones
+        .filter(t => t.periodo === 'Valores' && (t.tipo === 'deposito' || t.tipo === 'retiro'))
+        .map(t => ({
+          id: t.id,
+          tipo: t.tipo === 'deposito' ? 'Depósito' : 'Retiro',
+          monto: t.tipo === 'deposito' ? t.monto : -t.monto,
+          fecha: t.fecha
+        }))
+        .sort((a, b) => b.fecha - a.fecha)
+      
+      return movimientos
+    } catch (error) {
+      console.error('Error obteniendo movimientos:', error)
+      return []
+    }
+  },
 
-      if (!walletSnap.exists()) {
-        throw new Error('Wallet no encontrada')
-      }
-
-      const walletData = walletSnap.data()
-      let updates = {}
-
-      switch (tipo) {
-        case 'deposito':
-          updates.deposito = (walletData.deposito || 0) + monto
-          break
-        case 'retiro':
-          updates.retiro = (walletData.retiro || 0) + monto
-          break
-        case 'ganancia':
-          updates.ganancias = [...(walletData.ganancias || []), movimiento]
-          break
-        case 'tiro_dia':
-          updates.tiro_dia = [...(walletData.tiro_dia || []), movimiento]
-          break
-        case 'tiro_tarde':
-          updates.tiro_tarde = [...(walletData.tiro_tarde || []), movimiento]
-          break
-        case 'tiro_noche':
-          updates.tiro_noche = [...(walletData.tiro_noche || []), movimiento]
-          break
-        default:
-          throw new Error('Tipo de movimiento no válido')
-      }
-
-      // Calcular fondo recaudado
-      const fondoRecaudado = await this.calcularFondoRecaudado(walletData)
-      updates.fondo_recaudado = fondoRecaudado
-
-      await updateDoc(walletRef, {
-        ...updates,
-        updatedAt: serverTimestamp()
+  /**
+   * Actualiza fondos con transacción
+   */
+  async actualizarFondos({ userId, bancoId, tipo, monto, destinatarioId }) {
+    try {
+      return await TransactionsService.crearTransaccion({
+        userId,
+        bancoId,
+        tipo,
+        monto,
+        destinatarioId
       })
-
-      return { success: true }
     } catch (error) {
       console.error('Error actualizando fondos:', error)
       throw error
     }
   },
 
-  // Calcular fondo recaudado
-  async calcularFondoRecaudado(walletData) {
+  /**
+   * Actualiza el fondo recaudado de forma segura
+   */
+  async actualizarFondoRecaudado(userId, bancoId, monto, operacion = 'sumar') {
     try {
-      // Sumar todos los depositos
-      const totalDepositos = walletData.deposito || 0
-      
-      // Sumar todas las apuestas (asumiendo que tienes acceso a esta data)
-      // Esto deberías implementarlo según tu estructura de apuestas
-      const totalApuestas = 0 // Implementar lógica para obtener esto
-      
-      // Sumar ganancias totales
-      const totalGanancias = walletData.ganancias?.reduce((sum, g) => sum + (g.monto || 0), 0) || 0
-      
-      // Sumar retiros
-      const totalRetiros = walletData.retiro || 0
-      
-      // Sumar premios a pagar (tiros ganadores)
-      const totalPremiosDia = walletData.tiro_dia?.reduce((sum, t) => sum + (t.totalGlobal || 0), 0) || 0
-      const totalPremiosTarde = walletData.tiro_tarde?.reduce((sum, t) => sum + (t.totalGlobal || 0), 0) || 0
-      const totalPremiosNoche = walletData.tiro_noche?.reduce((sum, t) => sum + (t.totalGlobal || 0), 0) || 0
-      const totalPremios = totalPremiosDia + totalPremiosTarde + totalPremiosNoche
-      
-      // Calcular fondo recaudado
-      return totalDepositos + totalApuestas - totalGanancias - totalRetiros - totalPremios
-    } catch (error) {
-      console.error('Error calculando fondo recaudado:', error)
-      return 0
-    }
-  },
-
-  // Obtener movimientos para mostrar en ListaMovimientos.vue
-  async obtenerMovimientos(userId, bancoId) {
-    try {
-      if (!bancoId) return []
-      
       const walletRef = doc(db, `bancos/${bancoId}/wallets/${userId}`)
-      const walletSnap = await getDoc(walletRef)
       
-      if (!walletSnap.exists()) return []
-      
-      const walletData = walletSnap.data()
-      const movimientos = []
-      
-      // Procesar depósitos
-      if (walletData.deposito > 0) {
-        movimientos.push({
-          tipo: 'Deposito',
-          monto: walletData.deposito,
-          fecha: walletData.updatedAt?.toDate() || new Date()
-        })
-      }
-      
-      // Procesar retiros
-      if (walletData.retiro > 0) {
-        movimientos.push({
-          tipo: 'Retiro',
-          monto: -walletData.retiro,
-          fecha: walletData.updatedAt?.toDate() || new Date()
-        })
-      }
-      
-      // Procesar ganancias
-      walletData.ganancias?.forEach(g => {
-        movimientos.push({
-          tipo: 'Ganancia',
-          monto: g.monto || 0,
-          fecha: g.fecha?.toDate() || new Date()
-        })
+      await runTransaction(db, async (transaction) => {
+        const walletSnap = await transaction.get(walletRef)
+        let fondoActual = 0
+        
+        if (walletSnap.exists()) {
+          fondoActual = walletSnap.data().fondo_recaudado || 0
+        }
+
+        const nuevoFondo = operacion === 'sumar' 
+          ? fondoActual + Number(monto)
+          : fondoActual - Number(monto)
+
+        transaction.set(walletRef, {
+          fondo_recaudado: nuevoFondo,
+          updatedAt: serverTimestamp()
+        }, { merge: true })
       })
-      
-      // Procesar tiros (simplificado - puedes ajustar según necesidades)
-      walletData.tiro_dia?.forEach(t => {
-        movimientos.push({
-          tipo: 'Tiro del Dia',
-          monto: -(t.totalGlobal || 0),
-          fecha: t.fecha?.toDate() || new Date()
-        })
-      })
-      
-      walletData.tiro_tarde?.forEach(t => {
-        movimientos.push({
-          tipo: 'Tiro de la Tarde',
-          monto: -(t.totalGlobal || 0),
-          fecha: t.fecha?.toDate() || new Date()
-        })
-      })
-      
-      walletData.tiro_noche?.forEach(t => {
-        movimientos.push({
-          tipo: 'Tiro de la Noche',
-          monto: -(t.totalGlobal || 0),
-          fecha: t.fecha?.toDate() || new Date()
-        })
-      })
-      
-      // Ordenar por fecha (más reciente primero)
-      return movimientos.sort((a, b) => b.fecha - a.fecha)
+
+      return { success: true }
     } catch (error) {
-      console.error('Error obteniendo movimientos:', error)
-      return []
+      console.error('Error actualizando fondo recaudado:', error)
+      throw error
     }
   }
 }
