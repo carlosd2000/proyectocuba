@@ -2,8 +2,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { filasFijas, filasExtra, calcularTotalesCombinados, limpiarCampos, validarFilas} from '../scripts/operaciones.js'
 import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
-import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '@/firebase/config';
 import { useToastStore } from '../stores/toast'
 import CheckIcon from '../assets/icons/Check.svg'
 import ErrorIcon from '../assets/icons/Error.svg'
@@ -16,27 +14,6 @@ export function usePagar() {
     const errorMessage = ref('')
     const isOnline = ref(navigator.onLine)
     const mostrarEnviando = ref(false)
-
-    async function obtenerApuestaPorId(bancoId, idApuesta) {
-      try {
-        const apuestaRef = doc(db, `bancos/${bancoId}/apuestas`, idApuesta);
-        const apuestaSnap = await getDoc(apuestaRef);
-        
-        if (apuestaSnap.exists()) {
-          return { 
-            id: apuestaSnap.id, 
-            ...apuestaSnap.data(),
-            nombre: apuestaSnap.data().nombre || 'Sin nombre',
-            tipo: apuestaSnap.data().tipo || 'tiros',
-            horario: apuestaSnap.data().horario || 'Dia'
-          };
-        }
-        return null;
-      } catch (error) {
-        console.error('Error al obtener apuesta:', error);
-        throw error;
-      }
-    }
 
     const formatNumber = (value) => {
         const num = Number(value || 0)

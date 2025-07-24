@@ -1,7 +1,9 @@
 <script setup>
-import { useAuthStore } from '@/stores/authStore'
-import { ref, watchEffect, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import { database } from './firebase/config.js'
+import { ref as dbRef, onValue } from 'firebase/database'
 import ToastManager from './components/ToastManager.vue'
 import { cargarLibreriasIniciales } from './scripts/useAppInitializer.js'
 
@@ -24,9 +26,12 @@ onMounted(async () => {
     console.error('Error inicializando Auth:', error)
     isAppReady.value = true
   }
+
 })
 
-// Elimina watchEffect y reemplázalo con un watch controlado:
+let tiroRef = null
+let unsubscribeTiro = null
+
 watch(
   () => authStore.user && authStore.profile && authStore.bancoId, // Solo se dispara cuando TODO está listo
   async (ready) => {
@@ -40,6 +45,22 @@ watch(
       fondoManager = fondo;
       fondoCreadorManager = fondoCreador;
       usuariosCreadosManager = usuarios;
+
+      const userType = authStore.userType;
+      if(userType !== 'bancos') {
+        const bancoId = authStore.bancoId;
+        if (bancoId) {
+          tiroRef = dbRef(database, `tirosPorBanco/${bancoId}`)
+
+          unsubscribeTiro = onValue(tiroRef, (snapshot) => {
+            const data = snapshot.val()
+            if (data && data.tiro) {
+              console.log('📥 Nuevo tiro recibido:', data.tiro)
+              
+            }
+          })
+        }
+      }
     }
   },
   { immediate: true }
@@ -49,6 +70,9 @@ onUnmounted(() => {
   fondoManager?.detenerSincronizacion?.()
   fondoCreadorManager?.detenerSincronizacion?.()
   usuariosCreadosManager?.detener?.()
+  if (unsubscribeTiro && typeof unsubscribeTiro === 'function') {
+    unsubscribeTiro()
+  }
 })
 
 watch(() => authStore.user, (user) => {

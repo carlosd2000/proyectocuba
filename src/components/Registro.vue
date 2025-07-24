@@ -89,7 +89,7 @@
               :disabled="!showSelect || isLoading"
             >
               <span v-if="isLoading">
-                <i class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></i> Cargando...
+                Cargando...
               </span>
               <span v-else>Crear</span>
             </button>

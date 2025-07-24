@@ -44,7 +44,7 @@ h2{
   font-family: 'Manrope', sans-serif !important;
   font-weight: 600 !important;
   font-size: 20px !important;
-  line-height: 20px;
+  line-height: 20px !important;
   letter-spacing: 0% !important;
   color: #050517 !important;
 }

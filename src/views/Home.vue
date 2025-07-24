@@ -1,9 +1,13 @@
 <script setup>
+import { ref } from 'vue'
 import Header from '../components/Header.vue'
 import Dailyplay from '../components/Dailyplay.vue'
 import ToolsButton from '../components/ToolsButton.vue'
 import Footer from '../components/Footer.vue'
 import CardPrice from '../components/CardPrice.vue'
+import ModalTiro from '../components/ModalTiro.vue'
+
+const modalTiro = ref(false)
 </script>
 
 <template>
@@ -15,7 +19,8 @@ import CardPrice from '../components/CardPrice.vue'
       <CardPrice/>
       <dailyplay moneytime="999"/>
       <div class="line w-100"></div>
-      <ToolsButton title="Herramientas" />
+      <ToolsButton title="Herramientas" v-model:active="modalTiro"/>
+      <ModalTiro :modalTiro="modalTiro" @cerrar="modalTiro = false"/>
     </main>
     <footer>
       <Footer title="Home"/>
@@ -47,5 +52,4 @@ import CardPrice from '../components/CardPrice.vue'
   flex-grow: 0;
   border-top: 1px solid #CDCDD1;
 }
-
 </style>

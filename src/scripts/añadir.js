@@ -1,7 +1,7 @@
+import { ref } from 'vue';
 import { db, auth } from '../firebase/config';
 import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones';
-import { ref } from 'vue';
 import { obtenerHoraCuba } from './horacuba.js';
 import { useAuthStore } from '@/stores/authStore'
 import { useFondo } from './useFondo'
@@ -18,7 +18,6 @@ export const uuidGenerado = ref('');
 const authStore = useAuthStore()
 
 let syncPending = false;
-let cachedBancoId = null;
 
 // ================= CONFIGURACIÓN =================
 export function setNombre(nombre) {

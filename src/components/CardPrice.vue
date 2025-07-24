@@ -12,6 +12,7 @@ const route = useRoute()
 const router = useRouter()
 const isListerosRoute = computed(() => route.path.startsWith('/home') || route.path.startsWith('/fondo') || route.path.startsWith('/transferir'))
 const isFondoRoute = route.path.startsWith('/fondo')
+const isTransferirRoute = route.path.startsWith('/transferir')
 
 const emit = defineEmits(['update:showDetails'])
 
@@ -42,7 +43,7 @@ const toggleDetails = () => {
           {{ fondoActual  }}
         </h3>
         <!-- Cuenta Regresiva -->
-        <div v-if="!isFondoRoute">
+        <div v-if="!isFondoRoute && !isTransferirRoute">
           <CuentaRegresiva />
         </div>
         <div v-else class="container-text-fondo d-flex flex-row justify-content-center">
@@ -101,7 +102,6 @@ const toggleDetails = () => {
   max-width: 400px;
   max-height: 124px;
   position: relative; /* Agregado */
-  z-index: 10; 
 }
 .card-price {
   display: flex;
