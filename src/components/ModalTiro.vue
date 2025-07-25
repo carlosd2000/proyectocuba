@@ -10,10 +10,9 @@ import CheckIcon from '../assets/icons/Check.svg'
 const input1 = ref('')
 const input2 = ref('')
 const input3 = ref('')
+const selectedTurno = ref('Dia') // Por defecto al "Dia"
 const toastStore = useToastStore()
 const authStore = useAuthStore()
-
-const userBancoId = computed(() => authStore.user)
 
 const props = defineProps({
     modalTiro: {
@@ -37,7 +36,7 @@ function enviarTiro() {
     console.log('Tiro enviado:', input1.value, input2.value, input3.value)
     const tiro = `${input1.value}-${input2.value}-${input3.value}`
 
-    const ruta = dbRef(database, `tirosPorBanco/${authStore.bancoId}`)
+    const ruta = dbRef(database, `tirosPorBanco/${authStore.bancoId}/${selectedTurno.value}`)
 
     set(ruta, {
         tiro,
@@ -76,6 +75,11 @@ function enviarTiro() {
                     </h3>
                 </div>
             </div>
+            <select v-model="selectedTurno" class="select-turno">
+                <option value="1">Dia</option>
+                <option value="2">Tarde</option>
+                <option value="3">Noche</option>
+            </select>
             <div class="d-flex flex-row justify-content-between align-items-center gap-1 w-100">
                 <input type="text" v-model="input1" class="input-tiro text-center" style="max-width: 105px;" />
                 <p class="m-0 p-0">-</p>
@@ -114,7 +118,6 @@ function enviarTiro() {
     box-shadow: 0px 0px 24px rgba(0, 0, 0, 0.1);
     border-radius: 12px;
     flex: none;
-    order: 5;
     flex-grow: 0;
     z-index: 5;
 }
@@ -132,7 +135,6 @@ function enviarTiro() {
     border-radius: 30px;
     letter-spacing: 6px;
     flex: none;
-    order: 0;
     flex-grow: 1;
 }
 </style>

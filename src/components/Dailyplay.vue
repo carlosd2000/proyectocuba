@@ -80,7 +80,6 @@ onMounted(() => {
 .container{
     gap: 16px;
     flex: none;
-    order: 1;
     flex-grow: 0;
 }
 .buttons-heith {
@@ -94,7 +93,6 @@ onMounted(() => {
     height: 62px;
     border-radius: 12px;
     flex: none;
-    order: 0;
     flex-grow: 0;
 }
 .label{

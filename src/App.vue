@@ -54,9 +54,39 @@ watch(
 
           unsubscribeTiro = onValue(tiroRef, (snapshot) => {
             const data = snapshot.val()
-            if (data && data.tiro) {
-              console.log('📥 Nuevo tiro recibido:', data.tiro)
-              
+            if (data) {
+              const hoy = new Date().toISOString().slice(0, 10)
+
+              // Preparar objeto para almacenar localmente
+              const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
+
+              // Iterar por los tiros del día (puede haber mañana, tarde, noche)
+              for (const horario in data) {
+                const tiro = data[horario]
+
+                if (!tiro?.timestamp) continue
+
+                const fechaTiro = new Date(tiro.timestamp).toISOString().slice(0, 10)
+
+                // Solo guardar si el tiro es del día actual
+                if (fechaTiro === hoy) {
+                  // Asegurar estructura
+                  if (!tirosLocales[hoy]) {
+                    tirosLocales[hoy] = {}
+                  }
+
+                  // Guardar por horario: mañana, tarde, noche...
+                  tirosLocales[hoy][horario] = {
+                    tiro: tiro.tiro,
+                    timestamp: tiro.timestamp
+                  }
+
+                  console.log(`📥 Guardado tiro local [${horario}]:`, tiro.tiro)
+                }
+              }
+
+              // Guardar de vuelta en localStorage
+              localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
             }
           })
         }

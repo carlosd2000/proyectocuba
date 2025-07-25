@@ -160,7 +160,6 @@ async function crearTransaccion() {
     height: 2px;
     border: 1px solid #CDCDD1;
     flex: none;
-    order: 0;
     flex-grow: 0;
 }
 .container-selector {

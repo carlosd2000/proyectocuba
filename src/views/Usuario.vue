@@ -1,11 +1,11 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { AuthService } from '@/firebase/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { resetFondo, useFondo } from '@/scripts/useFondo.js'
 import { useFondoCreador, resetFondoCreador } from '@/scripts/useFondoCreador.js'
-import { useUsuariosCreados, resetUsuariosCreados } from '@/scripts/useUsuariosCreados.js'
+import { resetUsuariosCreados } from '@/scripts/useUsuariosCreados.js'
 import mifondo from '../components/mifondo.vue';
 import Footer from '../components/Footer.vue';
 import localforage from 'localforage';
@@ -19,6 +19,34 @@ const userType = computed(() => authStore.userType)
 const creatorId = computed(() => authStore.profile?.creadorDirectoId)
 const creatorType = computed(() => authStore.profile?.creadorDirectoTipo)
 const bancoId = computed(() => authStore.bancoId)
+function mostrarTirosLocales(fecha = null) {
+  const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
+
+  if (fecha) {
+    // Mostrar solo una fecha específica
+    const tirosDelDia = tirosLocales[fecha]
+    if (tirosDelDia) {
+      console.log(`📅 Tiros del día ${fecha}:`)
+      for (const horario in tirosDelDia) {
+        const { tiro, timestamp } = tirosDelDia[horario]
+        console.log(`🕒 ${horario}: ${tiro} (enviado a las ${new Date(timestamp).toLocaleTimeString()})`)
+      }
+    } else {
+      console.log(`❌ No hay tiros guardados para la fecha ${fecha}`)
+    }
+  } else {
+    // Mostrar todas las fechas guardadas
+    console.log('📦 Todos los tiros guardados localmente:')
+    for (const fechaGuardada in tirosLocales) {
+      console.log(`📅 Fecha: ${fechaGuardada}`)
+      const tiros = tirosLocales[fechaGuardada]
+      for (const horario in tiros) {
+        const { tiro, timestamp } = tiros[horario]
+        console.log(`   🕒 ${horario}: ${tiro} (enviado a las ${new Date(timestamp).toLocaleTimeString()})`)
+      }
+    }
+  }
+}
 
 const logout = async () => {
     try {
@@ -55,6 +83,10 @@ const logout = async () => {
         console.error('Error al cerrar sesión:', error);
     }
 };
+onMounted(async () => {
+    // Mostrar tiros locales al cargar
+    mostrarTirosLocales();
+});
 </script>
 <template>
     <div class="container d-flex flex-column justify-content-center gap-3">

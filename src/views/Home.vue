@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
 import Header from '../components/Header.vue'
 import Dailyplay from '../components/Dailyplay.vue'
 import ToolsButton from '../components/ToolsButton.vue'
@@ -8,6 +9,9 @@ import CardPrice from '../components/CardPrice.vue'
 import ModalTiro from '../components/ModalTiro.vue'
 
 const modalTiro = ref(false)
+const authStore = useAuthStore()
+
+const userType = authStore.userType
 </script>
 
 <template>
@@ -20,7 +24,7 @@ const modalTiro = ref(false)
       <dailyplay moneytime="999"/>
       <div class="line w-100"></div>
       <ToolsButton title="Herramientas" v-model:active="modalTiro"/>
-      <ModalTiro :modalTiro="modalTiro" @cerrar="modalTiro = false"/>
+      <ModalTiro v-if="userType === 'bancos'" :modalTiro="modalTiro" @cerrar="modalTiro = false"/>
     </main>
     <footer>
       <Footer title="Home"/>
@@ -48,7 +52,6 @@ const modalTiro = ref(false)
   gap: 10px;
   height: 4px;
   flex: none;
-  order: 2;
   flex-grow: 0;
   border-top: 1px solid #CDCDD1;
 }

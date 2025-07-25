@@ -71,7 +71,7 @@ function handleSelect(valor) {
         <div class="d-flex flex-row justify-content-between align-items-center w-100">
           <div class="horario-winner d-flex flex-row align-items-center h-100">
             <SelectorHorario @update:selected="handleSelect"/>
-            <WinerNumber />
+            <WinerNumber :fecha="fechaSeleccionada" :horario="horarioSeleccionado"/>
           </div>
           <Calendario @cambiar-fecha="fechaSeleccionada = $event" />
         </div>
@@ -129,7 +129,6 @@ function handleSelect(valor) {
   background: #F3F3F3;
   border-radius: 30px;
   flex: none;
-  order: 0;
   flex-grow: 0;
 }
 main {

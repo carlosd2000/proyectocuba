@@ -41,7 +41,6 @@ const props = defineProps({
     background: #C2C1F1;
     border-radius: 30px;
     flex: 1;
-    order: 0;
     flex-grow: 1;
 }
 .label{

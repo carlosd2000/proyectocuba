@@ -70,7 +70,6 @@ const props = defineProps({
         gap: 8px;
         width: 24px;
         flex: none;
-        order: 0;
         flex-grow: 0;
     }
     .punto{

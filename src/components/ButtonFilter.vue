@@ -313,7 +313,6 @@ function aplicarFiltros() {
     box-shadow: 0px 0px 24px rgba(0, 0, 0, 0.1);
     border-radius: 12px;
     flex: none;
-    order: 6;
     flex-grow: 0;
     z-index: 6;
 }
@@ -328,7 +327,6 @@ button.fecha{
     height: 48px;
     border-radius: 12px;
     flex: none;
-    order: 0;
     flex-grow: 0;
 }
 button.tipo{
@@ -342,7 +340,6 @@ button.tipo{
     height: 48px;
     border-radius: 12px;
     flex: none;
-    order: 0;
     flex-grow: 0;
 }
 .button-aplicar{
@@ -356,7 +353,6 @@ button.tipo{
     border-radius: 30px;
     background: #6665DD;
     flex: none;
-    order: 4;
     align-self: stretch;
     flex-grow: 0;
 }
@@ -372,7 +368,6 @@ button.tipo{
     border: 1px solid #CDCDD1;
     border-radius: 30px;
     flex: none;
-    order: 3;
     flex-grow: 0;
 }
 .ButtonFilter {

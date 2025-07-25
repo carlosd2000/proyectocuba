@@ -25,7 +25,6 @@ const props = defineProps({
     background: #050517;
     border-radius: 12px;
     flex: none;
-    order: 0;
     flex-grow: 1;
 }
 </style>
