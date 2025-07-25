@@ -55,42 +55,39 @@ export function useRegistro() {
             return
         }
 
-        if (!nombre.value || !email.value || !password.value || !tipoCuenta.value) {
-            Swal.fire("Error", "Completa todos los campos", "error")
-            return
-        }
-
-        if (!isValidNombre.value || !isValidPassword.value) {
-            Swal.fire("Error", "Corrige los campos inválidos", "error")
+        // Validación consolidada
+        const errors = []
+        if (!nombre.value) errors.push("Nombre requerido")
+        if (!email.value) errors.push("Email requerido")
+        if (!password.value) errors.push("Contraseña requerida")
+        if (!tipoCuenta.value) errors.push("Tipo de cuenta requerido")
+        if (!isValidNombre.value) errors.push("Nombre inválido")
+        if (!isValidPassword.value) errors.push("Contraseña inválida")
+        
+        if (errors.length > 0) {
+            Swal.fire("Error", errors.join(", "), "error")
             return
         }
 
         try {
             isLoading.value = true
-            const currentUser = authStore.user
-            const currentProfile = authStore.profile
-
-            const userData = {
-                nombre: nombre.value,
-                tipo: tipoCuenta.value,
-                bancoId: currentProfile?.bancoId || (tipoCuenta.value === 'bancos' ? null : currentProfile?.bancoId),
-                creadorDirectoId: currentUser?.uid,
-                creadorDirectoTipo: currentProfile?.tipo === 'bancos' ? 'banco' : 
-                                  currentProfile?.tipo === 'colectorPrincipal' ? 'colector principal' : 
-                                  currentProfile?.tipo === 'colectores' ? 'colector' : 'admin'
-            }
-
+            
+            // Datos mínimos necesarios
             const result = await AuthService.registrarUsuarioJerarquico({
                 email: email.value,
                 password: password.value,
-                ...userData
+                nombre: nombre.value,
+                tipo: tipoCuenta.value,
+                bancoId: authStore.profile?.bancoId,
+                creadorDirectoId: authStore.user?.uid,
+                creadorDirectoTipo: authStore.profile?.tipo
             })
 
             if (result.success) {
                 Swal.fire("Éxito", "Usuario creado", "success")
                 limpiarCampos()
             } else {
-                Swal.fire("Error", result.error, "error")
+                throw new Error(result.error)
             }
         } catch (error) {
             console.error("Error:", error)

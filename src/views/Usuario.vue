@@ -89,6 +89,7 @@ onMounted(async () => {
 });
 </script>
 <template>
+  <div class="overflow-y-auto" style="padding-bottom: 88px;">
     <div class="container d-flex flex-column justify-content-center gap-3">
         <h1>boton para cerrar seccion</h1>
         <button class="border-0 d-flex flex-column align-items-center justify-content-center"  @click="logout">
@@ -102,4 +103,5 @@ onMounted(async () => {
     <footer>
         <Footer title="Usuario" />
     </footer>
+  </div>
 </template>

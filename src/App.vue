@@ -17,10 +17,10 @@ let usuariosCreadosManager = null
 
 onMounted(async () => {
   try {
-    await authStore.initializeAuthListener()
-    if (authStore.user) {
-      await authStore.loadUserProfile()
-    }
+    // await authStore.initializeAuthListener()
+    // if (authStore.user) {
+    //   await authStore.loadUserProfile()
+    // }
     isAppReady.value = true
   } catch (error) {
     console.error('Error inicializando Auth:', error)
