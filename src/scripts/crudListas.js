@@ -3,6 +3,7 @@ import { db } from '../firebase/config'
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useFondo } from '../scripts/useFondo'
+import localforage from '@/stores/localStorage';
 
 // Estado reactivo para apuestas
 export const apuestas = ref([])
@@ -11,6 +12,7 @@ const authStore = useAuthStore()
 // Obtener apuestas en tiempo real filtradas por id_listero
 export const obtenerApuestas = async (idUsuario) => {
   try {
+    // Obtener de Firebase
     const bancoId = authStore.bancoId
     const q = query(
       collection(db, `bancos/${bancoId}/apuestas`),
@@ -18,17 +20,24 @@ export const obtenerApuestas = async (idUsuario) => {
     );
 
     const querySnapshot = await getDocs(q);
-
-    apuestas.value = querySnapshot.docs.map(doc => ({
+    const firebaseApuestas = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
-    }))
-    .sort((a, b) => {
-      const fechaA = a.creadoEn?.toDate?.()?.getTime() || 0
-      const fechaB = b.creadoEn?.toDate?.()?.getTime() || 0
-      return fechaB - fechaA
-    });
+    }));
 
+    // Obtener de LocalForage
+    const localApuestas = await getLocalStorageArray('apuestasPendientes');
+    console.log(`[LocalForage] ${localApuestas.length} apuestas locales encontradas`);
+
+    // Combinar y ordenar
+    apuestas.value = [...firebaseApuestas, ...localApuestas]
+      .sort((a, b) => {
+        const fechaA = a.creadoEn?.toDate?.()?.getTime() || a.timestampLocal || 0
+        const fechaB = b.creadoEn?.toDate?.()?.getTime() || b.timestampLocal || 0
+        return fechaB - fechaA
+      });
+
+    console.log(`[Apuestas] Total de apuestas cargadas: ${apuestas.value.length}`);
     return { success: true }
   } catch (error) {
     console.error('Error obteniendo apuestas:', error);
@@ -37,12 +46,12 @@ export const obtenerApuestas = async (idUsuario) => {
 }
 
 // Función para manejar el almacenamiento local de forma segura
-const getLocalStorageArray = (key) => {
+const getLocalStorageArray = async (key) => {
   try {
-    const data = localStorage.getItem(key)
-    return data ? JSON.parse(data) : []
+    const data = await localforage.getItem(key)
+    return data || []
   } catch (error) {
-    console.error(`Error al leer ${key} del localStorage:`, error)
+    console.error(`[LocalForage] Error al leer ${key}:`, error)
     return []
   }
 }
@@ -51,35 +60,44 @@ const getLocalStorageArray = (key) => {
 export const eliminarApuesta = async (id, esPendiente = false, montoApuesta = 0) => {
   try {
     const { ajustarFondoPorApuesta } = useFondo()
+    
     // Obtener monto si no se proporcionó
     if (montoApuesta === 0) {
       if (esPendiente) {
-        const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || [] );
+        const pendientes = await getLocalStorageArray('apuestasPendientes');
         const apuesta = pendientes.find(p => p.uuid === id)
         montoApuesta = apuesta?.totalGlobal || 0
       } else {
-        const cache = JSON.parse(localStorage.getItem('apuestasFirebaseCache') || '{"data":[]}');
-        const apuesta = cache.data.find(a => a.id === id)
+        const cache = await getLocalStorageArray('apuestasFirebaseCache');
+        const apuesta = cache.find(a => a.id === id)
         montoApuesta = apuesta?.totalGlobal || 0
       }
     }
 
     // Ajustar fondo ANTES de eliminar
     if (montoApuesta > 0) {
+      console.log(`[Eliminar] Ajustando fondo por eliminación de apuesta ${id}, monto: ${montoApuesta}`);
       await ajustarFondoPorApuesta('ELIMINACION', montoApuesta)
     }
+
     if (esPendiente) {
-      // Solo para apuestas pendientes (offline)
+      // Eliminar de pendientes locales
+      const pendientes = await getLocalStorageArray('apuestasPendientes');
+      const nuevasPendientes = pendientes.filter(p => p.uuid !== id);
+      await localforage.setItem('apuestasPendientes', nuevasPendientes);
+      console.log(`[LocalForage] Apuesta pendiente ${id} eliminada localmente`);
       return { success: true, offline: true };
     }
+
     // Para apuestas normales (Firebase)
     if (navigator.onLine) {
       const bancoId = authStore.bancoId
+      console.log(`[Firebase] Eliminando apuesta ${id} de Firebase`);
       await deleteDoc(doc(db, `bancos/${bancoId}/apuestas`, id));
       return { success: true };
     } else {
       // Guardar para sincronización posterior como mutación
-      const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
+      const mutaciones = await getLocalStorageArray('mutacionesPendientes');
       
       // Verificar si ya existe una mutación para esta apuesta
       const existe = mutaciones.some(m => m.idOriginal === id && m.tipo === 'ELIMINACION');
@@ -89,9 +107,10 @@ export const eliminarApuesta = async (id, esPendiente = false, montoApuesta = 0)
           tipo: 'ELIMINACION',
           idOriginal: id,
           timestamp: Date.now(),
-          uuid: id // Usar el mismo ID
+          uuid: id
         });
-        localStorage.setItem('mutacionesPendientes', JSON.stringify(mutaciones));
+        await localforage.setItem('mutacionesPendientes', mutaciones);
+        console.log(`[LocalForage] Mutación de eliminación para ${id} guardada localmente`);
       }
       
       return { success: true, offline: true };

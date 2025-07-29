@@ -14,7 +14,7 @@ import Horario from '../components/SelectorHorario.vue';
 import Pagar from '../components/Pagar.vue';
 import { setModoEdicion, setHorario, tomarUUID } from '../scripts/añadir.js';
 import { useAuthStore } from '../stores/authStore';
-
+import localforage from '@/stores/localStorage';
 
 const onHorarioSeleccionado = (nuevoHorario) => {
   if (nuevoHorario === null) {
@@ -65,28 +65,37 @@ onMounted(async () => {
   if (idEditar.value) {
     setModoEdicion(true, idEditar.value);
     
-    if (route.query.esPendiente === 'true') {
-      const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
-      const apuestaPendiente = pendientes.find(p => p.uuid === idEditar.value);
+    // Siempre cargar desde local primero
+    try {
+      const hoy = new Date().toISOString().split('T')[0];
+      const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
+      const apuestaLocal = apuestasPorFecha[hoy]?.find(a => a.uuid === idEditar.value);
       
-      if (apuestaPendiente) {
+      if (apuestaLocal) {
+        console.log(`[Edición] Cargando apuesta local (UUID: ${apuestaLocal.uuid})`);
         datosEdicion.value = {
-          id: apuestaPendiente.uuid,
-          ...apuestaPendiente,
-          datos: apuestaPendiente.datos || [],
-          circuloSolo: apuestaPendiente.circuloSolo || '',
-          bancoId: apuestaPendiente.bancoId || null
+          id: apuestaLocal.uuid,
+          ...apuestaLocal,
+          datos: apuestaLocal.datos || [],
+          circuloSolo: apuestaLocal.circuloSolo || '',
+          bancoId: apuestaLocal.bancoId || authStore.bancoId
         };
-        horarioEdicion.value = apuestaPendiente.horario || 'Dia';
+        horarioEdicion.value = apuestaLocal.horario || 'Dia';
+        return;
       }
-    } else {
+    } catch (error) {
+      console.error('[LocalForage] Error cargando apuesta local:', error);
+    }
+
+    // Si no se encontró localmente y estamos online, intentar cargar de Firebase
+    if (navigator.onLine) {
       try {
-        bancoId.value = authStore.bancoId
-        
+        bancoId.value = authStore.bancoId;
         const docRef = doc(db, `bancos/${bancoId.value}/apuestas`, idEditar.value);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
+          console.log(`[Edición] Cargando apuesta de Firebase (ID: ${docSnap.id})`);
           datosEdicion.value = {
             id: docSnap.id,
             ...docSnap.data(),
@@ -102,7 +111,8 @@ onMounted(async () => {
       }
     }
   } else {
-    tomarUUID();
+    const nuevoUUID = tomarUUID();
+    console.log(`[Nueva Apuesta] UUID generado: ${nuevoUUID}`);
     setModoEdicion(false, null);
     horarioEdicion.value = 'Dia';
   }

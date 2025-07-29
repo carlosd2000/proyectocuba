@@ -1,4 +1,4 @@
-// scripts/initCargaEnF5.js
+// scripts/useAppInitializer.js
 import { useUsuariosCreados } from './useUsuariosCreados'
 import { cargarInfoBancoSiNoExiste } from './fieldValidator.js'
 import { sincronizarHorasDeCierre } from './syncHorasCierre.js'

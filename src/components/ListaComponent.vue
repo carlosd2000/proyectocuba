@@ -173,7 +173,7 @@ const handleEditClick = (persona, event) => {
           </div>
         </div>
         <div class="col-2 d-flex justify-content-center align-items-center">
-          <div v-if="persona.circuloSolo" class="d-flex justify-content-center align-items-center container-number">
+          <div v-if="persona.circuloSolo !== undefined && persona.circuloSolo !== null" class="d-flex justify-content-center align-items-center container-number">
             <h5 class="label">{{ persona.circuloSolo }}</h5>
           </div>
         </div>

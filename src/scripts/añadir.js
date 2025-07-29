@@ -4,6 +4,7 @@ import { serverTimestamp, updateDoc, doc, setDoc, getDoc, deleteDoc } from 'fire
 import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones';
 import { obtenerHoraCuba } from './horacuba.js';
 import { useAuthStore } from '@/stores/authStore'
+import localforage from '@/stores/localStorage';
 
 // Variables reactivas
 export const nombreTemporal = ref('');
@@ -15,7 +16,6 @@ export const idEdicion = ref('');
 export const uuidGenerado = ref('');
 
 const authStore = useAuthStore()
-
 let syncPending = false;
 
 // ================= CONFIGURACIÓN =================
@@ -47,30 +47,33 @@ export function tomarUUID() {
   return uuidGenerado.value;
 }
 
-function guardarEnLocal(docAGuardar, esEdicion = false) {
+async function guardarEnLocal(docAGuardar, esEdicion = false) {
   try {
-    const pendientes = JSON.parse(localStorage.getItem('apuestasPendientes') || '[]');
+    const pendientes = await localforage.getItem('apuestasPendientes') || [];
     const pendientesArray = Array.isArray(pendientes) ? pendientes : [];
     
     if (esEdicion) {
       const index = pendientesArray.findIndex(p => p.uuid === docAGuardar.uuid);
       if (index !== -1) {
         pendientesArray[index] = docAGuardar;
+        console.log(`[LocalForage] Apuesta actualizada localmente (UUID: ${docAGuardar.uuid})`);
       } else {
         pendientesArray.push(docAGuardar);
+        console.log(`[LocalForage] Nueva apuesta guardada localmente (UUID: ${docAGuardar.uuid})`);
       }
     } else {
       const existe = pendientesArray.some(p => p.uuid === docAGuardar.uuid);
       if (!existe) {
         pendientesArray.push(docAGuardar);
+        console.log(`[LocalForage] Nueva apuesta guardada localmente (UUID: ${docAGuardar.uuid})`);
       }
     }
     
-    localStorage.setItem('apuestasPendientes', JSON.stringify(pendientesArray));
+    await localforage.setItem('apuestasPendientes', pendientesArray);
     window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
     return true;
   } catch (error) {
-    console.error('Error guardando en localStorage:', error);
+    console.error('[LocalForage] Error guardando apuesta local:', error);
     return false;
   }
 }
@@ -168,7 +171,7 @@ export async function guardarDatos() {
       
       if (modoEdicion.value) {
         docAGuardar.estado = 'EditadoOffline';
-        const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
+        const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
         
         const mutacionesFiltradas = mutaciones.filter(m => m.uuid !== uuid);
         
@@ -179,16 +182,15 @@ export async function guardarDatos() {
           timestamp: Date.now()
         });
 
-        localStorage.setItem('mutacionesPendientes', JSON.stringify(mutacionesFiltradas));
+        await localforage.setItem('mutacionesPendientes', mutacionesFiltradas);
         
-        const cacheStr = localStorage.getItem('apuestasFirebaseCache') || '{"data":[]}';
-        const cache = JSON.parse(cacheStr);
+        const cache = await localforage.getItem('apuestasFirebaseCache') || { data: [] };
         cache.data = cache.data.map(item => item.uuid === uuid ? docAGuardar : item);
-        localStorage.setItem('apuestasFirebaseCache', JSON.stringify(cache));
+        await localforage.setItem('apuestasFirebaseCache', cache);
       } 
       else {
         docAGuardar.estado = 'Pendiente';
-        guardarEnLocal(docAGuardar, false);
+        await guardarEnLocal(docAGuardar, false);
       }
 
       return { 
@@ -256,21 +258,29 @@ export async function sincronizarPendientes() {
   console.log('[SYNC] Iniciando sincronización de pendientes...');
   
   try {
-    const pendientesStr = localStorage.getItem('apuestasPendientes') || '[]';
-    const pendientes = JSON.parse(pendientesStr);
+    const pendientes = await localforage.getItem('apuestasPendientes') || [];
     const pendientesArray = Array.isArray(pendientes) ? pendientes : [];
     const pendientesExitosos = [];
+
+    console.log(`[SYNC] ${pendientesArray.length} apuestas pendientes encontradas`);
 
     for (const apuesta of pendientesArray) {
       try {
         const bancoId = apuesta.bancoId || authStore.bancoId;
-        if (!bancoId) continue;
+        if (!bancoId) {
+          console.log(`[SYNC] No hay bancoId para apuesta ${apuesta.uuid}, omitiendo`);
+          continue;
+        }
 
         const docRef = doc(db, `bancos/${bancoId}/apuestas`, apuesta.uuid);
         const snap = await getDoc(docRef);
         
-        if (snap.exists()) continue;
+        if (snap.exists()) {
+          console.log(`[SYNC] Apuesta ${apuesta.uuid} ya existe en Firebase, omitiendo`);
+          continue;
+        }
 
+        console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid} a Firebase...`);
         await setDoc(docRef, {
           ...apuesta,
           creadoEn: serverTimestamp(),
@@ -279,6 +289,7 @@ export async function sincronizarPendientes() {
         });
 
         pendientesExitosos.push(apuesta.uuid);
+        console.log(`[SYNC] Apuesta ${apuesta.uuid} subida correctamente`);
       } catch (error) {
         console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
       }
@@ -286,7 +297,8 @@ export async function sincronizarPendientes() {
     
     if (pendientesExitosos.length > 0) {
       const nuevosPendientes = pendientesArray.filter(p => !pendientesExitosos.includes(p.uuid));
-      localStorage.setItem('apuestasPendientes', JSON.stringify(nuevosPendientes));
+      await localforage.setItem('apuestasPendientes', nuevosPendientes);
+      console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas, ${nuevosPendientes.length} pendientes restantes`);
       window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
     }
   } catch (error) {
@@ -309,12 +321,15 @@ export async function sincronizarMutaciones() {
       return;
     }
 
-    const mutaciones = JSON.parse(localStorage.getItem('mutacionesPendientes') || '[]');
+    const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
+    console.log(`[SYNC] ${mutaciones.length} mutaciones pendientes encontradas`);
+
     const mutacionesExitosas = [];
 
     for (const mutacion of mutaciones) {
       try {
         if (mutacion.tipo === 'EDICION') {
+          console.log(`[SYNC] Procesando edición para ${mutacion.uuid}`);
           const docRef = doc(db, `bancos/${bancoId}/apuestas`, mutacion.uuid);
           const docSnap = await getDoc(docRef);
           
@@ -332,8 +347,11 @@ export async function sincronizarMutaciones() {
             actualizadoEn: serverTimestamp(),
             sincronizadoEn: serverTimestamp()
           });
+          
+          console.log(`[SYNC] Edición para ${mutacion.uuid} completada`);
         } 
         else if (mutacion.tipo === 'ELIMINACION') {
+          console.log(`[SYNC] Procesando eliminación para ${mutacion.idOriginal}`);
           const docRef = doc(db, `bancos/${bancoId}/apuestas`, mutacion.idOriginal);
           const docSnap = await getDoc(docRef);
           
@@ -356,10 +374,9 @@ export async function sincronizarMutaciones() {
       const nuevasMutaciones = mutaciones.filter(m => 
         !mutacionesExitosas.includes(m.timestamp)
       );
-      localStorage.setItem('mutacionesPendientes', JSON.stringify(nuevasMutaciones));
+      await localforage.setItem('mutacionesPendientes', nuevasMutaciones);
+      console.log(`[SYNC] ${mutacionesExitosas.length} mutaciones sincronizadas, ${nuevasMutaciones.length} pendientes restantes`);
     }
-
-    console.log(`[SYNC] ${mutacionesExitosas.length} mutaciones sincronizadas`);
   } catch (error) {
     console.error('[SYNC] Error general:', error);
   } finally {

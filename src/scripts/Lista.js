@@ -2,7 +2,6 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Swal from 'sweetalert2'
 import { apuestas, obtenerApuestas, eliminarApuesta, sincronizarEliminaciones } from '../scripts/crudListas.js'
 import { sincronizarPendientes, sincronizarMutaciones, generarUUID } from '../scripts/añadir.js'
-import { useFondo } from '../scripts/useFondo.js'
 import Cloud from '../assets/icons/Cloud.svg'
 import CloudFill from '../assets/icons/Cloud_fill.svg'
 import StropWatch from '../assets/icons/stopwatch.svg'
@@ -310,16 +309,10 @@ const editarPersona = async () => {
 
 const eliminarPersona = async () => {
   try {
-    const { ajustarFondoPorApuesta } = useFondo();
     const id = personaSeleccionada.value.id || personaSeleccionada.value.uuid;
     const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
     const esEditadoOffline = personaSeleccionada.value.estado === 'EditadoOffline';
     const montoApuesta = personaSeleccionada.value.totalGlobal || 0;
-
-    // Ajustar fondo primero
-    if (montoApuesta > 0) {
-      await ajustarFondoPorApuesta('ELIMINACION', montoApuesta);
-    }
 
     // 1. Registrar eliminación permanente
     const eliminacionesPermanentes = JSON.parse(

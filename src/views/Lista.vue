@@ -95,7 +95,7 @@ function handleSelect(valor) {
         </div>
       </main>
       
-      <aside class="w-100 h-100 overflow-auto">
+      <aside class="w-100 h-100 overflow-auto d-flex flex-column gap-1">
         <ListaComponent 
           :fecha="fechaSeleccionada" 
           :horario="horarioSeleccionado" 
