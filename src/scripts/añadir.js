@@ -48,47 +48,53 @@ export function tomarUUID() {
 }
 
 async function guardarEnLocal(docAGuardar, esEdicion = false) {
-  try {
-    const pendientes = await localforage.getItem('apuestasPendientes') || [];
-    const pendientesArray = Array.isArray(pendientes) ? pendientes : [];
-    
-    if (esEdicion) {
-      const index = pendientesArray.findIndex(p => p.uuid === docAGuardar.uuid);
-      if (index !== -1) {
-        pendientesArray[index] = docAGuardar;
-        console.log(`[LocalForage] Apuesta actualizada localmente (UUID: ${docAGuardar.uuid})`);
-      } else {
-        pendientesArray.push(docAGuardar);
-        console.log(`[LocalForage] Nueva apuesta guardada localmente (UUID: ${docAGuardar.uuid})`);
-      }
-    } else {
-      const existe = pendientesArray.some(p => p.uuid === docAGuardar.uuid);
-      if (!existe) {
-        pendientesArray.push(docAGuardar);
-        console.log(`[LocalForage] Nueva apuesta guardada localmente (UUID: ${docAGuardar.uuid})`);
-      }
+    try {
+        // Obtener la fecha actual en formato YYYY-MM-DD
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        // Obtener todas las apuestas locales organizadas por fecha
+        const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
+        
+        // Inicializar el array para la fecha si no existe
+        if (!apuestasPorFecha[hoy]) {
+            apuestasPorFecha[hoy] = [];
+        }
+        
+        if (esEdicion) {
+            // Buscar y actualizar la apuesta existente
+            const index = apuestasPorFecha[hoy].findIndex(p => p.uuid === docAGuardar.uuid);
+            if (index !== -1) {
+                apuestasPorFecha[hoy][index] = docAGuardar;
+            } else {
+                apuestasPorFecha[hoy].push(docAGuardar);
+            }
+        } else {
+            // Añadir nueva apuesta
+            const existe = apuestasPorFecha[hoy].some(p => p.uuid === docAGuardar.uuid);
+            if (!existe) {
+                apuestasPorFecha[hoy].push(docAGuardar);
+            }
+        }
+        
+        await localforage.setItem('apuestasPorFecha', apuestasPorFecha);
+        window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
+        return true;
+    } catch (error) {
+        console.error('[LocalForage] Error guardando apuesta local:', error);
+        return false;
     }
-    
-    await localforage.setItem('apuestasPendientes', pendientesArray);
-    window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
-    return true;
-  } catch (error) {
-    console.error('[LocalForage] Error guardando apuesta local:', error);
-    return false;
-  }
 }
-
 // ================= PROCESAMIENTO DE DATOS =================
 function procesarFilas(filas, tipo) {
   return filas.map((fila, index) => {
-    // Eliminar circuloSolo de todas las filas
-    const { circuloSolo, ...filaLimpia } = fila;
+    const { circuloSolo, ...filaSinCirculo } = fila;
 
     const filaProcesada = { tipo, fila: index + 1 };
     let tieneDatos = false;
 
-    for (const clave in filaLimpia) {
-      const valor = filaLimpia[clave];
+    // Procesar solo los campos que no son circuloSolo
+    for (const clave in filaSinCirculo) {
+      const valor = filaSinCirculo[clave];
       if (valor !== '' && valor !== null && !isNaN(valor)) {
         filaProcesada[clave] = Number(valor);
         tieneDatos = true;
@@ -109,7 +115,7 @@ export async function guardarDatos() {
     };
   }
 
-  const { hora24, timestamp } = obtenerHoraCuba();
+  const { timestamp } = obtenerHoraCuba();
   try {
     const bancoId = authStore.bancoId;
     if (!bancoId) throw new Error("No se pudo determinar el banco padre");
@@ -131,6 +137,7 @@ export async function guardarDatos() {
 
     const circuloSolo = filasFijas.value[2]?.circuloSolo;
     const circuloSoloValido = circuloSolo !== '' && circuloSolo !== null && !isNaN(circuloSolo);
+
     if (circuloSoloValido) totalGlobal += Number(circuloSolo);
 
     const datosAGuardar = procesarFilas(filasExpandidas, 'fija');
@@ -147,99 +154,96 @@ export async function guardarDatos() {
       nombre: nombreTemporal.value.trim() !== '' ? nombreTemporal.value : uuid.slice(0, 6),
       totalGlobal,
       datos: datosAGuardar,
+      circuloSolo: circuloSoloValido ? Number(circuloSolo) : null,
       id_usuario: auth.currentUser?.uid || 'sin-autenticar',
       tipo: circuloSoloValido && tipoOrigen.value === "tiros" ? `${tipoOrigen.value}/candado` : tipoOrigen.value,
       horario: horarioSeleccionado.value,
       uuid: uuid,
-      horaCuba24: hora24,
       timestampLocal: timestamp,
       bancoId,
-      estado: 'Cargado',
-      fueraDeTiempo: false,
-      creadoEn: serverTimestamp(),
-      actualizadoEn: serverTimestamp()
+      fueraDeTiempo: false, // Asumimos que no está fuera de tiempo al guardar
+      estado: 'Pendiente', // Siempre marcamos como pendiente para el día actual
+      creadoEn: new Date().toISOString(), // Usamos fecha local
     };
-
+    // Guardar siempre en local primero
+    const guardadoLocal = await guardarEnLocal(docAGuardar, modoEdicion.value);
+    
+    if (!guardadoLocal) {
+        return { 
+            success: false, 
+            message: "Error al guardar localmente"
+        };
+    }
     if (circuloSoloValido) {
       docAGuardar.circuloSolo = Number(circuloSolo);
     }
 
     // Manejo offline
-    if (!navigator.onLine) {
-      docAGuardar.creadoEn = new Date().toISOString();
-      docAGuardar.actualizadoEn = new Date().toISOString();
-      
-      if (modoEdicion.value) {
-        docAGuardar.estado = 'EditadoOffline';
-        const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
-        
-        const mutacionesFiltradas = mutaciones.filter(m => m.uuid !== uuid);
-        
-        mutacionesFiltradas.push({
-          tipo: 'EDICION',
-          uuid: uuid,
-          nuevosDatos: docAGuardar,
-          timestamp: Date.now()
-        });
-
-        await localforage.setItem('mutacionesPendientes', mutacionesFiltradas);
-        
-        const cache = await localforage.getItem('apuestasFirebaseCache') || { data: [] };
-        cache.data = cache.data.map(item => item.uuid === uuid ? docAGuardar : item);
-        await localforage.setItem('apuestasFirebaseCache', cache);
-      } 
-      else {
-        docAGuardar.estado = 'Pendiente';
-        await guardarEnLocal(docAGuardar, false);
-      }
-
-      return { 
-        success: true, 
-        offline: true,
-        uuid,
-        message: modoEdicion.value ?
-          'Cambios guardados localmente. Se sincronizarán automáticamente cuando vuelvas a estar online' :
-          'Apuesta guardada localmente. Se subirá a Firebase cuando vuelvas a estar online'
-      };
-    }
-
-    // Manejo online
-    const docPath = `bancos/${bancoId}/apuestas/${uuid}`;
-    
-    if (modoEdicion.value) {
-      // Obtener el monto anterior antes de actualizar
-      let montoAnterior = 0;
-      try {
-        const docRef = doc(db, `bancos/${bancoId}/apuestas`, idEdicion.value);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          montoAnterior = docSnap.data().totalGlobal || 0;
+    if (navigator.onLine) {
+        try {
+            const docPath = `bancos/${bancoId}/apuestas/${uuid}`;
+            const docParaFirebase = {
+                ...docAGuardar,
+                estado: 'Cargado',
+                sincronizadoEn: serverTimestamp()
+            };
+            if (modoEdicion.value) {
+              await updateDoc(doc(db, docPath), {
+                ...docParaFirebase,
+                creadoEn: new Date().toISOString(),
+                sincronizadoEn: serverTimestamp()
+              });
+            } else {
+                await setDoc(doc(db, docPath), docParaFirebase);
+            }
+            
+            // Actualizar estado en local
+            const hoy = new Date().toISOString().split('T')[0];
+            const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
+            
+            if (apuestasPorFecha[hoy]) {
+                // Buscar y actualizar la apuesta local
+                const index = apuestasPorFecha[hoy].findIndex(a => a.uuid === uuid);
+                if (index !== -1) {
+                    apuestasPorFecha[hoy][index] = {
+                        ...apuestasPorFecha[hoy][index],
+                        estado: 'Cargado',
+                    };
+                    await localforage.setItem('apuestasPorFecha', apuestasPorFecha);
+                }
+            }
+            return { 
+                success: true, 
+                message: `Apuesta ${modoEdicion.value ? 'actualizada' : 'guardada'} correctamente`,
+                docId: uuid
+            };
+        } 
+        catch (error) {
+            console.error('Error al sincronizar con Firebase:', error);
+            return { 
+                success: true, // Aún consideramos éxito porque se guardó localmente
+                message: 'Apuesta guardada localmente. Error al sincronizar con Firebase',
+                offline: true,
+                uuid
+            };
         }
-      } catch (error) {
-        console.error('Error obteniendo monto anterior:', error);
-      }
-
-      const { creadoEn, ...updateData } = docAGuardar;
-      await updateDoc(doc(db, docPath), updateData);
-      
-      return { 
-        success: true, 
-        message: `Apuesta actualizada correctamente a las ${hora24}`,
-        docId: uuid,
-        totalGlobal,
-        montoAnterior // Devolver también para referencia
-      };
     }
-    else {
-      const docRef = doc(db, docPath);
-      await setDoc(docRef, docAGuardar);
-
-      return { 
-        success: true, 
-        message: `Apuesta guardada correctamente a las ${hora24}`,
-        docId: uuid
-      };
+    else if (modoEdicion.value) {
+      // Si es edición y estamos offline, registrar la mutación de edición
+      await registrarEdicionOffline(
+          { ...docAGuardar, uuid: idEdicion.value }, // apuestaOriginal
+          docAGuardar // nuevosDatos
+      );
     }
+
+    return { 
+      success: true, 
+      offline: !navigator.onLine,
+      uuid,
+      message: navigator.onLine
+        ? `Apuesta ${modoEdicion.value ? 'actualizada' : 'guardada'} correctamente`
+        : 'Apuesta guardada localmente. Se sincronizará automáticamente cuando vuelvas a estar online'
+    };
   } catch (error) {
     console.error('Error al guardar:', error);
     return { 
@@ -252,151 +256,251 @@ export async function guardarDatos() {
 
 // ================= SINCRONIZACIÓN =================
 export async function sincronizarPendientes() {
-  if (!navigator.onLine || syncPending) return;
-  
-  syncPending = true;
-  console.log('[SYNC] Iniciando sincronización de pendientes...');
-  
-  try {
-    const pendientes = await localforage.getItem('apuestasPendientes') || [];
-    const pendientesArray = Array.isArray(pendientes) ? pendientes : [];
-    const pendientesExitosos = [];
-
-    console.log(`[SYNC] ${pendientesArray.length} apuestas pendientes encontradas`);
-
-    for (const apuesta of pendientesArray) {
-      try {
-        const bancoId = apuesta.bancoId || authStore.bancoId;
-        if (!bancoId) {
-          console.log(`[SYNC] No hay bancoId para apuesta ${apuesta.uuid}, omitiendo`);
-          continue;
-        }
-
-        const docRef = doc(db, `bancos/${bancoId}/apuestas`, apuesta.uuid);
-        const snap = await getDoc(docRef);
+    if (!navigator.onLine || syncPending) return;
+    
+    syncPending = true;
+    
+    try {
+        const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
+        const hoy = new Date().toISOString().split('T')[0];
+        const pendientes = apuestasPorFecha[hoy] || [];
         
-        if (snap.exists()) {
-          console.log(`[SYNC] Apuesta ${apuesta.uuid} ya existe en Firebase, omitiendo`);
-          continue;
+        console.log(`[SYNC] ${pendientes.length} apuestas encontradas para hoy`);
+
+        const pendientesExitosos = [];
+
+        for (const apuesta of pendientes) {
+            try {
+                const bancoId = apuesta.bancoId || authStore.bancoId;
+                if (!bancoId) {
+                    continue;
+                }
+
+                const docRef = doc(db, `bancos/${bancoId}/apuestas`, apuesta.uuid);
+                const snap = await getDoc(docRef);
+                
+                if (snap.exists()) {
+                    
+                    // Actualizar estado local pero mantener la apuesta visible
+                    const index = pendientes.findIndex(p => p.uuid === apuesta.uuid);
+                    if (index !== -1) {
+                        pendientes[index].estado = 'Cargado';
+                        pendientesExitosos.push(apuesta.uuid);
+                    }
+                    continue;
+                }
+
+                await setDoc(docRef, {
+                    ...apuesta,
+                    estado: 'Cargado',
+                    sincronizadoEn: serverTimestamp()
+                });
+
+                // Actualizar estado local pero mantener la apuesta
+                const index = pendientes.findIndex(p => p.uuid === apuesta.uuid);
+                if (index !== -1) {
+                    pendientes[index].estado = 'Cargado';
+                }
+                
+                pendientesExitosos.push(apuesta.uuid);
+            } catch (error) {
+                console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
+            }
         }
+        
+        // Guardar los cambios en las apuestas locales (estados actualizados)
+        apuestasPorFecha[hoy] = pendientes;
+        await localforage.setItem('apuestasPorFecha', apuestasPorFecha);
+        
+        console.log(`[SYNC] ${pendientesExitosos.length} apuestas procesadas`);
+        window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
+    } catch (error) {
+        console.error('[SYNC] Error general:', error);
+    } finally {
+        syncPending = false;
+    }
+}
 
-        console.log(`[SYNC] Subiendo apuesta ${apuesta.uuid} a Firebase...`);
-        await setDoc(docRef, {
-          ...apuesta,
-          creadoEn: serverTimestamp(),
-          sincronizadoEn: serverTimestamp(),
-          estado: 'Cargado'
-        });
+// Variable global mejorada para control de concurrencia
+let syncInProgress = {
+  mutaciones: false,
+  eliminaciones: false,
+  pendientes: false
+};// Variable global para control de concurrencia
 
-        pendientesExitosos.push(apuesta.uuid);
-        console.log(`[SYNC] Apuesta ${apuesta.uuid} subida correctamente`);
-      } catch (error) {
-        console.error(`[SYNC] Error en apuesta ${apuesta.uuid}:`, error);
+export async function sincronizarMutaciones() {
+  if (syncInProgress.mutaciones) {
+    console.log('[SYNC-MUT] Sincronización ya en progreso');
+    return { success: false, message: 'already-in-progress' };
+  }
+  
+  syncInProgress.mutaciones = true;
+  try {
+    const bancoId = authStore.bancoId;
+    if (!bancoId) throw new Error("No se pudo obtener bancoId");
+
+    const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
+    console.log(`[SYNC-MUT] ${mutaciones.length} mutaciones pendientes encontradas`);
+
+    const resultados = {
+      exitosas: 0,
+      fallidas: 0,
+      errores: []
+    };
+
+    // Filtrar solo las mutaciones únicas
+    const mutacionesUnicas = [];
+    const idsProcesados = new Set();
+    
+    for (const mutacion of mutaciones) {
+      if (!idsProcesados.has(mutacion.idOriginal)) {
+        mutacionesUnicas.push(mutacion);
+        idsProcesados.add(mutacion.idOriginal);
       }
     }
-    
-    if (pendientesExitosos.length > 0) {
-      const nuevosPendientes = pendientesArray.filter(p => !pendientesExitosos.includes(p.uuid));
-      await localforage.setItem('apuestasPendientes', nuevosPendientes);
-      console.log(`[SYNC] ${pendientesExitosos.length} apuestas sincronizadas, ${nuevosPendientes.length} pendientes restantes`);
-      window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
+
+    // Procesar mutaciones en serie para evitar conflictos
+    for (const mutacion of mutacionesUnicas) {
+      try {
+        const docRef = doc(db, `bancos/${bancoId}/apuestas`, mutacion.idOriginal);
+        
+        if (mutacion.tipo === 'EDICION') {
+          await updateDoc(docRef, {
+            ...mutacion.nuevosDatos,
+            estado: 'Cargado',
+            sincronizadoEn: serverTimestamp()
+          });
+          resultados.exitosas++;
+        }
+        else if (mutacion.tipo === 'ELIMINACION') {
+          await deleteDoc(docRef);
+          resultados.exitosas++;
+        }
+      } catch (error) {
+        console.error(`[SYNC-MUT] Error procesando mutación ${mutacion.idOriginal}:`, error);
+        resultados.fallidas++;
+        resultados.errores.push({
+          id: mutacion.idOriginal,
+          error: error.message
+        });
+      }
     }
+
+    // Actualizar mutaciones pendientes (remover las exitosas)
+    const nuevasMutaciones = mutaciones.filter(m => 
+      !mutacionesUnicas.slice(0, resultados.exitosas).some(u => u.idOriginal === m.idOriginal)
+    );
+    
+    await localforage.setItem('mutacionesPendientes', nuevasMutaciones);
+    
+    console.log(`[SYNC-MUT] Resultado: ${resultados.exitosas} exitosas, ${resultados.fallidas} fallidas`);
+    return { 
+      success: resultados.fallidas === 0,
+      count: resultados.exitosas,
+      errors: resultados.errores
+    };
   } catch (error) {
-    console.error('[SYNC] Error general:', error);
+    console.error('[SYNC-MUT] Error general:', error);
+    return { success: false, error: error.message };
   } finally {
-    syncPending = false;
+    syncInProgress.mutaciones = false;
+    console.log('[SYNC-MUT] ===== FINALIZADA SINCRONIZACIÓN DE MUTACIONES =====');
   }
 }
 
-export async function sincronizarMutaciones() {
-  if (!navigator.onLine || syncPending) return;
-  
-  syncPending = true;
-  console.log('[SYNC] Iniciando sincronización de mutaciones...');
-  
+// Para registrar ediciones
+export async function registrarEdicionOffline(apuestaOriginal, nuevosDatos) {
   try {
-    const bancoId = authStore.bancoId
-    if (!bancoId) {
-      console.error('[SYNC] No se pudo obtener bancoId');
-      return;
+    const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
+    
+    // Verificar si ya existe una mutación para esta apuesta
+    const existeIndex = mutaciones.findIndex(m => 
+      m.idOriginal === apuestaOriginal.uuid && m.tipo === 'EDICION'
+    );
+
+    const mutacion = {
+      tipo: 'EDICION',
+      idOriginal: apuestaOriginal.uuid,
+      uuid: apuestaOriginal.uuid,
+      timestamp: Date.now(),
+      nuevosDatos: {
+        ...nuevosDatos,
+        estado: 'EditadoOffline',
+      },
+      bancoId: apuestaOriginal.bancoId || authStore.bancoId
+    };
+
+    if (existeIndex !== -1) {
+      mutaciones[existeIndex] = mutacion;
+    } else {
+      mutaciones.push(mutacion);
     }
 
-    const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
-    console.log(`[SYNC] ${mutaciones.length} mutaciones pendientes encontradas`);
-
-    const mutacionesExitosas = [];
-
-    for (const mutacion of mutaciones) {
-      try {
-        if (mutacion.tipo === 'EDICION') {
-          console.log(`[SYNC] Procesando edición para ${mutacion.uuid}`);
-          const docRef = doc(db, `bancos/${bancoId}/apuestas`, mutacion.uuid);
-          const docSnap = await getDoc(docRef);
-          
-          if (!docSnap.exists()) {
-            console.log(`[SYNC] Documento ${mutacion.uuid} no existe, se omite`);
-            continue;
-          }
-
-          const { id, creadoEn, ...datosActualizados } = mutacion.nuevosDatos;
-          
-          await updateDoc(docRef, {
-            ...datosActualizados,
-            estado: 'Cargado',
-            fueraDeTiempo: false,
-            actualizadoEn: serverTimestamp(),
-            sincronizadoEn: serverTimestamp()
-          });
-          
-          console.log(`[SYNC] Edición para ${mutacion.uuid} completada`);
-        } 
-        else if (mutacion.tipo === 'ELIMINACION') {
-          console.log(`[SYNC] Procesando eliminación para ${mutacion.idOriginal}`);
-          const docRef = doc(db, `bancos/${bancoId}/apuestas`, mutacion.idOriginal);
-          const docSnap = await getDoc(docRef);
-          
-          if (!docSnap.exists()) {
-            console.log(`[SYNC] Documento a eliminar ${mutacion.idOriginal} no existe, se omite`);
-            continue;
-          }
-
-          await deleteDoc(docRef);
-          console.log(`[SYNC] Apuesta ${mutacion.idOriginal} eliminada`);
-        }
-        
-        mutacionesExitosas.push(mutacion.timestamp);
-      } catch (error) {
-        console.error(`[SYNC] Error en mutación ${mutacion.timestamp}:`, error);
+    await localforage.setItem('mutacionesPendientes', mutaciones);
+    
+    // Actualizar también en apuestasPorFecha para consistencia UI
+    const hoy = new Date().toISOString().split('T')[0];
+    const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
+    
+    if (apuestasPorFecha[hoy]) {
+      const index = apuestasPorFecha[hoy].findIndex(a => a.uuid === apuestaOriginal.uuid);
+      if (index !== -1) {
+        apuestasPorFecha[hoy][index] = {
+          ...apuestasPorFecha[hoy][index],
+          ...nuevosDatos,
+          estado: 'EditadoOffline'
+        };
+        await localforage.setItem('apuestasPorFecha', apuestasPorFecha);
       }
     }
-
-    if (mutacionesExitosas.length > 0) {
-      const nuevasMutaciones = mutaciones.filter(m => 
-        !mutacionesExitosas.includes(m.timestamp)
-      );
-      await localforage.setItem('mutacionesPendientes', nuevasMutaciones);
-      console.log(`[SYNC] ${mutacionesExitosas.length} mutaciones sincronizadas, ${nuevasMutaciones.length} pendientes restantes`);
-    }
+    
+    return true;
   } catch (error) {
-    console.error('[SYNC] Error general:', error);
-  } finally {
-    syncPending = false;
-    window.dispatchEvent(new Event('apuestas-sincronizadas'));
+    console.error('Error registrando edición offline:', error);
+    return false;
+  }
+}
+
+// Para registrar eliminaciones
+export async function registrarEliminacionOffline(apuesta) {
+  try {
+    const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
+    
+    mutaciones.push({
+      tipo: 'ELIMINACION',
+      idOriginal: apuesta.id || apuesta.uuid,
+      uuid: apuesta.uuid,
+      timestamp: Date.now(),
+      bancoId: apuesta.bancoId || authStore.bancoId,
+      datosOriginales: {
+        nombre: apuesta.nombre,
+        totalGlobal: apuesta.totalGlobal
+      }
+    });
+
+    await localforage.setItem('mutacionesPendientes', mutaciones);
+    return true;
+  } catch (error) {
+    console.error('Error registrando eliminación:', error);
+    return false;
   }
 }
 
 // ================= EVENT LISTENERS PARA SINCRONIZACIÓN =================
 if (typeof window !== 'undefined') {
   window.addEventListener('online', async () => {
-    console.log('[SYNC] Conexión restablecida, iniciando sincronización...');
-    setTimeout(async () => {
-      try {
-        await Promise.all([sincronizarPendientes(), sincronizarMutaciones()]);
-        console.log('[SYNC] Sincronización completa');
-      } catch (error) {
-        console.error('[SYNC] Error en sincronización automática:', error);
-      }
-    }, 3000);
+    // Esperar 3 segundos para asegurar conexión estable
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Ejecutar en secuencia para evitar conflictos
+    try {
+      await sincronizarEliminaciones();
+      await sincronizarMutaciones();
+      await sincronizarPendientes();
+      console.log('[SYNC] Sincronización completa');
+    } catch (error) {
+      console.error('[SYNC] Error en sincronización:', error);
+    }
   });
 
   if (navigator.onLine) {

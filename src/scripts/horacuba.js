@@ -1,21 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 
-// Configuración constante
-const ZONA_HORARIA = 'America/Havana';
-const FORMATO_24H = {
-  timeZone: ZONA_HORARIA,
-  hour12: false,
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit'
-};
-const FORMATO_12H = {
-  timeZone: ZONA_HORARIA,
-  hour12: true,
-  hour: 'numeric',
-  minute: '2-digit'
-};
-
 // ================= FUNCIONES PRINCIPALES =================
 
 /**
@@ -25,8 +9,6 @@ const FORMATO_12H = {
 export function obtenerHoraCuba() {
   const ahora = new Date();
   return {
-    hora24: ahora.toLocaleTimeString('es-ES', FORMATO_24H),
-    hora12: ahora.toLocaleTimeString('es-ES', FORMATO_12H),
     timestamp: ahora.getTime()
   };
 }

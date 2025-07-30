@@ -2,6 +2,7 @@
 import { useUsuariosCreados } from './useUsuariosCreados'
 import { cargarInfoBancoSiNoExiste } from './fieldValidator.js'
 import { sincronizarHorasDeCierre } from './syncHorasCierre.js'
+import { obtenerApuestas } from './obtenerApuestas.js'
 
 export async function cargarLibreriasIniciales(authStore) {
   let fondoManager = null
@@ -30,6 +31,10 @@ export async function cargarLibreriasIniciales(authStore) {
       setInterval(() => {
         sincronizarHorasDeCierre()
       }, 60 * 60 * 1000)
+    }
+    
+    if (authStore.user?.uid) {
+      await obtenerApuestas(authStore.user.uid)
     }
     return {
       fondoManager,
