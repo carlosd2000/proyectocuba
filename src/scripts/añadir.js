@@ -5,6 +5,7 @@ import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones'
 import { obtenerHoraCuba } from './horacuba.js';
 import { useAuthStore } from '@/stores/authStore'
 import localforage from '@/stores/localStorage';
+import GananciasService from '../firebase/gananciasService.js';
 
 // Variables reactivas
 export const nombreTemporal = ref('');
@@ -197,6 +198,22 @@ export async function guardarDatos() {
                 await setDoc(doc(db, docPath), docParaFirebase);
             }
             
+            // Registrar ganancia solo para apuestas nuevas (no en edición) y cuando está online
+            if (!modoEdicion.value) {
+              try {
+                await GananciasService.procesarGananciaDesdeApuesta(
+                  uuid,
+                  bancoId,
+                  auth.currentUser?.uid,
+                  0.85 // 85% de ganancia
+                );
+                console.log(`Registro de ganancia creado para apuesta ${uuid}`);
+              } catch (error) {
+                console.error('Error registrando ganancia:', error);
+                // No fallamos el proceso completo por un error en ganancias
+              }
+            }
+            
             // Actualizar estado en local
             const hoy = new Date().toISOString().split('T')[0];
             const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
@@ -215,7 +232,8 @@ export async function guardarDatos() {
             return { 
                 success: true, 
                 message: `Apuesta ${modoEdicion.value ? 'actualizada' : 'guardada'} correctamente`,
-                docId: uuid
+                docId: uuid,
+                totalGlobal // Añadimos totalGlobal al resultado para usarlo en Pagar.vue
             };
         } 
         catch (error) {
@@ -295,6 +313,19 @@ export async function sincronizarPendientes() {
                     estado: 'Cargado',
                     sincronizadoEn: serverTimestamp()
                 });
+
+                // Registrar ganancia para apuestas pendientes que se sincronizan
+                try {
+                  await GananciasService.procesarGananciaDesdeApuesta(
+                    apuesta.uuid,
+                    bancoId,
+                    apuesta.id_usuario,
+                    0.85
+                  );
+                  console.log(`Registro de ganancia creado para apuesta pendiente ${apuesta.uuid}`);
+                } catch (error) {
+                  console.error('Error registrando ganancia para apuesta pendiente:', error);
+                }
 
                 // Actualizar estado local pero mantener la apuesta
                 const index = pendientes.findIndex(p => p.uuid === apuesta.uuid);
