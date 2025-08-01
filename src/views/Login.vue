@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { iniciarRelojGlobal } from '@/stores/useHoraGlobal'
 import Swal from 'sweetalert2'
 
 const router = useRouter()
@@ -59,6 +60,7 @@ const handleSubmit = async () => {
       })
 
       // Redirección basada en el tipo de usuario según tu router
+      await iniciarRelojGlobal()
       const redirectPath = `/home/${authStore.userId}`
       router.push(redirectPath)
     } else {

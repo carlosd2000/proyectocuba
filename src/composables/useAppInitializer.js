@@ -1,8 +1,8 @@
 // scripts/useAppInitializer.js
-import { useUsuariosCreados } from './useUsuariosCreados'
-import { cargarInfoBancoSiNoExiste } from './fieldValidator.js'
-import { sincronizarHorasDeCierre } from './syncHorasCierre.js'
-import { obtenerApuestas } from './obtenerApuestas.js'
+import { useUsuariosCreados } from '../scripts/useUsuariosCreados.js'
+import { cargarInfoBancoSiNoExiste } from '../scripts/fieldValidator.js'
+import { sincronizarHorasDeCierre } from '../scripts/syncHorasCierre.js'
+import { obtenerApuestas } from '../scripts/obtenerApuestas.js'
 
 export async function cargarLibreriasIniciales(authStore) {
   let fondoManager = null
@@ -27,7 +27,6 @@ export async function cargarLibreriasIniciales(authStore) {
     if (authStore.bancoId) {
       cargarInfoBancoSiNoExiste(authStore.bancoId)
       await sincronizarHorasDeCierre()
-      // ...y luego cada 10 minutos
       setInterval(() => {
         sincronizarHorasDeCierre()
       }, 60 * 60 * 1000)

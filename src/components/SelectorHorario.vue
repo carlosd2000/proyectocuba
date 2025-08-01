@@ -2,7 +2,7 @@
 import { ref, computed, watch, defineEmits, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { verificarHorarioActivo, verificarHorarioBasico, leerEstadosHorariosCache, actualizarCacheHorarios } from '../scripts/FunctionHorarioActivo.js'
+import { leerEstadosHorariosCache, actualizarCacheHorarios } from '../scripts/FunctionHorarioActivo.js'
 
 import Dia from '../assets/icons/Dia.svg'
 import Tarde from '../assets/icons/Tarde.svg'

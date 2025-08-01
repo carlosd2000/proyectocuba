@@ -28,12 +28,10 @@ export function useHeader() {
   }
 
   const cargarDesdeHoraCierreCache = () => {
-    const fechaKey = new Date().toISOString().slice(0, 10)
     const cache = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
-    const dataLocal = cache[fechaKey] || {}
 
     for (const turno of turnos) {
-      const datos = dataLocal[turno]
+      const datos = cache[turno]
       if (datos?.activo === true && typeof datos.hora === 'string') {
         const [h, m] = datos.hora.split(':').map(Number)
         const hora = new Date()

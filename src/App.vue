@@ -1,15 +1,19 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from './stores/authStore'
 import { database } from './firebase/config.js'
 import { ref as dbRef, onValue } from 'firebase/database'
+import { cargarLibreriasIniciales } from './composables/useAppInitializer.js'
+import { iniciarRelojGlobal } from './composables/useHoraGlobal.js'
+import { useHorariosMonitor } from './composables/useSobrepasadoMonitor.js' 
 import ToastManager from './components/ToastManager.vue'
-import { cargarLibreriasIniciales } from './scripts/useAppInitializer.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const isAppReady = ref(false)
+
+const { estadosHorarios, contadores, actualizarEstadosHorarios } = useHorariosMonitor()
 
 let fondoManager = null
 let fondoCreadorManager = null
@@ -21,6 +25,11 @@ onMounted(async () => {
     // if (authStore.user) {
     //   await authStore.loadUserProfile()
     // }
+    iniciarRelojGlobal()
+    console.log('horaGlobal:', localStorage.getItem('horaGlobal'))
+    console.log('horaCierreCache:', JSON.parse(localStorage.getItem('horaCierreCache') || '{}'))
+    actualizarEstadosHorarios()
+    
     isAppReady.value = true
   } catch (error) {
     console.error('Error inicializando Auth:', error)

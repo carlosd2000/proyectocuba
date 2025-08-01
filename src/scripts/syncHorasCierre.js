@@ -11,8 +11,7 @@ export async function sincronizarHorasDeCierre() {
 
     const horarios = ['dia', 'tarde', 'noche']
     const fechaKey = new Date().toISOString().slice(0, 10)
-    let cache = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
-    if (!cache[fechaKey]) cache[fechaKey] = {}
+    let cache = {}
 
     for (const horarioKey of horarios) {
         try {
@@ -28,7 +27,7 @@ export async function sincronizarHorasDeCierre() {
             if (hora instanceof Timestamp || (hora && typeof hora.toDate === 'function')) {
                 const horaDate = hora.toDate()
                 const horaStr = horaDate.toTimeString().slice(0, 5) // 'HH:MM'
-                cache[fechaKey][horarioKey] = { hora: horaStr, activo }
+                cache[horarioKey] = { hora: horaStr, activo }
             }
         }
         } catch (err) {
