@@ -51,7 +51,16 @@ export function useCandadoHorario(fechaSeleccionada, horarioSeleccionado) {
     serverTime.value = serverNow || deviceNow // Usamos serverTime como referencia principal
 
     // Verifica sobrepasado en cache
-    if (estaSobrepasado(horarioKey)) {
+    if (estaSobrepasado(horarioSeleccionado)) {
+      candadoAbierto.value = false
+      return
+    }
+
+    // Verifica si ya se recibió el tiro para este horario
+    const tirosGuardados = JSON.parse(localStorage.getItem('tirosRecibidos') || '{}')
+    const tiroKey = 'tiro' + (horarioSeleccionado.value || '').toLowerCase() 
+
+    if (tirosGuardados[tiroKey] === true) {
       candadoAbierto.value = false
       return
     }

@@ -51,6 +51,7 @@ const handleSubmit = async () => {
     
     if (result.success) {
       // Mostrar feedback al usuario
+      await iniciarRelojGlobal()
       await Swal.fire({
         title: '¡Bienvenido!',
         text: 'Has iniciado sesión correctamente',
@@ -60,7 +61,6 @@ const handleSubmit = async () => {
       })
 
       // Redirección basada en el tipo de usuario según tu router
-      await iniciarRelojGlobal()
       const redirectPath = `/home/${authStore.userId}`
       router.push(redirectPath)
     } else {

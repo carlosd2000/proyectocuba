@@ -94,9 +94,9 @@ function enviarTiro() {
                 </div>
             </div>
             <select v-model="selectedTurno" class="select-turno">
-                <option value="1">Dia</option>
-                <option value="2">Tarde</option>
-                <option value="3">Noche</option>
+                <option value="Dia">Dia</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noche">Noche</option>
             </select>
             <div class="d-flex flex-row justify-content-between align-items-center gap-1 w-100">
                 <input type="text" v-model="input1" class="input-tiro text-center" style="max-width: 105px;" />

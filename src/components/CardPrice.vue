@@ -32,9 +32,9 @@ const toggleDetails = () => {
 </script>
 
 <template>
-  <div class="card-price-container d-flex flex-column justify-content-start align-items-center gap-2 w-100">
-    <div class="d-flex flex-row justify-content-between gap-2 w-100" style="max-width: 400px;">
-      <div @click="toggleDetails" class="card-price flex-grow-1" :class="{ 'horizontal-layout': !isListerosRoute }">
+  <div class="card-price-container p-0 container d-flex flex-column justify-content-start align-items-center gap-2 w-100">
+    <div class="d-flex flex-row justify-content-between gap-2 w-100">
+      <div @click="toggleDetails" class="card-price flex-grow-1 w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
         <!-- Valor/Precio -->
         <h1 v-if="isListerosRoute" class="price-value">
           ${{ fondoActual  }}
@@ -99,7 +99,6 @@ const toggleDetails = () => {
 <style scoped>
 .card-price-container {
   width: 100%;
-  max-width: 400px;
   max-height: 124px;
   position: relative; /* Agregado */
 }

@@ -107,9 +107,9 @@ const handleEditClick = (persona, event) => {
     <span v-if="isSyncing" class="ms-2">Sincronizando...</span>
   </div>
   
-  <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
+  <div v-if="!apuestasFiltradas.length" class="d-flex justify-content-center align-items-center h-100">
     <h5 class="body">
-      Aún no hay apuestas en la lista para este horario
+      Aún no hay jugadas en la lista
     </h5>
   </div>
   

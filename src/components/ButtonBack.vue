@@ -1,5 +1,5 @@
 <template>
-  <div @click="regresar" class="px-2">
+  <div @click="regresar" class="px-1">
     <img src="../assets/icons/Chevron_left_alt.svg" alt="">
   </div>
 </template>

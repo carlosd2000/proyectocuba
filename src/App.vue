@@ -6,6 +6,7 @@ import { database } from './firebase/config.js'
 import { ref as dbRef, onValue } from 'firebase/database'
 import { cargarLibreriasIniciales } from './composables/useAppInitializer.js'
 import { useInicializarHorarios } from './composables/useInicializarHorarios.js'
+import { useVerificarTirosLocales } from './composables/useVerificarTirosLocales.js'
 import ToastManager from './components/ToastManager.vue'
 
 const router = useRouter()
@@ -13,6 +14,7 @@ const authStore = useAuthStore()
 const isAppReady = ref(false)
 
 const { inicializar } = useInicializarHorarios()
+const { tirosRecibidos, verificarTirosLocales } = useVerificarTirosLocales()
 
 let fondoManager = null
 let fondoCreadorManager = null
@@ -24,9 +26,7 @@ onMounted(async () => {
     // if (authStore.user) {
     //   await authStore.loadUserProfile()
     // }
-    console.log('horaGlobal:', localStorage.getItem('horaGlobal'))
-    console.log('horaCierreCache:', JSON.parse(localStorage.getItem('horaCierreCache') || '{}'))
-    
+    verificarTirosLocales()
     isAppReady.value = true
   } catch (error) {
     console.error('Error inicializando Auth:', error)
@@ -87,14 +87,14 @@ watch(
                     tiro: tiro.tiro,
                     timestamp: tiro.timestamp
                   }
-
+                  
                   console.log(`📥 Guardado tiro local [${horario}]:`, tiro.tiro)
                 }
               }
-
               // Guardar de vuelta en localStorage
               localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
             }
+            verificarTirosLocales()
           })
         }
       }

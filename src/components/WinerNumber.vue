@@ -7,22 +7,14 @@ const props = defineProps({
 })
 
 // Normalizamos el nombre del horario (sin tildes, lowercase)
-function convertirHorarioAHorarioId(nombreHorario) {
-  const limpio = nombreHorario.normalize("NFD").replace(/[\u0300-\u036f]/g, '').toLowerCase()
-
-  const mapa = {
-    'dia': '1',
-    'tarde': '2',
-    'noche': '3'
-  }
-
-  return mapa[limpio] || null
+function capitalizarPrimeraLetra(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase()
 }
 
 function obtenerTiroDeLocalStorage(fecha, horarioNombre) {
   const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
   const fechaStr = fecha.toISOString().slice(0, 10)
-  const horarioId = convertirHorarioAHorarioId(horarioNombre)
+  const horarioId = capitalizarPrimeraLetra(horarioNombre)
 
   return tirosLocales?.[fechaStr]?.[horarioId]?.tiro || null
 }

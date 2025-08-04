@@ -8,6 +8,14 @@ export async function verificarHorarioActivo(horario) {
         const cache = leerEstadosHorariosCache()
         const estado = cache[horario] || { activo: false, sobrepasado: false }
         
+        // Verifica si ya se recibió el tiro para este horario
+        const tirosGuardados = JSON.parse(localStorage.getItem('tirosRecibidos') || '{}')
+        const tiroKey = 'tiro' + horario // ej: 'tirodia', 'tirotarde', etc.
+        
+        if (tirosGuardados[tiroKey] === true) {
+            return false
+        }
+
         return estado.activo && !estado.sobrepasado
     } catch (error) {
         console.error(`Error verificando horario ${horario}:`, error)

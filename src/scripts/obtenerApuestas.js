@@ -23,7 +23,7 @@ export const obtenerApuestas = async (idUsuario) => {
 
     const querySnapshot = await getDocs(q)
     const firebaseApuestas = querySnapshot.docs.map(doc => ({
-      id: doc.id,
+      uuid: doc.uuid,
       ...doc.data(),
     }))
 
@@ -34,7 +34,7 @@ export const obtenerApuestas = async (idUsuario) => {
       const fechaB = b.creadoEn?.toDate?.()?.getTime() || b.timestampLocal || 0
       return fechaB - fechaA
     })
-
+    await guardarApuestasDelDia(firebaseApuestas);
     return { success: true }
 
   } catch (error) {
@@ -49,4 +49,45 @@ const getLocalStorageArray = async (key) => {
   } catch (error) {
     return []
   }
+}
+
+const guardarApuestasDelDia = async (apuestasFirebase) => {
+  const hoy = new Date().toISOString().split('T')[0]
+  const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {}
+
+  if (!apuestasPorFecha[hoy]) {
+    apuestasPorFecha[hoy] = []
+  }
+
+  for (const apuesta of apuestasFirebase) {
+    const uuid = apuesta.uuid || apuesta.id
+    if (!uuid) continue
+
+    // Convertir sincronizadoEn o creadoEn a fecha ISO para comparar
+    let fechaReferencia = apuesta.sincronizadoEn?.toDate?.().toISOString?.()
+      || apuesta.creadoEn?.toDate?.().toISOString?.()
+      || apuesta.creadoEn // por si ya es string
+
+    if (!fechaReferencia) continue
+
+    const fecha = fechaReferencia.split('T')[0]
+    if (fecha !== hoy) continue
+
+    const index = apuestasPorFecha[hoy].findIndex(p => p.uuid === uuid)
+
+    const apuestaActualizada = {
+      ...apuesta,
+      uuid,
+      creadoEn: apuesta.sincronizadoEn?.toDate?.().toISOString?.() || apuesta.creadoEn
+    }
+
+    if (index !== -1) {
+      apuestasPorFecha[hoy][index] = apuestaActualizada
+    } else {
+      apuestasPorFecha[hoy].push(apuestaActualizada)
+    }
+  }
+
+  await localforage.setItem('apuestasPorFecha', apuestasPorFecha)
+  window.dispatchEvent(new Event('apuestas-locales-actualizadas'))
 }

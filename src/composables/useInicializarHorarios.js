@@ -7,16 +7,13 @@ import { iniciarRelojGlobal } from '@/composables/useHoraGlobal'
 export function useInicializarHorarios() {
   const authStore = useAuthStore()
   let sincronizacionInterval = null
+  const monitor = useHorariosMonitor() 
   
-  // Inicializa todos los sistemas de horarios
   const inicializarSistemasHorarios = async () => {
     try {
       if (!authStore.bancoId) {
-        console.warn('No hay bancoId - no se pueden inicializar horarios')
         return
       }
-
-      console.log('Inicializando sistemas de horarios...')
       
       // 1. Iniciar reloj global (obtiene hora del servidor)
       await iniciarRelojGlobal()
@@ -24,9 +21,9 @@ export function useInicializarHorarios() {
       // 2. Sincronizar horarios de cierre desde Firestore
       await sincronizarHorasDeCierre()
       
+      monitor.iniciar()
       // 3. Iniciar monitor de horarios
-      const { actualizarEstadosHorarios } = useHorariosMonitor()
-      await actualizarEstadosHorarios()
+      await monitor.actualizarEstadosHorarios()
       
       // 4. Programar sincronización periódica (cada hora)
       sincronizacionInterval = setInterval(() => {
@@ -44,6 +41,7 @@ export function useInicializarHorarios() {
     if (sincronizacionInterval) {
       clearInterval(sincronizacionInterval)
     }
+    monitor.limpiar()
   }
 
   // Ejecutar inmediatamente y cuando cambie el bancoId

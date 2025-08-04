@@ -22,6 +22,9 @@ export async function cargarLibreriasIniciales(authStore) {
       usuariosCreadosManager = useUsuariosCreados()
       await usuariosCreadosManager.iniciar()
     }
+    if (authStore.bancoId) {
+      cargarInfoBancoSiNoExiste(authStore.bancoId)
+    }
     
     if (authStore.user?.uid) {
       await obtenerApuestas(authStore.user.uid)

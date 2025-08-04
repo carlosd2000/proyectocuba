@@ -45,6 +45,7 @@ export function useHorariosMonitor() {
       const horaGlobalRaw = localStorage.getItem('horaGlobal')
       const cacheCompleto = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
 
+      
       if (!horaGlobalRaw) {
         console.warn('No hay horaGlobal disponible')
         return
@@ -53,9 +54,13 @@ export function useHorariosMonitor() {
       const horaActual = new Date(horaGlobalRaw)
       const nuevosEstados = {}
       const nuevosContadores = {}
-
-      // Procesamos cada horario
       const horarios = ['dia', 'tarde', 'noche']
+      
+      if (isNaN(horaActual.getTime())) {
+        console.warn('horaGlobal no es una fecha válida:', horaGlobalRaw)
+        return
+      }
+
       horarios.forEach(horario => {
         const datosHorario = cacheCompleto[horario] || {}
         const activo = !!datosHorario.activo
@@ -80,12 +85,9 @@ export function useHorariosMonitor() {
   // Programa la próxima actualización para cuando el contador llegue a cero
   const programarProximaActualizacion = (horaActual, cache) => {
     clearTimeout(timeoutId)
-    
     const { horario, minutos } = encontrarHorarioMasCercano(horaActual, cache)
-    
     if (horario && minutos !== Infinity) {
       const msHastaCierre = minutos * 60 * 1000
-      
       // Ajustamos el tiempo para asegurar precisión
       const ahora = new Date().getTime()
       const horaServer = horaActual.getTime()
@@ -114,25 +116,25 @@ export function useHorariosMonitor() {
   }
 
   // Iniciar el sistema
-  onMounted(() => {
+  const iniciar = () => {
     setupWatchers()
     actualizarEstadosCompletos()
-    
-    // Intervalo de seguridad (cada 5 minutos)
     intervalId = setInterval(() => {
       actualizarEstadosCompletos()
     }, 300000)
-  })
+  }
 
   // Limpieza
-  onUnmounted(() => {
+  const limpiar = () => {
     clearInterval(intervalId)
     clearTimeout(timeoutId)
-  })
+  }
 
   return {
     estadosHorarios,
     contadores,
-    actualizarEstadosHorarios: actualizarEstadosCompletos
+    actualizarEstadosHorarios: actualizarEstadosCompletos,
+    iniciar,
+    limpiar,
   }
 }
