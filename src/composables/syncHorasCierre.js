@@ -10,7 +10,6 @@ export async function sincronizarHorasDeCierre() {
     if (!bancoId) return
 
     const horarios = ['dia', 'tarde', 'noche']
-    const fechaKey = new Date().toISOString().slice(0, 10)
     let cache = {}
 
     for (const horarioKey of horarios) {

@@ -1,7 +1,6 @@
 // scripts/useAppInitializer.js
 import { useUsuariosCreados } from '../scripts/useUsuariosCreados.js'
 import { cargarInfoBancoSiNoExiste } from '../scripts/fieldValidator.js'
-import { sincronizarHorasDeCierre } from '../scripts/syncHorasCierre.js'
 import { obtenerApuestas } from '../scripts/obtenerApuestas.js'
 
 export async function cargarLibreriasIniciales(authStore) {
@@ -22,14 +21,6 @@ export async function cargarLibreriasIniciales(authStore) {
 
       usuariosCreadosManager = useUsuariosCreados()
       await usuariosCreadosManager.iniciar()
-    }
-
-    if (authStore.bancoId) {
-      cargarInfoBancoSiNoExiste(authStore.bancoId)
-      await sincronizarHorasDeCierre()
-      setInterval(() => {
-        sincronizarHorasDeCierre()
-      }, 60 * 60 * 1000)
     }
     
     if (authStore.user?.uid) {

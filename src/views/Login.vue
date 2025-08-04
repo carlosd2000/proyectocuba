@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { iniciarRelojGlobal } from '@/stores/useHoraGlobal'
+import { iniciarRelojGlobal } from '@/composables/useHoraGlobal'
 import Swal from 'sweetalert2'
 
 const router = useRouter()

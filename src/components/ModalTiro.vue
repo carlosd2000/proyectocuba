@@ -35,13 +35,32 @@ const disabled = computed(() => {
 function enviarTiro() {
     console.log('Tiro enviado:', input1.value, input2.value, input3.value)
     const tiro = `${input1.value}-${input2.value}-${input3.value}`
-
+    const turno = selectedTurno.value
+    
     const ruta = dbRef(database, `tirosPorBanco/${authStore.bancoId}/${selectedTurno.value}`)
+    const timestamp = new Date().toISOString()
 
+    // 1. Guardar en Firebase
     set(ruta, {
         tiro,
-        timestamp: new Date().toISOString()
+        timestamp
     })
+    // 2. Guardar en localStorage
+    const hoy = timestamp.slice(0, 10) // "YYYY-MM-DD"
+    const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
+
+    if (!tirosLocales[hoy]) {
+        tirosLocales[hoy] = {}
+    }
+
+    tirosLocales[hoy][turno] = {
+        tiro,
+        timestamp
+    }
+
+    localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
+    console.log(`📦 Tiro guardado localmente [${turno}]:`, tiro)
+
     toastStore.showToast(
         'Tiro enviado con exito',
         'success', 
@@ -49,7 +68,6 @@ function enviarTiro() {
         CheckIcon
     )
     emit('cerrar')
-
     input1.value = ''
     input2.value = ''
     input3.value = ''
