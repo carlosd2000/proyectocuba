@@ -1,7 +1,6 @@
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch } from 'vue'
 
 export function useHorariosMonitor() {
-  console.log('useHorariosMonitor initialized')
   const estadosHorarios = ref({})
   const contadores = ref({})
   let intervalId = null
@@ -13,8 +12,6 @@ export function useHorariosMonitor() {
     const [horaStr, minutoStr] = horaCierre.split(':').map(Number)
     const horaLimiteMin = horaStr * 60 + minutoStr
     const horaActualMin = horaActual.getHours() * 60 + horaActual.getMinutes()
-    const segundosRestantes = (horaLimiteMin - horaActualMin) * 60 // <- Esto es nuevo
-    console.log(`Segundos restantes para cierre: ${segundosRestantes}s`) // <- Único console.log agregado
     return horaLimiteMin - horaActualMin
   }
 
@@ -41,7 +38,6 @@ export function useHorariosMonitor() {
   // Actualiza todos los estados y contadores
   const actualizarEstadosCompletos = () => {
     try {
-      console.log('Actualizando estados horarios...')
       const horaGlobalRaw = localStorage.getItem('horaGlobal')
       const cacheCompleto = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
 
@@ -98,7 +94,6 @@ export function useHorariosMonitor() {
         actualizarEstadosCompletos()
       }, msAjustados)
       
-      console.log(`Próxima actualización programada en ${Math.round(msAjustados/1000)} segundos`)
     }
   }
 

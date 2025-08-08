@@ -161,6 +161,7 @@ export async function guardarDatos() {
       horario: horarioSeleccionado.value,
       uuid: uuid,
       timestampLocal: timestamp,
+      fecha: new Date().toISOString().slice(0, 10),
       bancoId,
       fueraDeTiempo: false, // Asumimos que no está fuera de tiempo al guardar
       estado: 'Pendiente', // Siempre marcamos como pendiente para el día actual
@@ -207,7 +208,6 @@ export async function guardarDatos() {
                   auth.currentUser?.uid,
                   0.85 // 85% de ganancia
                 );
-                console.log(`Registro de ganancia creado para apuesta ${uuid}`);
               } catch (error) {
                 console.error('Error registrando ganancia:', error);
                 // No fallamos el proceso completo por un error en ganancias
@@ -282,9 +282,6 @@ export async function sincronizarPendientes() {
         const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
         const hoy = new Date().toISOString().split('T')[0];
         const pendientes = apuestasPorFecha[hoy] || [];
-        
-        console.log(`[SYNC] ${pendientes.length} apuestas encontradas para hoy`);
-
         const pendientesExitosos = [];
 
         for (const apuesta of pendientes) {
@@ -322,7 +319,6 @@ export async function sincronizarPendientes() {
                     apuesta.id_usuario,
                     0.85
                   );
-                  console.log(`Registro de ganancia creado para apuesta pendiente ${apuesta.uuid}`);
                 } catch (error) {
                   console.error('Error registrando ganancia para apuesta pendiente:', error);
                 }
@@ -342,8 +338,6 @@ export async function sincronizarPendientes() {
         // Guardar los cambios en las apuestas locales (estados actualizados)
         apuestasPorFecha[hoy] = pendientes;
         await localforage.setItem('apuestasPorFecha', apuestasPorFecha);
-        
-        console.log(`[SYNC] ${pendientesExitosos.length} apuestas procesadas`);
         window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
     } catch (error) {
         console.error('[SYNC] Error general:', error);
@@ -361,7 +355,6 @@ let syncInProgress = {
 
 export async function sincronizarMutaciones() {
   if (syncInProgress.mutaciones) {
-    console.log('[SYNC-MUT] Sincronización ya en progreso');
     return { success: false, message: 'already-in-progress' };
   }
   
@@ -371,7 +364,6 @@ export async function sincronizarMutaciones() {
     if (!bancoId) throw new Error("No se pudo obtener bancoId");
 
     const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
-    console.log(`[SYNC-MUT] ${mutaciones.length} mutaciones pendientes encontradas`);
 
     const resultados = {
       exitosas: 0,
@@ -423,8 +415,7 @@ export async function sincronizarMutaciones() {
     );
     
     await localforage.setItem('mutacionesPendientes', nuevasMutaciones);
-    
-    console.log(`[SYNC-MUT] Resultado: ${resultados.exitosas} exitosas, ${resultados.fallidas} fallidas`);
+  
     return { 
       success: resultados.fallidas === 0,
       count: resultados.exitosas,
@@ -435,7 +426,6 @@ export async function sincronizarMutaciones() {
     return { success: false, error: error.message };
   } finally {
     syncInProgress.mutaciones = false;
-    console.log('[SYNC-MUT] ===== FINALIZADA SINCRONIZACIÓN DE MUTACIONES =====');
   }
 }
 

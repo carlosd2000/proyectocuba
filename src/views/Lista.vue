@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Header from '../components/Header.vue'
 import CardPrice from '../components/CardPrice.vue'
@@ -25,6 +25,14 @@ const valorBote = computed(() => Number(localStorage.getItem('valorBote')) || 10
 const { candadoAbierto } = useCandadoHorario(fechaSeleccionada, horarioSeleccionado)
 const listaLogic = useLista(fechaSeleccionada, router, route)
 
+const handleGanadoresActualizados = async () => {
+  try {
+    await listaLogic.cargarApuestasLocales()
+    console.log('Apuestas recargadas después de actualización de ganadores')
+  } catch (error) {
+    console.error('Error recargando apuestas:', error)
+  }
+}
 // Función para verificar si supera el bote (se mantiene igual)
 const superaBote = (apuesta) => {
   if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > valorBote.value) return true
@@ -58,6 +66,22 @@ function handleSelect(valor) {
     default: horarioSeleccionado.value = 'Dia'
   }
 }
+watch(apuestasFiltradas, (newVal) => {
+  console.log('Apuestas filtradas actualizadas:', newVal.map(a => ({
+    id: a.id,
+    nombre: a.nombre,
+    ganador: a.ganador,
+    tipoGanador: typeof a.ganador
+  })))
+}, { deep: true })
+
+onMounted(() => {
+  window.addEventListener('ganadores-actualizados', handleGanadoresActualizados)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('ganadores-actualizados', handleGanadoresActualizados)
+})
 </script>
 
 <template>
@@ -95,7 +119,7 @@ function handleSelect(valor) {
         </div>
       </main>
       
-      <aside class="w-100 h-100 overflow-auto d-flex flex-column gap-1">
+      <aside class="overflow-auto d-flex flex-column gap-1 h-100 w-100" style="padding-bottom: 10px;">
         <ListaComponent 
           :fecha="fechaSeleccionada" 
           :horario="horarioSeleccionado" 
@@ -117,7 +141,7 @@ function handleSelect(valor) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0px 16px 24px 16px;
+  padding: 0px 16px 0px 16px;
   gap: 16px;
   width: 100%;
   height: calc(100vh - 7% - 88px);

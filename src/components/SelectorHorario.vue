@@ -18,11 +18,11 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const dropdownOpen = ref(false)
-const selectedValue = ref('1')
-const selectedIcon = ref(Dia)
-
+const selectedValue = ref(null)
+const selectedIcon = ref(null)
 const intervalId = ref(null)
 const yaInicializado = ref(false)
+const isLoading = ref(false)
 
 const allOptions = [
   { value: '1', icon: Dia, nombre: 'Dia' },
@@ -51,81 +51,102 @@ function valueToIcon(value) {
 }
 
 async function actualizarHorarios() {
-  const bancoId = authStore.bancoId
-  if (!bancoId) return
-
-  const horarios = [
-    { firebaseKey: 'dia', nombre: 'Dia' },
-    { firebaseKey: 'tarde', nombre: 'Tarde' },
-    { firebaseKey: 'noche', nombre: 'Noche' }
-  ]
-
-  const activos = []
-  const esRutaAñadirJugada = route.path.startsWith('/anadirjugada')
-
-
-  // 🔁 Siempre actualiza el cache local para reflejar la hora actual vs hora cierre
-  await actualizarCacheHorarios(bancoId)
-
-  // ✅ Luego lee del cache local (ya actualizado)
-  const cache = leerEstadosHorariosCache()
-
-  for (const h of horarios) {
-    const estado = cache[h.firebaseKey]
-    if (!estado) continue
-
-    if (esRutaAñadirJugada) {
-      if (estado.activo && !estado.sobrepasado) {
-        const op = allOptions.find(o => o.nombre === h.nombre)
-        if (op) activos.push(op)
-      }
-    } else {
-      if (estado.activo) {
-        const op = allOptions.find(o => o.nombre === h.nombre)
-        if (op) activos.push(op)
-      }
-    }
-  }
-
-  options.value = activos
-
-  if (activos.length === 0) {
-    selectedValue.value = null
-    selectedIcon.value = null
-    emit('no-horarios-disponibles')
-    return
-  }
-
-  if (!yaInicializado.value) {
-    const val = horarioToValue(props.horarioEdicion)
-    const exists = activos.find(o => o.value === val)
-
-    if (exists) {
-      selectedValue.value = val
-      selectedIcon.value = exists.icon
-    } else if (activos.length > 0) {
-      selectedValue.value = activos[0].value
-      selectedIcon.value = activos[0].icon
+  isLoading.value = true
+  try {
+    const bancoId = authStore.bancoId
+    if (!bancoId) {
+      return
     }
 
-    emit('update:selected', selectedValue.value)
-    yaInicializado.value = true
+    const horarios = [
+      { firebaseKey: 'dia', nombre: 'Dia' },
+      { firebaseKey: 'tarde', nombre: 'Tarde' },
+      { firebaseKey: 'noche', nombre: 'Noche' }
+    ]
+
+    const activos = []
+    const esRutaAñadirJugada = route.path.startsWith('/anadirjugada')
+
+    await actualizarCacheHorarios(bancoId)
+    const cache = leerEstadosHorariosCache()
+
+    for (const h of horarios) {
+      const estado = cache[h.firebaseKey]
+      if (!estado) continue
+
+      if (esRutaAñadirJugada) {
+        if (estado.activo && !estado.sobrepasado) {
+          const op = allOptions.find(o => o.nombre === h.nombre)
+          if (op) activos.push(op)
+        }
+      } else {
+        if (estado.activo) {
+          const op = allOptions.find(o => o.nombre === h.nombre)
+          if (op) activos.push(op)
+        }
+      }
+    }
+
+    options.value = activos
+
+    if (activos.length === 0) {
+      selectedValue.value = null
+      selectedIcon.value = null
+      emit('no-horarios-disponibles')
+      return
+    }
+
+    // Inicialización
+    if (!yaInicializado.value) {
+      const val = horarioToValue(props.horarioEdicion)
+      
+      const exists = activos.find(o => o.value === val)
+
+      if (exists) {
+        selectedValue.value = val
+        selectedIcon.value = exists.icon
+      } else if (activos.length > 0) {
+        selectedValue.value = activos[0].value
+        selectedIcon.value = activos[0].icon
+      }
+
+      if (selectedValue.value) {
+        emit('update:selected', selectedValue.value)
+      }
+      yaInicializado.value = true
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 
-onMounted(() => {
-  actualizarHorarios()
-  intervalId.value = setInterval(actualizarHorarios, 10000) // cada 10 segundos
+watch(selectedValue, (newVal) => {
+  if (newVal) {
+    selectedIcon.value = valueToIcon(newVal)
+    emit('update:selected', newVal)
+  }
+})
+
+watch(() => props.horarioEdicion, (newVal) => {
+  if (newVal && options.value.length > 0) {
+    const val = horarioToValue(newVal)
+    const exists = options.value.find(o => o.value === val)
+    if (exists && selectedValue.value !== val) {
+      selectedValue.value = val
+      selectedIcon.value = exists.icon
+    }
+  }
+}, { immediate: true })
+
+onMounted(async () => {
+  await actualizarHorarios()
+  intervalId.value = setInterval(actualizarHorarios, 10000)
 })
 
 onUnmounted(() => {
-  if (intervalId.value) clearInterval(intervalId.value)
-})
-
-
-watch(selectedValue, (newVal) => {
-  selectedIcon.value = valueToIcon(newVal)
-  emit('update:selected', newVal)
+  if (intervalId.value) {
+    clearInterval(intervalId.value)
+  }
 })
 
 const filteredOptions = computed(() => {
@@ -179,6 +200,7 @@ const isDisabled = computed(() => options.value.length === 0)
     </select>
   </div>
 </template>
+
 
 <style scoped>
 .disabled {

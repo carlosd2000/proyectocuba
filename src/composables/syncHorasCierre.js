@@ -15,7 +15,6 @@ export async function sincronizarHorasDeCierre() {
     for (const horarioKey of horarios) {
         try {
         const ref = doc(db, `bancos/${bancoId}/hora`, horarioKey)
-        console.log(`Sincronizando horario: ${horarioKey} para banco: ${bancoId}`)
         const snap = await getDoc(ref)
 
         if (snap.exists()) {

@@ -1,5 +1,5 @@
 <script setup>
-import { toRef, reactive, watch, computed } from 'vue'
+import { toRef, reactive, watch, computed, onMounted } from 'vue'
 import useLista from '../scripts/Lista.js'
 import { useRouter, useRoute } from 'vue-router'
 import Swal from 'sweetalert2'
@@ -20,6 +20,11 @@ const detallesVisibles = reactive(new Set())
 const valorBote = computed(() => Number(localStorage.getItem('valorBote')) || 100)
 
 const toggleDetalles = (personaId) => {
+  const apuesta = props.apuestas.find(a => a.id === personaId)
+  console.log('Información de apuesta:', {
+    ...apuesta,
+    ganadorType: typeof apuesta?.ganador
+  })
   if (detallesVisibles.has(personaId)) {
     detallesVisibles.delete(personaId)
   } else {
@@ -47,10 +52,7 @@ const {
 // Función para verificar si supera el bote
 const superaBote = (apuesta) => {
   // Verificar círculo solo
-  if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > valorBote.value) {
-    return true
-  }
-  
+  if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > valorBote.value) return true
   // Verificar datos de apuesta
   if (apuesta.datos) {
     return apuesta.datos.some(d => {
@@ -62,27 +64,47 @@ const superaBote = (apuesta) => {
   return false
 }
 
+const esNumeroGanador = (persona, tipoNumero, valor, mapa) => {
+  if (tipoNumero !== 'cuadrado' || !persona.ganador) return false;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}');
+  const tiroGanador = tirosLocales[hoy]?.[persona.horario]?.tiro;
+  
+  if (!tiroGanador) return false;
+
+  const [fijo, corrido1, corrido2] = tiroGanador.split('-');
+  const decenaFijo = fijo.slice(-2);
+  const cuadradoStr = valor.toString().padStart(2, '0');
+
+  // Condición 1: Decena del fijo (requiere circulo1)
+  if (cuadradoStr === decenaFijo) {
+    return mapa.circulo1 !== undefined && mapa.circulo1 !== null && mapa.circulo1 !== '';
+  }
+  
+  // Condición 2: Números corridos (requiere circulo2)
+  if (cuadradoStr === corrido1 || cuadradoStr === corrido2) {
+    return mapa.circulo2 !== undefined && mapa.circulo2 !== null && mapa.circulo2 !== '';
+  }
+
+  return false;
+};
+
 // Filtramos las apuestas por horario Y por bote
 const apuestasFiltradas = computed(() => {
-  return apuestasCombinadas.value.filter(apuesta => {
-    // Primero filtramos por horario
+  return props.apuestas.filter(apuesta => {
     const mismoHorario = apuesta.horario?.toLowerCase() === props.horario?.toLowerCase()
     if (!mismoHorario) return false
     
-    // Luego aplicamos filtro de bote según la opción
-    if (props.opcionSeleccionada === 'Bote') {
-      return superaBote(apuesta)
-    } else if (props.opcionSeleccionada === 'Lista') {
-      return !superaBote(apuesta)
-    }
+    if (props.opcionSeleccionada === 'Bote') return superaBote(apuesta)
+    if (props.opcionSeleccionada === 'Lista') return !superaBote(apuesta)
     return true
   })
 })
-
-// Watcher para sincronizar cambios (se mantiene igual)
-watch(apuestasCombinadas, (newVal) => {
-  props.apuestas.splice(0, props.apuestas.length, ...newVal)
-}, { deep: true })
+onMounted(() => {
+  console.log('📋 Apuestas combinadas:', apuestasCombinadas.value)
+  console.log('📋 Apuestas filtradas:', apuestasFiltradas.value)
+})
 
 const handleEditClick = (persona, event) => {
   event.stopPropagation()
@@ -121,10 +143,11 @@ const handleEditClick = (persona, event) => {
          'apuesta-pendiente': persona.estado === 'Pendiente',
          'apuesta-editada': persona.estado === 'EditadoOffline',
          'eliminando': persona.estado === 'Eliminando'
-       }">
+       }" @click="toggleDetalles(persona.id)">
     
-    <header class="d-flex flex-row justify-content-between align-items-center h-100" @click="toggleDetalles(persona.id)">
+    <header class="d-flex flex-row justify-content-between align-items-center h-100">
       <div class="container-title d-flex justify-content-center align-items-center">
+        <img v-if="persona.ganador === true" src="../assets/icons/Star_fill.svg" alt="Avatar" class="avatar px-2">        
         <h5 class="body">{{ persona.nombre }}</h5>
       </div>
       <div class="container-cloud d-flex flex-row justify-content-center align-items-center">
@@ -149,8 +172,10 @@ const handleEditClick = (persona, event) => {
           <div v-for="(mapa, index) in persona.datos" :key="index" class="my-1 w-100">
             <div class="d-flex align-items-center flex-wrap justify-content-around container-line">
               <div class="col-4">
-                <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number">
-                  <p class="label d-flex justify-content-center align-items-center">
+                <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number"
+                  :class="{ 'numero-ganador': esNumeroGanador(persona, 'cuadrado', mapa['cuadrado'], mapa) }">
+                  <p class="label d-flex justify-content-center align-items-center"
+                  :class="{ 'numero-ganador': esNumeroGanador(persona, 'cuadrado', mapa['cuadrado'], mapa) }">
                     {{ mapa['cuadrado'] }}
                   </p>
                 </div>
@@ -441,5 +466,12 @@ const handleEditClick = (persona, event) => {
   padding: 0.25em 0.4em;
   border-radius: 0.25rem;
   font-weight: 500;
+}
+.numero-ganador {
+  background-color: #6665DD !important; /* Verde para indicar ganador */
+  color: white !important;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(106, 139, 249, 0.6);
+  animation: pulse 1.5s infinite;
 }
 </style>

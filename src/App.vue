@@ -7,6 +7,7 @@ import { ref as dbRef, onValue } from 'firebase/database'
 import { cargarLibreriasIniciales } from './composables/useAppInitializer.js'
 import { useInicializarHorarios } from './composables/useInicializarHorarios.js'
 import { useVerificarTirosLocales } from './composables/useVerificarTirosLocales.js'
+import { useSincronizarGanadores } from './composables/useSincronizarGanadores.js'
 import ToastManager from './components/ToastManager.vue'
 
 const router = useRouter()
@@ -22,24 +23,19 @@ let usuariosCreadosManager = null
 
 onMounted(async () => {
   try {
-    // await authStore.initializeAuthListener()
-    // if (authStore.user) {
-    //   await authStore.loadUserProfile()
-    // }
     verificarTirosLocales()
     isAppReady.value = true
   } catch (error) {
     console.error('Error inicializando Auth:', error)
     isAppReady.value = true
   }
-
 })
 
 let tiroRef = null
 let unsubscribeTiro = null
 
 watch(
-  () => authStore.user && authStore.profile && authStore.bancoId, // Solo se dispara cuando TODO está listo
+  () => authStore.user && authStore.profile && authStore.bancoId,
   async (ready) => {
     if (ready) {
       await inicializar()
@@ -60,41 +56,38 @@ watch(
           tiroRef = dbRef(database, `tirosPorBanco/${bancoId}`)
 
           unsubscribeTiro = onValue(tiroRef, (snapshot) => {
-            const data = snapshot.val()
-            if (data) {
-              const hoy = new Date().toISOString().slice(0, 10)
+            (async () => {
+              const data = snapshot.val()
+              if (data) {
+                const hoy = new Date().toISOString().slice(0, 10)
+                const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
 
-              // Preparar objeto para almacenar localmente
-              const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
+                for (const horario in data) {
+                  const tiro = data[horario]
+                  if (!tiro?.timestamp) continue
 
-              // Iterar por los tiros del día (puede haber mañana, tarde, noche)
-              for (const horario in data) {
-                const tiro = data[horario]
+                  const fechaTiro = new Date(tiro.timestamp).toISOString().slice(0, 10)
 
-                if (!tiro?.timestamp) continue
+                  if (fechaTiro === hoy) {
+                    if (!tirosLocales[hoy]) {
+                      tirosLocales[hoy] = {}
+                    }
 
-                const fechaTiro = new Date(tiro.timestamp).toISOString().slice(0, 10)
+                    tirosLocales[hoy][horario] = {
+                      tiro: tiro.tiro,
+                      timestamp: tiro.timestamp
+                    }
 
-                // Solo guardar si el tiro es del día actual
-                if (fechaTiro === hoy) {
-                  // Asegurar estructura
-                  if (!tirosLocales[hoy]) {
-                    tirosLocales[hoy] = {}
+                    console.log(`📥 Guardado tiro local [${horario}]:`, tiro.tiro)
                   }
-
-                  // Guardar por horario: mañana, tarde, noche...
-                  tirosLocales[hoy][horario] = {
-                    tiro: tiro.tiro,
-                    timestamp: tiro.timestamp
-                  }
-                  
-                  console.log(`📥 Guardado tiro local [${horario}]:`, tiro.tiro)
                 }
+
+                localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
+                const ganadores = await useSincronizarGanadores()
               }
-              // Guardar de vuelta en localStorage
-              localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
-            }
-            verificarTirosLocales()
+
+              verificarTirosLocales()
+            })()
           })
         }
       }

@@ -99,36 +99,52 @@ async function cargarApuestasLocales() {
         const eliminacionesPermanentes = JSON.parse(
             localStorage.getItem('eliminacionesPermanentes') || '{}'
         );
+
+        // Cargar ganadores confirmados primero
+        const ganadoresConfirmados = JSON.parse(localStorage.getItem('ganadoresConfirmados') || '{}');
+        const ganadoresHoy = ganadoresConfirmados[hoy] || [];
         
         // Obtener apuestas por fecha
         const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
-        
-        // Filtrar por fecha seleccionada
         const fechaSeleccionadaStr = fechaRef.value.toISOString().split('T')[0];
-        const apuestasFecha = apuestasPorFecha[fechaSeleccionadaStr] || [];
+        let apuestasFecha = apuestasPorFecha[fechaSeleccionadaStr] || [];
         
+        apuestasFecha = apuestasFecha.map(apuesta => {
+            const esGanadora = ganadoresHoy.some(g => 
+                g.uuid === apuesta.uuid || g.uuid === apuesta.id
+            );
+            return {
+                ...apuesta,
+                ganador: esGanadora || apuesta.ganador === true || apuesta.ganador === 'true'
+            };
+        });
         // Obtener mutaciones pendientes
         const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
         const eliminacionesPendientes = mutaciones.filter(m => m.tipo === 'ELIMINACION');
         const edicionesPendientes = mutaciones.filter(m => m.tipo === 'EDICION');
-        
+        // Función para normalizar el valor de ganador
+        const normalizarGanador = (valor) => {
+            if (valor === undefined || valor === null) return false;
+            return valor === true || valor === 'true';
+        };
         // Filtrar eliminaciones y mantener todos los estados (Pendiente y Cargado)
         apuestasLocales.value = apuestasFecha
             .filter(a => !eliminacionesPermanentes[a.uuid])
             .filter(a => !eliminacionesPendientes.some(e => e.idOriginal === a.uuid || e.idOriginal === a.id))
             .map(a => {
-                // Buscar si hay ediciones pendientes para esta apuesta
+                const ganador = normalizarGanador(a.ganador);
                 const edicionPendiente = edicionesPendientes.find(e => 
                     e.idOriginal === a.uuid || e.idOriginal === a.id
                 );
-                
+
                 if (edicionPendiente) {
                     return {
                         ...a,
                         ...edicionPendiente.nuevosDatos,
                         estado: 'EditadoOffline',
                         id: a.uuid,
-                        totalGlobal: Number(edicionPendiente.nuevosDatos.totalGlobal) || Number(a.totalGlobal) || 0
+                        totalGlobal: Number(edicionPendiente.nuevosDatos.totalGlobal) || Number(a.totalGlobal) || 0,
+                        ganador: normalizarGanador(edicionPendiente.nuevosDatos.ganador ?? a.ganador)
                     };
                 }
                 
@@ -136,7 +152,8 @@ async function cargarApuestasLocales() {
                     ...a,
                     estado: a.estado || 'Pendiente',
                     id: a.uuid,
-                    totalGlobal: Number(a.totalGlobal) || 0
+                    totalGlobal: Number(a.totalGlobal) || 0,
+                    ganador
                 };
             });
         
@@ -147,13 +164,12 @@ async function cargarApuestasLocales() {
                 .map(m => ({
                     ...m.nuevosDatos,
                     estado: 'Pendiente',
-                    id: m.uuid
+                    id: m.uuid,
+                    ganador: normalizarGanador(m.nuevosDatos.ganador),
                 }));
             
             apuestasLocales.value = [...apuestasLocales.value, ...nuevasApuestasPendientes];
         }
-        
-        console.log(`[LocalForage] ${apuestasLocales.value.length} apuestas cargadas para ${fechaSeleccionadaStr}`);
     } catch (error) {
         console.error('Error cargando apuestas locales:', error);
         apuestasLocales.value = [];
@@ -215,26 +231,36 @@ const apuestasCombinadas = computed(() => {
     const hoy = new Date();
     const esHoySeleccionado = esMismoDia(fechaRef.value, hoy);
     
+    // Cargar ganadores confirmados
+    const ganadoresConfirmados = JSON.parse(localStorage.getItem('ganadoresConfirmados') || {});
+    const ganadoresHoy = ganadoresConfirmados[hoy] || [];
     // Obtener todas las apuestas locales (pendientes y cargadas)
-    const todasLasApuestasLocales = apuestasLocales.value.filter(a => {
-        try {
-            let fechaA;
-            if (a.creadoEn?.seconds) {
-                fechaA = new Date(a.creadoEn.seconds * 1000);
-            } else if (a.creadoEn?.toDate) {
-                fechaA = a.creadoEn.toDate();
-            } else if (a.creadoEn) {
-                fechaA = new Date(a.creadoEn);
+    const apuestasLocalesHoy = apuestasLocales.value
+        .filter(a => {
+            try {
+                let fechaA;
+                if (a.creadoEn?.seconds) {
+                    fechaA = new Date(a.creadoEn.seconds * 1000);
+                } else if (a.creadoEn?.toDate) {
+                    fechaA = a.creadoEn.toDate();
+                } else if (a.creadoEn) {
+                    fechaA = new Date(a.creadoEn);
+                }
+                return fechaA && esMismoDia(fechaA, fechaRef.value);
+            } catch {
+                return false;
             }
-            return fechaA && esMismoDia(fechaA, fechaRef.value);
-        } catch {
-            return false;
-        }
-    });
+        })
+        .map(a => ({
+            ...a,
+            ganador: ganadoresHoy.some(g => g.uuid === a.uuid || g.uuid === a.id) || 
+                a.ganador === true || 
+                a.ganador === 'true'
+        }));
 
     // Si es hoy, mostramos todas las locales (pendientes y cargadas)
     if (esHoySeleccionado) {
-        return todasLasApuestasLocales.sort((a, b) => {
+        return apuestasLocalesHoy.sort((a, b) => {
             try {
                 const fechaA = a.creadoEn?.seconds ? a.creadoEn.seconds * 1000 : 
                     a.creadoEn?.toDate ? a.creadoEn.toDate().getTime() : 
@@ -253,22 +279,35 @@ const apuestasCombinadas = computed(() => {
 
     // Para otros días, mostrar de Firebase si hay conexión
     if (isOnline.value && apuestas.value.length > 0) {
-        guardarApuestasEnCache(apuestas.value);
-        const apuestasFirebaseFiltradas = apuestas.value.filter(a => {
-            try {
-                let fechaA;
-                if (a.creadoEn?.seconds) {
-                    fechaA = new Date(a.creadoEn.seconds * 1000);
-                } else if (a.creadoEn?.toDate) {
-                    fechaA = a.creadoEn.toDate();
-                } else if (a.creadoEn) {
-                    fechaA = new Date(a.creadoEn);
+        const apuestasFirebaseFiltradas = apuestas.value
+            .filter(a => {
+                try {
+                    let fechaA;
+                    if (a.creadoEn?.seconds) {
+                        fechaA = new Date(a.creadoEn.seconds * 1000);
+                    } else if (a.creadoEn?.toDate) {
+                        fechaA = a.creadoEn.toDate();
+                    } else if (a.creadoEn) {
+                        fechaA = new Date(a.creadoEn);
+                    }
+                    return fechaA && esMismoDia(fechaA, fechaRef.value);
+                } catch {
+                    return false;
                 }
-                return fechaA && esMismoDia(fechaA, fechaRef.value);
-            } catch {
-                return false;
-            }
-        });
+            })
+            .map(fbApuesta => {
+                const esGanadora = ganadoresHoy.some(g => g.uuid === fbApuesta.uuid);
+                const localVersion = apuestasLocalesHoy.find(
+                    local => local.uuid === fbApuesta.uuid
+                );
+                
+                return {
+                    ...fbApuesta,
+                    ganador: esGanadora || 
+                            (localVersion?.ganador === true) || 
+                            fbApuesta.ganador === true
+                };
+            });
         
         return apuestasFirebaseFiltradas.sort((a, b) => {
             try {
@@ -350,8 +389,8 @@ const apuestasCombinadas = computed(() => {
 const eliminarPersona = async () => {
   try {
     const id = personaSeleccionada.value.id || personaSeleccionada.value.uuid;
-    const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
-    const esCargado = personaSeleccionada.value.estado === 'Cargado';
+
+    apuestasLocales.value = apuestasLocales.value.filter(a => a.id !== id && a.uuid !== id);
     
     // 1. Eliminar de apuestas locales
     const hoy = new Date().toISOString().split('T')[0];
@@ -364,8 +403,6 @@ const eliminarPersona = async () => {
 
     // 2. Agregar a mutaciones pendientes (con serialización segura)
     const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
-    
-    // Verificar si ya existe una mutación para esta apuesta
     const existe = mutaciones.some(m => m.idOriginal === id && m.tipo === 'ELIMINACION');
     
     if (!existe) {
@@ -381,7 +418,7 @@ const eliminarPersona = async () => {
         creadoEn: personaSeleccionada.value.creadoEn?.toISOString?.() || 
                  personaSeleccionada.value.creadoEn,
         // Solo guardar datos esenciales para evitar problemas
-        datosOriginales: esCargado ? {
+        datosOriginales: personaSeleccionada.value.estado === 'Cargado' ? {
           nombre: personaSeleccionada.value.nombre,
           totalGlobal: personaSeleccionada.value.totalGlobal,
           tipo: personaSeleccionada.value.tipo
@@ -392,10 +429,9 @@ const eliminarPersona = async () => {
       await localforage.setItem('mutacionesPendientes', mutaciones);
     }
 
-    // 3. Actualizar UI
-    apuestasLocales.value = apuestasLocales.value.filter(a => a.id !== id && a.uuid !== id);
+    await cargarApuestasLocales();
+    window.dispatchEvent(new CustomEvent('apuestas-actualizadas'));
 
-    // 4. Mostrar feedback
     mostrarConfirmacionEliminar.value = false;
     mostrarModal.value = false;
 
@@ -424,15 +460,11 @@ const eliminarPersona = async () => {
 
 const editarPersona = async () => {
   try {
-    console.log('[EDITAR] Iniciando edición para persona:', personaSeleccionada.value);
-    
     const tipoJugada = personaSeleccionada.value.tipo.split('/')[0] || 'normal';
     const esPendiente = personaSeleccionada.value.estado === 'Pendiente';
-    const esCargado = personaSeleccionada.value.estado === 'Cargado';
     
     // Siempre usar el ID original
     const idEdicion = personaSeleccionada.value.id || personaSeleccionada.value.uuid;
-    console.log('[EDITAR] ID de edición:', idEdicion, 'Estado:', personaSeleccionada.value.estado);
     
     router.push({
       path: `/anadirjugada/${route.params.id}`,
@@ -446,7 +478,6 @@ const editarPersona = async () => {
     });
     
     cerrarModal();
-    console.log('[EDITAR] Redirección completada');
   } catch (error) {
     console.error('[EDITAR] Error en editarPersona:', error);
     Swal.fire({
@@ -463,7 +494,6 @@ const editarPersona = async () => {
     }
 
     onMounted(async() => {
-        console.log("estas son las mutaciones:", await localforage.getItem('mutacionesPendientes'));
         isOnline.value = navigator.onLine
         unsubscribe = await obtenerApuestas(idListero)
         cargarApuestasLocales()
@@ -506,13 +536,11 @@ const editarPersona = async () => {
  // Nueva función para manejar la reconexión
     const handleReconnect = async () => {
         if (syncInProgress) {
-            console.log('[SYNC] Sincronización ya en progreso, omitiendo')
             return
         }
         
         syncInProgress = true
         isSyncing.value = true
-        console.log('[SYNC] Conexión restablecida - Iniciando sincronización en 3 segundos...')
         
         try {
             // Esperar 3 segundos para asegurar conexión estable
@@ -560,6 +588,18 @@ const editarPersona = async () => {
     watch(() => fechaRef.value, () => {
         cargarApuestasLocales()
     })
+    watch(apuestasCombinadas, (newVal) => {
+        console.log('🔍 Apuestas combinadas:', {
+            total: newVal.length,
+            conGanador: newVal.filter(a => a.ganador).length,
+            detallesGanadores: newVal.filter(a => a.ganador).map(a => ({
+                id: a.id,
+                nombre: a.nombre,
+                horario: a.horario,
+                ganador: a.ganador
+            }))
+        });
+    }, { deep: true, immediate: true });
 
     return {
         mostrarModal,
@@ -575,6 +615,7 @@ const editarPersona = async () => {
         eliminarPersona,
         confirmarEliminar,
         mostrarHora,
-        obtenerIconoEstado
+        obtenerIconoEstado,
+        cargarApuestasLocales
     }
 }

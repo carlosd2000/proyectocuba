@@ -71,7 +71,7 @@ export function iniciarRelojGlobal() {
     obtenerHora().catch(error => {
       console.error('Error al actualizar hora:', error)
     })
-  }, 1 * 60 * 1000)
+  }, 10 * 60 * 1000)
 
   // Actualizar cuando vuelva la conexión
   window.addEventListener('online', () => {

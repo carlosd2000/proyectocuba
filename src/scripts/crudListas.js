@@ -26,20 +26,16 @@ export const eliminarApuesta = async (id, esPendiente = false) => {
 
 export const sincronizarEliminaciones = async () => {
   if (!navigator.onLine) {
-    console.log('[SYNC-ELIM] No hay conexión, abortando');
     return { success: false, message: 'offline' };
   }
 
   try {
-    console.log('[SYNC-ELIM] Iniciando sincronización de eliminaciones');
     const eliminacionesStr = localStorage.getItem('eliminacionesPermanentes') || '{}';
     const eliminaciones = JSON.parse(eliminacionesStr);
     const idsAEliminar = Object.keys(eliminaciones).filter(id => eliminaciones[id] === true);
     
-    console.log(`[SYNC-ELIM] ${idsAEliminar.length} eliminaciones pendientes`);
 
     if (idsAEliminar.length === 0) {
-      console.log('[SYNC-ELIM] No hay eliminaciones pendientes');
       return { success: true, count: 0 };
     }
 
@@ -70,7 +66,6 @@ export const sincronizarEliminaciones = async () => {
 
     localStorage.setItem('eliminacionesPermanentes', JSON.stringify(eliminacionesActualizadas));
     
-    console.log(`[SYNC-ELIM] ${exitosas}/${idsAEliminar.length} eliminaciones exitosas`);
     return { 
       success: exitosas === idsAEliminar.length, 
       count: exitosas,

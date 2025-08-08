@@ -30,7 +30,6 @@ export function useInicializarHorarios() {
         sincronizarHorasDeCierre()
       }, 60 * 60 * 1000)
       
-      console.log('Sistemas de horarios inicializados correctamente')
     } catch (error) {
       console.error('Error inicializando sistemas de horarios:', error)
     }
