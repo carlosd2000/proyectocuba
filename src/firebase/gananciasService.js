@@ -4,6 +4,10 @@ import {
   doc,
   setDoc,
   getDoc,
+  deleteDoc,
+  query,
+  where,
+  getDocs,
   serverTimestamp
 } from 'firebase/firestore'
 
@@ -52,6 +56,55 @@ export const GananciasService = {
       }
     } catch (error) {
       console.error('[GananciasService] Error creando registro de ganancia:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Elimina un registro de ganancia asociado a una apuesta
+   * @param {Object} params 
+   * @param {string} params.apuestaId - ID de la apuesta relacionada
+   * @param {string} params.bancoId - ID del banco
+   * @param {string} params.userId - ID del usuario que recibió la ganancia
+   * @param {string} params.horario - Horario de la apuesta (Dia/Tarde/Noche)
+   * @returns {Promise<Object>} - Resultado de la operación
+   */
+  async eliminarRegistroGanancia({ apuestaId, bancoId, userId, horario }) {
+    try {
+      // Validar que el horario sea correcto
+      const horariosValidos = ['Dia', 'Tarde', 'Noche']
+      if (!horariosValidos.includes(horario)) {
+        throw new Error(`Horario inválido: ${horario}. Debe ser Dia, Tarde o Noche`)
+      }
+
+      // Obtener referencia a la subcolección de transacciones
+      const transaccionesRef = collection(
+        db,
+        'bancos', bancoId, 'wallets', userId, `Transacciones_${horario}`
+      )
+
+      // Buscar la transacción de ganancia asociada a esta apuesta
+      const q = query(
+        transaccionesRef, 
+        where('tipo', '==', 'ganancia'), 
+        where('apuestaId', '==', apuestaId)
+      )
+      const querySnapshot = await getDocs(q)
+
+      // Eliminar todos los registros encontrados (debería ser solo uno)
+      const resultados = []
+      for (const docSnap of querySnapshot.docs) {
+        await deleteDoc(doc(db, transaccionesRef.path, docSnap.id))
+        resultados.push({ id: docSnap.id, success: true })
+      }
+
+      return { 
+        success: true,
+        resultados,
+        count: resultados.length
+      }
+    } catch (error) {
+      console.error('[GananciasService] Error eliminando registro de ganancia:', error)
       throw error
     }
   },
