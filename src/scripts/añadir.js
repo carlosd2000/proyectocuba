@@ -396,6 +396,23 @@ export async function sincronizarMutaciones() {
           resultados.exitosas++;
         }
         else if (mutacion.tipo === 'ELIMINACION') {
+          // Primero eliminar el registro de ganancia si existe
+          if (mutacion.datosOriginales?.horario && mutacion.datosOriginales?.id_usuario) {
+            try {
+              await GananciasService.eliminarRegistroGanancia({
+                apuestaId: mutacion.idOriginal,
+                bancoId: bancoId,
+                userId: mutacion.datosOriginales.id_usuario,
+                horario: mutacion.datosOriginales.horario
+              });
+              console.log(`Registro de ganancia eliminado para apuesta ${mutacion.idOriginal}`);
+            } catch (error) {
+              console.error(`Error eliminando registro de ganancia para ${mutacion.idOriginal}:`, error);
+              // Continuamos con la eliminación aunque falle la eliminación de ganancia
+            }
+          }
+          
+          // Luego eliminar la apuesta
           await deleteDoc(docRef);
           resultados.exitosas++;
         }
@@ -427,7 +444,7 @@ export async function sincronizarMutaciones() {
   } finally {
     syncInProgress.mutaciones = false;
   }
-}
+};
 
 // Para registrar ediciones
 export async function registrarEdicionOffline(apuestaOriginal, nuevosDatos) {

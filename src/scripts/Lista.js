@@ -7,7 +7,7 @@ import Cloud from '../assets/icons/Cloud.svg'
 import CloudFill from '../assets/icons/Cloud_fill.svg'
 import StropWatch from '../assets/icons/stopwatch.svg'
 import localforage from 'localforage';
-
+import GananciasService from '../firebase/gananciasService.js'
 export default function useLista(fechaRef, router, route) {
     const mostrarModal = ref(false)
     const mostrarConfirmacionEliminar = ref(false)
@@ -415,7 +415,23 @@ const eliminarPersona = async () => {
       await localforage.setItem('apuestasPorFecha', apuestasPorFecha);
     }
 
-    // 2. Agregar a mutaciones pendientes (con serialización segura)
+    // 2. Si está online y es una apuesta cargada, eliminar también el registro de ganancia
+    if (isOnline.value && esCargado) {
+      try {
+        await GananciasService.eliminarRegistroGanancia({
+          apuestaId: id,
+          bancoId: personaSeleccionada.value.bancoId || authStore.bancoId,
+          userId: personaSeleccionada.value.id_usuario || auth.currentUser?.uid,
+          horario: personaSeleccionada.value.horario
+        });
+        console.log(`Registro de ganancia eliminado para apuesta ${id}`);
+      } catch (error) {
+        console.error('Error eliminando registro de ganancia:', error);
+        // No fallamos el proceso completo por un error en ganancias
+      }
+    }
+
+    // 3. Agregar a mutaciones pendientes (con serialización segura)
     const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
     const existe = mutaciones.some(m => m.idOriginal === id && m.tipo === 'ELIMINACION');
     
@@ -435,7 +451,9 @@ const eliminarPersona = async () => {
         datosOriginales: personaSeleccionada.value.estado === 'Cargado' ? {
           nombre: personaSeleccionada.value.nombre,
           totalGlobal: personaSeleccionada.value.totalGlobal,
-          tipo: personaSeleccionada.value.tipo
+          tipo: personaSeleccionada.value.tipo,
+          horario: personaSeleccionada.value.horario,
+          id_usuario: personaSeleccionada.value.id_usuario
         } : null
       };
 
@@ -457,7 +475,7 @@ const eliminarPersona = async () => {
       showConfirmButton: false 
     });
 
-    // 5. Si estamos online, sincronizar inmediatamente
+    // 6. Si estamos online, sincronizar inmediatamente
     if (isOnline.value) {
       await sincronizarMutaciones();
     }
