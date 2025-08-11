@@ -2,7 +2,6 @@
 import { ref, onMounted, watch } from 'vue';
 import { Timestamp } from 'firebase/firestore'
 import Header from '../components/Header.vue';
-import Hora from '../components/hora.vue';
 import { db } from '../firebase/config.js';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // Añadimos getDoc para leer datos
 
@@ -34,10 +33,6 @@ const bancoPadreId = ref('');
 const dbHoradia = ref(null)
 const dbHoratarde = ref(null)
 const dbHoranoche = ref(null)
-
-const horaInputDia = ref('')
-const horaInputTarde = ref(null)
-const horaInputNoche = ref(null)
 
 const valorHoraDia = ref('');
 const valorHoraTarde = ref('');
@@ -213,7 +208,7 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                             {{ dbHoratarde }}
                         </h6>
                         <input type="time" v-model="valorHoraTarde">
-                        <button class="btn bg-transparent p-1" @click="guardarHora('tarde', valorHoraTarde)">
+                        <button class="btn bg-transparent" @click="guardarHora('tarde', valorHoraTarde)">
                             <img src="@/assets/icons/Timer.svg" alt="">
                         </button>
                     </div>
@@ -223,8 +218,8 @@ const actualizarActivoTurno = async (turnoNombre, estado) => {
                         <h6 class="m-0 p-0">
                             Tiro de  la noche
                         </h6>
-                        <button class="btn bg-transparent p-1" @click="cambiarToggle(3)">
-                            <img :src="toggleActivo3 ? toggleon : toggleoff" alt="Toggle" width="24" />
+                        <button class="btn bg-transparent" @click="cambiarToggle(3)">
+                            <img :src="toggleActivo3 ? toggleon : toggleoff" alt="Toggle" width="48" />
                         </button>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">

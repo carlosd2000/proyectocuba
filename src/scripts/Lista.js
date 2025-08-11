@@ -101,7 +101,14 @@ async function cargarApuestasLocales() {
         );
 
         // Cargar ganadores confirmados primero
-        const ganadoresConfirmados = JSON.parse(localStorage.getItem('ganadoresConfirmados') || '{}');
+        // Modifica donde cargas ganadoresConfirmados
+        let ganadoresConfirmados
+        try {
+            ganadoresConfirmados = JSON.parse(localStorage.getItem('ganadoresConfirmados') || '{}')
+        } catch (e) {
+            console.error('Error parsing ganadoresConfirmados:', e)
+            ganadoresConfirmados = {}
+        }
         const ganadoresHoy = ganadoresConfirmados[hoy] || [];
         
         // Obtener apuestas por fecha
@@ -232,7 +239,14 @@ const apuestasCombinadas = computed(() => {
     const esHoySeleccionado = esMismoDia(fechaRef.value, hoy);
     
     // Cargar ganadores confirmados
-    const ganadoresConfirmados = JSON.parse(localStorage.getItem('ganadoresConfirmados') || {});
+    // Modifica donde cargas ganadoresConfirmados
+    let ganadoresConfirmados
+    try {
+        ganadoresConfirmados = JSON.parse(localStorage.getItem('ganadoresConfirmados') || '{}')
+    } catch (e) {
+        console.error('Error parsing ganadoresConfirmados:', e)
+        ganadoresConfirmados = {}
+    }
     const ganadoresHoy = ganadoresConfirmados[hoy] || [];
     // Obtener todas las apuestas locales (pendientes y cargadas)
     const apuestasLocalesHoy = apuestasLocales.value

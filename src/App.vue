@@ -50,47 +50,47 @@ watch(
       usuariosCreadosManager = usuarios;
 
       const userType = authStore.userType;
-      if(userType !== 'bancos') {
-        const bancoId = authStore.bancoId;
-        if (bancoId) {
-          tiroRef = dbRef(database, `tirosPorBanco/${bancoId}`)
 
-          unsubscribeTiro = onValue(tiroRef, (snapshot) => {
-            (async () => {
-              const data = snapshot.val()
-              if (data) {
-                const hoy = new Date().toISOString().slice(0, 10)
-                const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
+      const bancoId = authStore.bancoId;
+      if (bancoId) {
+        tiroRef = dbRef(database, `tirosPorBanco/${bancoId}`)
 
-                for (const horario in data) {
-                  const tiro = data[horario]
-                  if (!tiro?.timestamp) continue
+        unsubscribeTiro = onValue(tiroRef, (snapshot) => {
+          (async () => {
+            const data = snapshot.val()
+            if (data) {
+              const hoy = new Date().toISOString().slice(0, 10)
+              const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
 
-                  const fechaTiro = new Date(tiro.timestamp).toISOString().slice(0, 10)
+              for (const horario in data) {
+                const tiro = data[horario]
+                if (!tiro?.timestamp) continue
 
-                  if (fechaTiro === hoy) {
-                    if (!tirosLocales[hoy]) {
-                      tirosLocales[hoy] = {}
-                    }
+                const fechaTiro = new Date(tiro.timestamp).toISOString().slice(0, 10)
 
-                    tirosLocales[hoy][horario] = {
-                      tiro: tiro.tiro,
-                      timestamp: tiro.timestamp
-                    }
-
-                    console.log(`📥 Guardado tiro local [${horario}]:`, tiro.tiro)
+                if (fechaTiro === hoy) {
+                  if (!tirosLocales[hoy]) {
+                    tirosLocales[hoy] = {}
                   }
-                }
 
-                localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
-                const ganadores = await useSincronizarGanadores()
+                  tirosLocales[hoy][horario] = {
+                    tiro: tiro.tiro,
+                    timestamp: tiro.timestamp
+                  }
+
+                  console.log(`📥 Guardado tiro local [${horario}]:`, tiro.tiro)
+                }
               }
 
-              verificarTirosLocales()
-            })()
-          })
-        }
+              localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
+              const ganadores = await useSincronizarGanadores()
+            }
+
+            verificarTirosLocales()
+          })()
+        })
       }
+
     }
   },
   { immediate: true }

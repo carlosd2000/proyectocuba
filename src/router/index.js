@@ -87,6 +87,12 @@ const router = createRouter({
       name: 'transferir',
       component: () => import('../views/Transferir.vue'),
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/payments/:id',
+      name: 'payments',
+      component: () => import('../views/Payments.vue'),
+      meta: { requiresAuth: true },
     }
   ],
 })

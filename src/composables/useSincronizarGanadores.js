@@ -9,7 +9,14 @@ export async function useSincronizarGanadores() {
   const bancoId = authStore.bancoId
   const userId = authStore.userId
 
-  const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
+  // En useSincronizarGanadores.js
+  let tirosLocales
+  try {
+    tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
+  } catch (e) {
+    console.error('Error parsing tirosLocales:', e)
+    tirosLocales = {}
+  }
   const hoy = new Date().toISOString().slice(0, 10)
 
   if (!tirosLocales[hoy]) {
