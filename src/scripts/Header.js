@@ -15,7 +15,12 @@ export function useHeader() {
   const turnos = ['dia', 'tarde', 'noche']
   const horaActual = ref('--:--:--')
 
-  const back = computed(() => route.path.startsWith('/home'))
+  const back = computed(() => {
+    if (route.path.startsWith('/configpayments')) {
+      return route.path.startsWith('/payments')
+    }
+    return route.path.startsWith('/home')
+  })
   const bell = computed(() => route.path.startsWith('/'))
 
   const irfondo = () => {

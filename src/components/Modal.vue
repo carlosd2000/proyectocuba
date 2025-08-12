@@ -19,6 +19,15 @@ const selectedTurno = ref('Dia') // Por defecto al "Dia"
 const toastStore = useToastStore()
 const authStore = useAuthStore()
 
+const inputsNumeros = ref([{ id: 1, value: '' }]); // Array para almacenar los inputs
+
+const agregarInput = () => {
+  inputsNumeros.value.push({ 
+    id: Date.now(), // Usamos el timestamp como ID único
+    value: '' 
+  });
+};
+
 const originalToggles = ref({
     dia: false,
     tarde: false,
@@ -42,29 +51,24 @@ const mostrarToastSave = ref(false)
 const mostrarToastError = ref(false)
 const mostrarToastComplete = ref(false)
 
-const emit = defineEmits(['cerrar'])
+const montoLimitado = ref(''); 
+
+const emit = defineEmits(['cerrar', 'guardarLimitados']);
 
 const props = defineProps({
     modal: {
         type: Boolean,
         default: ''
     },
+    title: {
+        type: String,
+        default: ''
+    },
     type: {
         type: String,
         default: null
-    }
+    },
 })
-
-const hayCambios = computed(() => {
-    return (
-        toggleActivo1.value !== originalToggles.value.dia ||
-        toggleActivo2.value !== originalToggles.value.tarde ||
-        toggleActivo3.value !== originalToggles.value.noche ||
-        (toggleActivo1.value && valorHoraDia.value !== originalHoras.value.dia) ||
-        (toggleActivo2.value && valorHoraTarde.value !== originalHoras.value.tarde) ||
-        (toggleActivo3.value && valorHoraNoche.value !== originalHoras.value.noche)
-    );
-});
 
 const cambiarToggle = (num) => {
     if (num === 1) {
@@ -84,6 +88,44 @@ const disabled = computed(() => {
         input3.value.length !== 2 || !soloNumeros.test(input3.value)
     )
 })
+
+const hayCambios = computed(() => {
+    return (
+        toggleActivo1.value !== originalToggles.value.dia ||
+        toggleActivo2.value !== originalToggles.value.tarde ||
+        toggleActivo3.value !== originalToggles.value.noche ||
+        (toggleActivo1.value && valorHoraDia.value !== originalHoras.value.dia) ||
+        (toggleActivo2.value && valorHoraTarde.value !== originalHoras.value.tarde) ||
+        (toggleActivo3.value && valorHoraNoche.value !== originalHoras.value.noche)
+    );
+});
+
+const completo = computed(() => {
+    if (['Limitado'].includes(props.type)) {
+    // Verifica que el monto tenga valor (convertido a string para asegurar)
+        const montoValido = String(montoLimitado.value).trim() !== '';
+        
+        // Verifica que al menos un input numérico tenga valor
+        const algunNumeroValido = inputsNumeros.value.some(input => {
+            // Convertimos a string y verificamos que no esté vacío
+            const value = input.value;
+            return value !== null && value !== undefined && String(value).trim() !== '';
+        });
+        
+        return montoValido && algunNumeroValido;
+    }
+    else{
+        // Verifica que al menos un input numérico tenga valor
+        const algunNumeroValido = inputsNumeros.value.some(input => {
+            // Convertimos a string y verificamos que no esté vacío
+            const value = input.value;
+            return value !== null && value !== undefined && String(value).trim() !== '';
+        });
+        
+        return algunNumeroValido;
+    }
+    return false
+});
 
 function enviarTiro() {
     console.log('Tiro enviado:', input1.value, input2.value, input3.value)
@@ -234,6 +276,37 @@ const guardar = async () => {
     }
 };
 
+const guardarLimitados = () => {
+    if (['Limitado'].includes(props.type)) {
+        // Prepara los datos para enviar al padre
+        const datosLimitados = {
+            monto: montoLimitado.value,
+            numeros: inputsNumeros.value
+                .map(input => input.value)
+                .filter(valor => valor !== '' && valor !== null && valor !== undefined)
+        };
+        
+        // Emite los datos al padre
+        emit('guardarLimitados', datosLimitados);
+        
+        // Cierra el modal
+        emit('cerrar');
+    }
+    else{
+        const datosLimitados = {
+            numeros: inputsNumeros.value
+                .map(input => input.value)
+                .filter(valor => valor !== '' && valor !== null && valor !== undefined)
+        };
+        
+        // Emite los datos al padre
+        emit('guardarLimitados', datosLimitados);
+        
+        // Cierra el modal
+        emit('cerrar');
+    }
+}
+
 const actualizarActivoTurno = async (turnoNombre, estado) => {
     try {
         if (!authStore.bancoId) return;
@@ -287,6 +360,10 @@ const lanzarToast = () => {
         mostrarToastComplete.value = false;
     }, 3000);
 };
+
+const typeHeight = computed(() => {
+    return ['Limitado', 'NoJuega'].includes(props.type);
+});
 
 onMounted(() => {
     try {
@@ -349,7 +426,7 @@ onMounted(() => {
 });
 </script>
 <template>
-    <div v-if="type" class="modal-overlay-tiro d-flex flex-column justify-content-end align-items-center gap-2">
+    <div v-if="type" class="modal-overlay-tiro d-flex flex-column justify-content-end align-items-center gap-2" :class="typeHeight ? 'height-all' : 'height-footer'">
         <div v-if="type === 'tiro'" class="container-tiro d-flex flex-column justify-content-center align-items-center gap-4">
             <div class="d-flex flex-column justify-content-center align-items-center gap-2 w-100">
                 <div class="d-flex justify-content-between align-items-center gap-3 w-100">
@@ -437,13 +514,85 @@ onMounted(() => {
             </div>
             <ButtonSend title="Guardar" :disabled="!hayCambios" @click="guardar()"/>
         </div>
+        <div v-if="['Limitado', 'NoJuega'].includes(type)" class="container-tiro d-flex flex-column justify-content-center align-items-center gap-3">
+            <div v-if="type === 'Limitado'" class="d-flex flex-column justify-content-center align-items-start gap-3 w-100">
+                <div class="d-flex justify-content-between gap-2 w-100">
+                    <img src="../assets/icons/Alerta_ol.svg" alt="" width="20">
+                    <h2 class="d-flex justify-content-start w-100">
+                        {{ title }} limitado
+                    </h2>
+                    <img src="../assets/icons/Cerrar.svg" alt="" width="20" @click="emit('cerrar')">
+                </div>
+                <h5 class="small">
+                    Configura los valores y numeros limitados
+                </h5>
+                <div class="input d-flex flex-row align-items-center gap-1 w-100">
+                    <h5 class="input-label">
+                        $
+                    </h5>
+                    <input v-model="montoLimitado" class="border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                </div>
+                <div class="d-flex flex-column align-items-start gap-2 w-100">
+                    <h5 class="body-bold">
+                        Agregar números
+                    </h5>
+                    <div class="d-flex flex-row align-items-center gap-1 w-100">
+                        <div class="inputs-container">
+                            <div v-for="input in inputsNumeros" :key="input.id">
+                                <input 
+                                    v-model="input.value" 
+                                    class="circle label bg-transparent" 
+                                    placeholder="-" 
+                                    type="number">
+                            </div>
+                            <button 
+                                class="button-plus"
+                                @click="agregarInput">
+                                <img src="../assets/icons/Plus.svg" alt="" style="filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div v-if="type === 'NoJuega'" class="d-flex flex-column justify-content-center align-items-start gap-3 w-100">
+                <div class="d-flex justify-content-between gap-2 w-100">
+                    <img src="../assets/icons/Alerta_ol.svg" alt="" width="20">
+                    <h2 class="d-flex justify-content-start w-100">
+                        No juegan
+                    </h2>
+                    <img src="../assets/icons/Cerrar.svg" alt="" width="20" @click="emit('cerrar')">
+                </div>
+                <h5 class="small">
+                    Selecciona uno o mas numeros que no jugaran en las proximas tiradas
+                </h5>
+                <div class="d-flex flex-column align-items-start gap-2 w-100">
+                    <div class="d-flex flex-row align-items-center gap-1 w-100">
+                        <div class="inputs-container">
+                            <div v-for="input in inputsNumeros" :key="input.id">
+                                <input 
+                                    v-model="input.value" 
+                                    class="circle label bg-transparent" 
+                                    placeholder="-" 
+                                    type="number">
+                            </div>
+                            <button 
+                                class="button-plus"
+                                @click="agregarInput">
+                                <img src="../assets/icons/Plus.svg" alt="" style="filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ButtonSend :title=" type === 'Limitado' ? 'Aplicar limitados' : 'Aplicar numeros'" :disabled="!completo" @click="guardarLimitados()"/>
+        </div>
     </div>
 </template>
 <style scoped>
 .modal-overlay-tiro {
     position: fixed;
     width: 100%;
-    height: calc(100% - 140px); /* Asume que el footer mide 64px */
+     /* Asume que el footer mide 64px */
     box-sizing: border-box;
     background: rgba(253, 254, 242, 0.4);
     /* Accent/Mindaro 10 */
@@ -455,6 +604,12 @@ onMounted(() => {
     flex: none;
     flex-grow: 0;
     z-index: 3;
+}
+.height-footer{
+    height: calc(100% - 140px);
+}
+.height-all{
+    height: calc(100% - 50px);
 }
 .container-tiro{
     padding: 24px 20px;
@@ -497,5 +652,58 @@ onMounted(() => {
     border-radius: 30px;
     flex: none;
     flex-grow: 0;
+}
+.input{
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px 8px 16px;
+    gap: 10px;
+    height: 48px;
+    width: 100%;
+    border: 1px solid #CDCDD1;
+    border-radius: 30px;
+    flex-grow: 1;
+}
+.circle{
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 10px;
+    width: 72px;
+    height: 48px;
+    border: 1px solid #CDCDD1;
+    border-radius: 30px;
+    flex: none;
+    flex-grow: 0;
+    text-align: center;
+    font-size: 14px;
+}
+.button-plus{
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 10px;
+    width: 48px;
+    height: 48px;
+    background: #C2C1F1;
+    border: 1px solid #F3F3F3;
+    border-radius: 30px;
+    flex: none;
+    grid-column: -1;
+    flex-grow: 0;
+}
+.inputs-container {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 4px;
 }
 </style>

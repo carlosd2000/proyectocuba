@@ -1,4 +1,9 @@
 <script setup>
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+
 const props = defineProps({
     fistbutton: {
         type: String,
@@ -13,10 +18,22 @@ const props = defineProps({
         default: false
     }
 })
+
+const cancelarButton = () => {
+    const path = route.path || '' // p. ej. "/transferir/ABC123"
+    const id = route.params.id ?? ''
+
+    // Opción simple: comprobar prefijo
+    if (path.startsWith('/transferir')) {
+        router.push(id ? `/fondo/${id}` : '/fondo')
+    } else {
+        router.push(id ? `/payments/${id}` : '/home')
+    }
+}
 </script>
 <template>
     <div class="container-buttons d-flex flex-row justify-content-between align-items-center w-100">
-        <div class="button d-flex flex-row justify-content-center align-items-center" @click="$router.push(`/fondo/${$route.params.id}`)">
+        <div class="button d-flex flex-row justify-content-center align-items-center" @click="cancelarButton()">
             <h5 class="label">
                 {{ props.fistbutton }}
             </h5>
@@ -33,6 +50,7 @@ const props = defineProps({
     padding: 16px 16px 24px 16px;
     gap: 16px;
     width: 100%;
+    background-color: #fdfef2;
 }
 .button {
     padding: 8px;

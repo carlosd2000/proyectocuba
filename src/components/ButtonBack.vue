@@ -5,15 +5,20 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const route = useRoute() 
 const authStore = useAuthStore()
 
 const regresar = () => {
   if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
-    router.push(`/home/${authStore.userId}`)
+    if (route.path.startsWith('/configpayments')) { // Usar route.path en lugar de path
+      router.push(`/payments/${authStore.userId}`)
+    } else {
+      router.push(`/home/${authStore.userId}`)
+    }
   } else {
     router.push('/')
   }

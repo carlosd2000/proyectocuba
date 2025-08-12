@@ -93,6 +93,12 @@ const router = createRouter({
       name: 'payments',
       component: () => import('../views/Payments.vue'),
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/configpayments/:id',
+      name: 'configpayments',
+      component: () => import('../views/ConfigPayments.vue'),
+      meta: { requiresAuth: true },
     }
   ],
 })
