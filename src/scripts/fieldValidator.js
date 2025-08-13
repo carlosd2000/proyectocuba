@@ -79,14 +79,16 @@ export function validarCampo(valor, campo, index = null) {
       `Límite alcanzado !! El valor ingresado supera $${limite} al límite permitido para esta jugada.`,
       'double-message',
       5000,
-      Alert
+      Alert,
+      'top'
     )
   } else if (esVisualmenteInvalido && activo) {
     toastStore.showToast(
       `Tu tirada superó el límite !! Se juega $${limite} como valor máximo, el excedente se va directo al bote.`,
       'double-message',
       5000,
-      Alert
+      Alert,
+      'top'
     )
   }
 }

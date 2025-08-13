@@ -17,11 +17,18 @@ const props = defineProps({
 const emit = defineEmits(['eliminarNumero'])
 
 const eliminarNumero = (index) => {
-  emit('eliminarNumero', { 
-    tipo: props.tipo,
-    title: props.title,
-    index 
-  })
+    emit('eliminarNumero', { 
+        tipo: props.tipo,
+        title: props.title,
+        index 
+    })
+    
+    if (props.lista.numeros.length === 1) {
+        emit('resetearMonto', {
+            tipo: props.tipo,
+            title: props.title
+        })
+    }
 }
 </script>
 <template>
@@ -37,9 +44,20 @@ const eliminarNumero = (index) => {
         <div class="d-flex flex-row justify-content-start align-items-center gap-1 w-100">
             <div v-for="value in lista.numeros" class="d-flex flex-row justify-content-start align-items-center">
                 <div class="circle-numeros">
-                    <h5 class="small">
+                    <h5 v-if="props.title !== 'Parlet'" class="small">
                         {{ value }}
                     </h5>
+                    <div v-else class="d-flex flex-row justify-content-center align-items-center gap-1">
+                        <h5 class="small">
+                            {{ value[0] }}
+                        </h5>
+                        <h5 class="small">
+                            -
+                        </h5>
+                        <h5 class="small">
+                            {{ value[1] }}
+                        </h5>
+                    </div>
                     <img src="../assets/icons/Cerrar.svg" alt="" @click="eliminarNumero(index)" style="cursor: pointer;">
                 </div>
             </div>

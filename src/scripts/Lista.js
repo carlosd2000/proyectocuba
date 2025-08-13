@@ -404,6 +404,8 @@ const eliminarPersona = async () => {
   try {
     const id = personaSeleccionada.value.id || personaSeleccionada.value.uuid;
 
+    const esCargado = personaSeleccionada.value.estado === 'Cargado';
+    
     apuestasLocales.value = apuestasLocales.value.filter(a => a.id !== id && a.uuid !== id);
     
     // 1. Eliminar de apuestas locales

@@ -1,17 +1,33 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import Header from '../components/Header.vue';
 import SelectorHorario from '../components/SelectorHorario.vue';
 import LimitedNumber from '../components/LimitedNumber.vue';
 import CirclesPayments from '../components/CirclesPayments.vue';
 import ButtonDouble from '../components/ButtonDouble.vue';
 import Modal from '../components/Modal.vue';
+import { useToastStore } from '../stores/toast'
 import toggleon from '@/assets/icons/Toggleon.svg';
 import toggleoff from '@/assets/icons/Toggleoff.svg';
+import CheckIcon from '../assets/icons/Check.svg'
+
+const router = useRouter()
+const route = useRoute()
 
 const toggleActivo = ref(false);
 const modalType = ref(null);
 const title = ref('');
+const horarioSeleccionado = ref('Dia')
+const toastStore = useToastStore()
+
+const inputPrincipal = ref('')
+
+const montos = ref({
+  Fijo: '',
+  Corrido: '',
+  Parlet: ''
+})
 
 // Estado para los limitados
 const limitadosFijo = ref({
@@ -45,12 +61,29 @@ const noJuegaParlet = ref({
     numeros: []
 });
 
+const hayDatosParaGuardar = computed(() => {
+  // Verificar input principal
+  if (!inputPrincipal.value || inputPrincipal.value.trim() === '') return false
+  
+  // Verificar que los 3 LimitedNumber tengan datos
+  return Object.values(montos.value).every(monto => monto.trim() !== '')
+})
+
+const actualizarMonto = ({ title, monto }) => {
+  montos.value[title] = monto
+}
+
 const cambiarToggle = () => {
     toggleActivo.value = !toggleActivo.value;
 };
 
-const handleSelect = (selected) => {
-    
+function handleSelect(valor) {
+  switch (valor) {
+    case '1': horarioSeleccionado.value = 'Dia'; break
+    case '2': horarioSeleccionado.value = 'Tarde'; break
+    case '3': horarioSeleccionado.value = 'Noche'; break
+    default: horarioSeleccionado.value = 'Dia'
+  }
 }
 
 const manejarPrimerBoton = (origen) => {
@@ -146,8 +179,64 @@ const handleEliminarNumero = ({ tipo, title, index }) => {
   }
 }
 
+const handleResetearMonto = ({ tipo, title }) => {
+  if (tipo === 'Limitado') {
+    switch(title) {
+      case 'Fijo':
+        limitadosFijo.value.monto = '';
+        break;
+      case 'Corrido':
+        limitadosCorrido.value.monto = '';
+        break;
+      case 'Parlet':
+        limitadosParlet.value.monto = '';
+        break;
+    }
+  }
+}
+
 const guardar = () => {
-    
+  const datosParaGuardar = {
+    inputPrincipal: inputPrincipal.value,
+    montos: {
+      Fijo: montos.value.Fijo,
+      Corrido: montos.value.Corrido,
+      Parlet: montos.value.Parlet,
+    },
+    limitados: {
+      Fijo: limitadosFijo.value,
+      Corrido: limitadosCorrido.value,
+      Parlet: limitadosParlet.value,
+    },
+    noJuega: {
+      Fijo: noJuegaFijo.value,
+      Corrido: noJuegaCorrido.value,
+      Parlet: noJuegaParlet.value,
+    },
+    boteActivo: toggleActivo.value,
+  }
+  
+  console.log('Datos a guardar:', datosParaGuardar)
+  // 1. Obtener datos existentes de localStorage
+  const todosLosDatos = JSON.parse(localStorage.getItem('configPagos') || '{}')
+  
+  // 2. Actualizar solo el horario actual
+  todosLosDatos[horarioSeleccionado.value] = datosParaGuardar
+  
+  // 3. Guardar en localStorage
+  localStorage.setItem('configPagos', JSON.stringify(todosLosDatos))
+  
+  console.log('Datos guardados para horario:', horarioSeleccionado.value)
+
+  // Aquí puedes enviar los datos a tu backend o hacer lo que necesites
+  toastStore.showToast(
+    'Cambios guardados (offline)',
+    'success',
+    20000,
+    CheckIcon,
+    'bottom',
+  )
+  router.push(`/payments/${route.params.id}`)
 }
 </script>
 <template>
@@ -178,20 +267,20 @@ const guardar = () => {
                     <h5 class="input-label">
                         $
                     </h5>
-                    <input class="border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                    <input v-model="inputPrincipal" class="border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
                 </div>
             </div>
             <div class="line"></div>
-            <LimitedNumber title="Fijo" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton"/>
-            <CirclesPayments title="Fijo" tipo="Limitado" :lista="limitadosFijo" @eliminarNumero="handleEliminarNumero"/>
+            <LimitedNumber title="Fijo" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto"/>
+            <CirclesPayments title="Fijo" tipo="Limitado" :lista="limitadosFijo" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
             <CirclesPayments title="Fijo" tipo="NoJuega" :lista="noJuegaFijo" @eliminarNumero="handleEliminarNumero"/>
             <div class="line"></div>
-            <LimitedNumber title="Corrido" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton"/>
-            <CirclesPayments title="Corrido" tipo="Limitado" :lista="limitadosCorrido" @eliminarNumero="handleEliminarNumero"/>
+            <LimitedNumber title="Corrido" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto"/>
+            <CirclesPayments title="Corrido" tipo="Limitado" :lista="limitadosCorrido" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
             <CirclesPayments title="Corrido" tipo="NoJuega" :lista="noJuegaCorrido" @eliminarNumero="handleEliminarNumero"/>
             <div class="line"></div>
-            <LimitedNumber title="Parlet" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton"/>
-            <CirclesPayments title="Parlet" tipo="Limitado" :lista="limitadosParlet" @eliminarNumero="handleEliminarNumero"/>
+            <LimitedNumber title="Parlet" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto"/>
+            <CirclesPayments title="Parlet" tipo="Limitado" :lista="limitadosParlet" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
             <CirclesPayments title="Parlet" tipo="NoJuega" :lista="noJuegaParlet" @eliminarNumero="handleEliminarNumero"/>
             <div class="line"></div>
             <div class="d-flex justify-content-between align-items-center gap-1 w-100">
@@ -205,7 +294,7 @@ const guardar = () => {
             <Modal v-if="modalType" :title="title" :type="modalType" @cerrar="modalType = null" @guardarLimitados="guardarDatosLimitados"/>
         </main>
         <footer>
-            <ButtonDouble fistbutton="Cancelar" secondbutton="Guardar" :isEnabled="false" @accionSegundoBoton="guardar"/>
+            <ButtonDouble fistbutton="Cancelar" secondbutton="Guardar" :isEnabled="hayDatosParaGuardar" @accionSegundoBoton="guardar"/>
         </footer>
     </div>
 </template>

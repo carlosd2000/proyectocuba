@@ -251,11 +251,9 @@ const handleEditClick = (persona, event) => {
     <div class="custom-modal" @click.stop>
       <div class="button-group">
         <button @click="editarPersona" class="btn editar btn-page">
-          <i class="bi bi-pencil-fill"></i>
           Editar
         </button>
         <button @click="confirmarEliminar" class="btn eliminar">
-          <i class="bi bi-trash3"></i>
           Eliminar
         </button>
       </div>

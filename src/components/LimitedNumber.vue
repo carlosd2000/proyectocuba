@@ -1,9 +1,23 @@
 <script setup>
+import { ref, watch } from 'vue';
+
 const props = defineProps({
     title: {
         type: String,
         default: ''
     }
+})
+
+const emit = defineEmits(['accionPimerBoton', 'accionSegundoBoton', 'update:value'])
+
+const monto = ref('')
+
+// Emitir cambios cuando el monto cambie
+watch(monto, (newValue) => {
+    emit('update:value', {
+        title: props.title,
+        monto: newValue
+    })
 })
 </script>
 <template>
@@ -26,7 +40,7 @@ const props = defineProps({
                 <h5 class="input-label">
                     $
                 </h5>
-                <input class="border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                <input v-model="monto" class="border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
             </div>
             <div class="button-circle" @click="$emit('accionPimerBoton', title)">
                 <img src="../assets/icons/Fecha.svg" alt="">

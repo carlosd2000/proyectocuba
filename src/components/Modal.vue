@@ -19,26 +19,6 @@ const selectedTurno = ref('Dia') // Por defecto al "Dia"
 const toastStore = useToastStore()
 const authStore = useAuthStore()
 
-const inputsNumeros = ref([{ id: 1, value: '' }]); // Array para almacenar los inputs
-
-const agregarInput = () => {
-  inputsNumeros.value.push({ 
-    id: Date.now(), // Usamos el timestamp como ID único
-    value: '' 
-  });
-};
-
-const originalToggles = ref({
-    dia: false,
-    tarde: false,
-    noche: false
-});
-const originalHoras = ref({
-    dia: '',
-    tarde: '',
-    noche: ''
-});
-
 const toggleActivo1 = ref(false);
 const toggleActivo2 = ref(false);
 const toggleActivo3 = ref(false);
@@ -69,6 +49,26 @@ const props = defineProps({
         default: null
     },
 })
+
+const inputsNumeros = ref([{ id: 1, value: props.title === 'Parlet' ? { primero: '', segundo: '' } : '' }]);
+
+const agregarInput = () => {
+    inputsNumeros.value.push({ 
+        id: Date.now(),
+        value: props.title === 'Parlet' ? { primero: '', segundo: '' } : '' 
+    });
+};
+
+const originalToggles = ref({
+    dia: false,
+    tarde: false,
+    noche: false
+});
+const originalHoras = ref({
+    dia: '',
+    tarde: '',
+    noche: ''
+});
 
 const cambiarToggle = (num) => {
     if (num === 1) {
@@ -102,29 +102,30 @@ const hayCambios = computed(() => {
 
 const completo = computed(() => {
     if (['Limitado'].includes(props.type)) {
-    // Verifica que el monto tenga valor (convertido a string para asegurar)
         const montoValido = String(montoLimitado.value).trim() !== '';
         
-        // Verifica que al menos un input numérico tenga valor
-        const algunNumeroValido = inputsNumeros.value.some(input => {
-            // Convertimos a string y verificamos que no esté vacío
-            const value = input.value;
-            return value !== null && value !== undefined && String(value).trim() !== '';
-        });
-        
-        return montoValido && algunNumeroValido;
+        if (props.title === 'Parlet') {
+            const algunParValido = inputsNumeros.value.some(input => {
+                return input.value.primero !== '' && input.value.segundo !== '';
+            });
+            return montoValido && algunParValido;
+        } else {
+            const algunNumeroValido = inputsNumeros.value.some(input => {
+                return input.value !== '' && input.value !== null && input.value !== undefined;
+            });
+            return montoValido && algunNumeroValido;
+        }
+    } else {
+        if (props.title === 'Parlet') {
+            return inputsNumeros.value.some(input => {
+                return input.value.primero !== '' && input.value.segundo !== '';
+            });
+        } else {
+            return inputsNumeros.value.some(input => {
+                return input.value !== '' && input.value !== null && input.value !== undefined;
+            });
+        }
     }
-    else{
-        // Verifica que al menos un input numérico tenga valor
-        const algunNumeroValido = inputsNumeros.value.some(input => {
-            // Convertimos a string y verificamos que no esté vacío
-            const value = input.value;
-            return value !== null && value !== undefined && String(value).trim() !== '';
-        });
-        
-        return algunNumeroValido;
-    }
-    return false
 });
 
 function enviarTiro() {
@@ -160,7 +161,8 @@ function enviarTiro() {
         'Tiro enviado con exito',
         'success', 
         3000, 
-        CheckIcon
+        CheckIcon,
+        'top'
     )
     emit('cerrar')
     input1.value = ''
@@ -281,9 +283,13 @@ const guardarLimitados = () => {
         // Prepara los datos para enviar al padre
         const datosLimitados = {
             monto: montoLimitado.value,
-            numeros: inputsNumeros.value
-                .map(input => input.value)
-                .filter(valor => valor !== '' && valor !== null && valor !== undefined)
+            numeros: props.title === 'Parlet' 
+                ? inputsNumeros.value
+                    .filter(input => input.value.primero !== '' && input.value.segundo !== '')
+                    .map(input => [input.value.primero, input.value.segundo])
+                : inputsNumeros.value
+                    .map(input => input.value)
+                    .filter(valor => valor !== '' && valor !== null && valor !== undefined)
         };
         
         // Emite los datos al padre
@@ -294,14 +300,17 @@ const guardarLimitados = () => {
     }
     else{
         const datosLimitados = {
-            numeros: inputsNumeros.value
-                .map(input => input.value)
-                .filter(valor => valor !== '' && valor !== null && valor !== undefined)
+            numeros: props.title === 'Parlet' 
+                ? inputsNumeros.value
+                    .filter(input => input.value.primero !== '' && input.value.segundo !== '')
+                    .map(input => [input.value.primero, input.value.segundo])
+                : inputsNumeros.value
+                    .map(input => input.value)
+                    .filter(valor => valor !== '' && valor !== null && valor !== undefined)
         };
         
         // Emite los datos al padre
         emit('guardarLimitados', datosLimitados);
-        
         // Cierra el modal
         emit('cerrar');
     }
@@ -519,7 +528,7 @@ onMounted(() => {
                 <div class="d-flex justify-content-between gap-2 w-100">
                     <img src="../assets/icons/Alerta_ol.svg" alt="" width="20">
                     <h2 class="d-flex justify-content-start w-100">
-                        {{ title }} limitado
+                        {{ props.title }} limitado
                     </h2>
                     <img src="../assets/icons/Cerrar.svg" alt="" width="20" @click="emit('cerrar')">
                 </div>
@@ -540,10 +549,24 @@ onMounted(() => {
                         <div class="inputs-container">
                             <div v-for="input in inputsNumeros" :key="input.id">
                                 <input 
+                                    v-if="props.title !== 'Parlet'"
                                     v-model="input.value" 
                                     class="circle label bg-transparent" 
                                     placeholder="-" 
                                     type="number">
+                                <div v-else class="circle2 d-flex flex-row justify-content-center align-items-center gap-1">
+                                    <input 
+                                        v-model="input.value.primero" 
+                                        class="label parlet-inputs text-center bg-transparent border-0"
+                                        placeholder="00" 
+                                        type="number">
+                                    <p class="m-0 p-0 subtitle">-</p>
+                                    <input 
+                                        v-model="input.value.segundo" 
+                                        class="label parlet-inputs text-center bg-transparent border-0"
+                                        placeholder="00" 
+                                        type="number">
+                                </div>
                             </div>
                             <button 
                                 class="button-plus"
@@ -570,10 +593,24 @@ onMounted(() => {
                         <div class="inputs-container">
                             <div v-for="input in inputsNumeros" :key="input.id">
                                 <input 
+                                    v-if="props.title !== 'Parlet'"
                                     v-model="input.value" 
                                     class="circle label bg-transparent" 
                                     placeholder="-" 
                                     type="number">
+                                <div v-else class="circle2 d-flex flex-row justify-content-center align-items-center gap-1">
+                                    <input 
+                                        v-model="input.value.primero" 
+                                        class="label parlet-inputs text-center bg-transparent border-0"
+                                        placeholder="00" 
+                                        type="number">
+                                    <p class="m-0 p-0 subtitle">-</p>
+                                    <input 
+                                        v-model="input.value.segundo" 
+                                        class="label parlet-inputs text-center bg-transparent border-0"
+                                        placeholder="00" 
+                                        type="number">
+                                </div>
                             </div>
                             <button 
                                 class="button-plus"
@@ -584,7 +621,7 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
-            <ButtonSend :title=" type === 'Limitado' ? 'Aplicar limitados' : 'Aplicar numeros'" :disabled="!completo" @click="guardarLimitados()"/>
+            <ButtonSend :title="type === 'Limitado' ? 'Aplicar limitados' : 'Aplicar numeros'" :disabled="!completo" @click="guardarLimitados()"/>
         </div>
     </div>
 </template>
@@ -600,7 +637,7 @@ onMounted(() => {
     box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(10px);
     border-radius: 12px;
-    padding: 10px;
+    padding: 15px 10px;
     flex: none;
     flex-grow: 0;
     z-index: 3;
@@ -674,7 +711,7 @@ onMounted(() => {
     align-items: center;
     padding: 8px 12px;
     gap: 10px;
-    width: 72px;
+    width: 70px;
     height: 48px;
     border: 1px solid #CDCDD1;
     border-radius: 30px;
@@ -682,6 +719,21 @@ onMounted(() => {
     flex-grow: 0;
     text-align: center;
     font-size: 14px;
+}
+.circle2{
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px 8px 16px;
+    gap: 12px;
+    width: 148px;
+    height: 48px;
+    border: 1px solid #CDCDD1;
+    border-radius: 30px;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
 }
 .button-plus{
     box-sizing: border-box;
@@ -702,8 +754,17 @@ onMounted(() => {
 }
 .inputs-container {
     display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
-
     gap: 4px;
 }
+.parlet-inputs{
+    max-width: 60px;
+    color: #9B9BA2;
+}
+input::placeholder {
+  color: #9B9BA2; /* O cualquier color */
+  opacity: 1; /* Asegura que el color se vea */
+}
+
 </style>

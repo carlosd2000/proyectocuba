@@ -97,7 +97,8 @@ export function usePagar() {
             `Limite alcanzado !! El valor ingresado supera $${valorBote} al limite permitido para esta jugada.`,
             'double-message',
             4000,
-            Alert
+            Alert,
+            'top'
           )
           mostrarEnviando.value = false
           return
@@ -114,7 +115,8 @@ export function usePagar() {
                 errorMessage.value, 
                 'error', 
                 3000, 
-                ErrorIcon
+                ErrorIcon,
+                'top'
               )
             return
         }
@@ -126,7 +128,8 @@ export function usePagar() {
               isOnline.value ? 'Jugada actualizada' : 'Cambios guardados (offline)',
               'success',
               2000,
-              CheckIcon
+              CheckIcon,
+              'top'
             )
             limpiarCampos()
             setNombre('')
@@ -136,7 +139,8 @@ export function usePagar() {
               isOnline.value ? 'Jugada enviada' : 'Jugada guardada (offline)',
               'success',
               2000,
-              CheckIcon
+              CheckIcon,
+              'top'
             )
             limpiarCampos()
             setNombre('')
@@ -147,7 +151,8 @@ export function usePagar() {
             resultado.message || 'Error al guardar',
             'error',
             3000,
-            ErrorIcon
+            ErrorIcon,
+            'top'
           )
         }
       }
@@ -156,7 +161,8 @@ export function usePagar() {
           'Ocurrió un error inesperado',
           'error',
           3000,
-          ErrorIcon
+          ErrorIcon,
+          'top'
         )
       } 
       finally {
