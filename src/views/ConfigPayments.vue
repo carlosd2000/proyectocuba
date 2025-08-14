@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import Header from '../components/Header.vue';
 import SelectorHorario from '../components/SelectorHorario.vue';
@@ -62,10 +62,7 @@ const noJuegaParlet = ref({
 });
 
 const hayDatosParaGuardar = computed(() => {
-  // Verificar input principal
   if (!inputPrincipal.value || inputPrincipal.value.trim() === '') return false
-  
-  // Verificar que los 3 LimitedNumber tengan datos
   return Object.values(montos.value).every(monto => monto.trim() !== '')
 })
 
@@ -87,29 +84,13 @@ function handleSelect(valor) {
 }
 
 const manejarPrimerBoton = (origen) => {
-    modalType.value = 'Limitado'
-    if (origen === 'Fijo') {
-        title.value = 'Fijo';
-    }
-    else if (origen === 'Corrido') {
-        title.value = 'Corrido'
-    }
-    else if (origen === 'Parlet') {
-        title.value = 'Parlet'
-    }
+  modalType.value = 'Limitado'
+  title.value = origen;
 }
 
 const manejarSegundoBoton = (origen) => {
     modalType.value = 'NoJuega'
-    if (origen === 'Fijo') {
-        title.value = 'Fijo';
-    }
-    else if (origen === 'Corrido') {
-        title.value = 'Corrido'
-    }
-    else if (origen === 'Parlet') {
-        title.value = 'Parlet'
-    }
+    title.value = origen;
 }
 
 const guardarDatosLimitados = (datos) => {
@@ -195,6 +176,14 @@ const handleResetearMonto = ({ tipo, title }) => {
   }
 }
 
+const formatForStorage = () => {
+  const now = new Date();
+  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  return `${meses[now.getMonth()]} ${now.getDate().toString().padStart(2, '0')} | ${
+         now.getHours().toString().padStart(2, '0')}:${
+         now.getMinutes().toString().padStart(2, '0')}`;
+};
+
 const guardar = () => {
   const datosParaGuardar = {
     inputPrincipal: inputPrincipal.value,
@@ -214,6 +203,7 @@ const guardar = () => {
       Parlet: noJuegaParlet.value,
     },
     boteActivo: toggleActivo.value,
+    hora: formatForStorage(),
   }
   
   console.log('Datos a guardar:', datosParaGuardar)
@@ -232,12 +222,45 @@ const guardar = () => {
   toastStore.showToast(
     'Cambios guardados (offline)',
     'success',
-    20000,
+    2000,
     CheckIcon,
     'bottom',
   )
   router.push(`/payments/${route.params.id}`)
 }
+
+const cargarConfiguracionExistente = (horario) => {
+  const configGuardada = JSON.parse(localStorage.getItem('configPagos') || '{}');
+  const configHorario = configGuardada[horario];
+  
+  if (configHorario) {
+    // Establecer el horario seleccionado
+    horarioSeleccionado.value = horario;
+
+    // Cargar datos básicos
+    inputPrincipal.value = configHorario.inputPrincipal;
+    montos.value = { ...configHorario.montos };
+    toggleActivo.value = configHorario.boteActivo;
+    
+    // Cargar limitados y noJuega
+    limitadosFijo.value = { ...configHorario.limitados?.Fijo || { monto: '', numeros: [] } };
+    limitadosCorrido.value = { ...configHorario.limitados?.Corrido || { monto: '', numeros: [] } };
+    limitadosParlet.value = { ...configHorario.limitados?.Parlet || { monto: '', numeros: [] } };
+    
+    noJuegaFijo.value = { ...configHorario.noJuega?.Fijo || { monto: '', numeros: [] } };
+    noJuegaCorrido.value = { ...configHorario.noJuega?.Corrido || { monto: '', numeros: [] } };
+    noJuegaParlet.value = { ...configHorario.noJuega?.Parlet || { monto: '', numeros: [] } };
+  }
+};
+
+onMounted(() => {
+  const route = useRoute();
+  
+  // Si estamos en modo edición
+  if (route.query.edit && route.query.horario) {
+    cargarConfiguracionExistente(route.query.horario);
+  }
+});
 </script>
 <template>
     <div class="container-login d-flex flex-column align-items-center gap-2">
@@ -257,7 +280,7 @@ const guardar = () => {
                 <h5 class="label">
                     Horario
                 </h5>
-                <SelectorHorario @update:selected="handleSelect"/>
+                <SelectorHorario @update:selected="handleSelect" :horarioEdicion="horarioSeleccionado" :modoEdicion="true"/>
             </div>
             <div class="d-flex justify-content-between align-items-center gap-1 w-100">
                 <h5 class="label d-flex justify-content-start w-50">
@@ -271,15 +294,15 @@ const guardar = () => {
                 </div>
             </div>
             <div class="line"></div>
-            <LimitedNumber title="Fijo" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto"/>
+            <LimitedNumber title="Fijo" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto" :monto-inicial="montos.Fijo"/>
             <CirclesPayments title="Fijo" tipo="Limitado" :lista="limitadosFijo" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
             <CirclesPayments title="Fijo" tipo="NoJuega" :lista="noJuegaFijo" @eliminarNumero="handleEliminarNumero"/>
             <div class="line"></div>
-            <LimitedNumber title="Corrido" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto"/>
+            <LimitedNumber title="Corrido" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto" :monto-inicial="montos.Corrido"/>
             <CirclesPayments title="Corrido" tipo="Limitado" :lista="limitadosCorrido" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
             <CirclesPayments title="Corrido" tipo="NoJuega" :lista="noJuegaCorrido" @eliminarNumero="handleEliminarNumero"/>
             <div class="line"></div>
-            <LimitedNumber title="Parlet" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto"/>
+            <LimitedNumber title="Parlet" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto" :monto-inicial="montos.Parlet"/>
             <CirclesPayments title="Parlet" tipo="Limitado" :lista="limitadosParlet" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
             <CirclesPayments title="Parlet" tipo="NoJuega" :lista="noJuegaParlet" @eliminarNumero="handleEliminarNumero"/>
             <div class="line"></div>

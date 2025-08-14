@@ -1,8 +1,12 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 
 const props = defineProps({
     title: {
+        type: String,
+        default: ''
+    },
+    montoInicial: {
         type: String,
         default: ''
     }
@@ -12,12 +16,22 @@ const emit = defineEmits(['accionPimerBoton', 'accionSegundoBoton', 'update:valu
 
 const monto = ref('')
 
+onMounted(() => {
+    if (props.montoInicial) {
+        monto.value = props.montoInicial;
+    }
+})
+
 // Emitir cambios cuando el monto cambie
 watch(monto, (newValue) => {
     emit('update:value', {
         title: props.title,
         monto: newValue
     })
+})
+
+watch(() => props.montoInicial, (newVal) => {
+    monto.value = newVal;
 })
 </script>
 <template>

@@ -14,7 +14,15 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['eliminarNumero'])
+const emit = defineEmits(['eliminarNumero', 'editar', 'resetearMonto'])
+
+const editar = () => {
+    emit('editar', { 
+        tipo: props.tipo,
+        title: props.title,
+        lista: props.lista
+    })
+}
 
 const eliminarNumero = (index) => {
     emit('eliminarNumero', { 
@@ -22,7 +30,6 @@ const eliminarNumero = (index) => {
         title: props.title,
         index 
     })
-    
     if (props.lista.numeros.length === 1) {
         emit('resetearMonto', {
             tipo: props.tipo,
@@ -61,7 +68,7 @@ const eliminarNumero = (index) => {
                     <img src="../assets/icons/Cerrar.svg" alt="" @click="eliminarNumero(index)" style="cursor: pointer;">
                 </div>
             </div>
-            <div class="circle-editar">
+            <div class="circle-editar" @click="editar()">
                 <img src="../assets/icons/Editar.svg" alt="">
             </div>
         </div>

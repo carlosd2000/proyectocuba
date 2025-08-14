@@ -1,6 +1,7 @@
 <script setup>
 import Header from '../components/Header.vue'
 import ButtonSend from '../components/ButtonSend.vue'
+import PayCardsContainer from '../components/PayCardsContainer.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
@@ -18,6 +19,7 @@ const configPayments = () => {
         </header>
         <main class="container-main">
             <ButtonSend title="Configurar nuevo pago" :img="true" @click="configPayments()"/>
+            <PayCardsContainer/>
         </main>
     </div>
 </template>
