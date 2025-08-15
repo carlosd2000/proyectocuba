@@ -1,13 +1,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { db } from '../firebase/config';
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { useToastStore } from '../stores/toast'
+import { useAuthStore } from '@/stores/authStore';
+import { useOfflineQueueStore } from '@/stores/offlineQueue'
 import Header from '../components/Header.vue';
 import SelectorHorario from '../components/SelectorHorario.vue';
 import LimitedNumber from '../components/LimitedNumber.vue';
 import CirclesPayments from '../components/CirclesPayments.vue';
 import ButtonDouble from '../components/ButtonDouble.vue';
 import Modal from '../components/Modal.vue';
-import { useToastStore } from '../stores/toast'
 import toggleon from '@/assets/icons/Toggleon.svg';
 import toggleoff from '@/assets/icons/Toggleoff.svg';
 import CheckIcon from '../assets/icons/Check.svg'
@@ -18,10 +22,16 @@ const route = useRoute()
 const toggleActivo = ref(false);
 const modalType = ref(null);
 const title = ref('');
-const horarioSeleccionado = ref('Dia')
+const horarioSeleccionado = ref(null)
+const authStore = useAuthStore();
 const toastStore = useToastStore()
 
 const inputPrincipal = ref('')
+const modalInitialData = ref(null);
+
+const inputBoteFijo = ref('');
+const inputBoteCorrido = ref('');
+const inputBoteParlet = ref('');
 
 const montos = ref({
   Fijo: '',
@@ -62,9 +72,20 @@ const noJuegaParlet = ref({
 });
 
 const hayDatosParaGuardar = computed(() => {
-  if (!inputPrincipal.value || inputPrincipal.value.trim() === '') return false
-  return Object.values(montos.value).every(monto => monto.trim() !== '')
-})
+  if (!horarioSeleccionado.value) return false;
+  // Validar datos básicos
+  if (!inputPrincipal.value || inputPrincipal.value.trim() === '') return false;
+  if (!Object.values(montos.value).every(monto => monto.trim() !== '')) return false;
+  
+  // Si el bote está activo, validar que todos los montos del bote estén completos
+  if (toggleActivo.value) {
+    if (!inputBoteFijo.value || !inputBoteCorrido.value || !inputBoteParlet.value) {
+      return false;
+    }
+  }
+  
+  return true;
+});
 
 const actualizarMonto = ({ title, monto }) => {
   montos.value[title] = monto
@@ -86,16 +107,40 @@ function handleSelect(valor) {
 const manejarPrimerBoton = (origen) => {
   modalType.value = 'Limitado'
   title.value = origen;
+  modalInitialData.value = null; // Modal vacío
 }
 
 const manejarSegundoBoton = (origen) => {
-    modalType.value = 'NoJuega'
-    title.value = origen;
+  modalType.value = 'NoJuega'
+  title.value = origen;
+  modalInitialData.value = null; // Modal vacío
+}
+
+// ...existing code...
+const manejarEditar = ({ tipo, title: titulo }) => {
+  modalType.value = tipo;
+  title.value = titulo;
+
+  // Busca los datos actuales según tipo y title
+  let datos = { monto: '', numeros: [] };
+  if (tipo === 'Limitado') {
+    if (titulo === 'Fijo') datos = { ...limitadosFijo.value };
+    else if (titulo === 'Corrido') datos = { ...limitadosCorrido.value };
+    else if (titulo === 'Parlet') datos = { ...limitadosParlet.value };
+  } else if (tipo === 'NoJuega') {
+    if (titulo === 'Fijo') datos = { ...noJuegaFijo.value };
+    else if (titulo === 'Corrido') datos = { ...noJuegaCorrido.value };
+    else if (titulo === 'Parlet') datos = { ...noJuegaParlet.value };
+  }
+  modalInitialData.value = datos;
 }
 
 const guardarDatosLimitados = (datos) => {
-  console.log('Datos recibidos:', datos);
   
+  if (datos.numeros.length === 0) {
+    datos.monto = '';
+  }
+
   // Determinar si es Limitado o NoJuega
   const esNoJuega = modalType.value === 'NoJuega';
   
@@ -103,28 +148,22 @@ const guardarDatosLimitados = (datos) => {
   if (title.value === 'Fijo') {
     if (esNoJuega) {
       noJuegaFijo.value = datos;
-      console.log('NoJuega Fijo actualizado:', noJuegaFijo.value);
     } else {
       limitadosFijo.value = datos;
-      console.log('Limitados Fijo actualizado:', limitadosFijo.value);
     }
   } 
   else if (title.value === 'Corrido') {
     if (esNoJuega) {
       noJuegaCorrido.value = datos;
-      console.log('NoJuega Corrido actualizado:', noJuegaCorrido.value);
     } else {
       limitadosCorrido.value = datos;
-      console.log('Limitados Corrido actualizado:', limitadosCorrido.value);
     }
   } 
   else if (title.value === 'Parlet') {
     if (esNoJuega) {
       noJuegaParlet.value = datos;
-      console.log('NoJuega Parlet actualizado:', noJuegaParlet.value);
     } else {
       limitadosParlet.value = datos;
-      console.log('Limitados Parlet actualizado:', limitadosParlet.value);
     }
   }
   
@@ -137,12 +176,21 @@ const handleEliminarNumero = ({ tipo, title, index }) => {
     switch(title) {
       case 'Fijo':
         limitadosFijo.value.numeros.splice(index, 1);
+        if (limitadosFijo.value.numeros.length === 0) {
+          limitadosFijo.value.monto = '';
+        }
         break;
       case 'Corrido':
         limitadosCorrido.value.numeros.splice(index, 1);
+        if (limitadosCorrido.value.numeros.length === 0) {
+          limitadosCorrido.value.monto = '';
+        }
         break;
       case 'Parlet':
         limitadosParlet.value.numeros.splice(index, 1);
+        if (limitadosParlet.value.numeros.length === 0) {
+          limitadosParlet.value.monto = '';
+        }
         break;
     }
   } else { // NoJuega
@@ -184,7 +232,86 @@ const formatForStorage = () => {
          now.getMinutes().toString().padStart(2, '0')}`;
 };
 
-const guardar = () => {
+const transformarParaFirestore = (data) => {
+  const transformarNumeros = (numeros) => {
+    if (numeros === undefined || numeros === null) return '';
+    if (!Array.isArray(numeros)) return numeros.toString();
+    
+    // Si es un array de arrays (como en Parlet)
+    if (numeros.length > 0 && Array.isArray(numeros[0])) {
+      return JSON.stringify(numeros); // Convertir a string JSON
+    }
+    
+    // Si es un array simple
+    return numeros.join(',');
+  };
+
+  const safeData = {
+    ...data,
+    limitados: {
+      Fijo: data.limitados?.Fijo || { monto: '', numeros: [] },
+      Corrido: data.limitados?.Corrido || { monto: '', numeros: [] },
+      Parlet: data.limitados?.Parlet || { monto: '', numeros: [] }
+    },
+    noJuega: {
+      Fijo: data.noJuega?.Fijo || { numeros: [] },
+      Corrido: data.noJuega?.Corrido || { numeros: [] },
+      Parlet: data.noJuega?.Parlet || { numeros: [] }
+    }
+  };
+
+  return {
+    inputPrincipal: safeData.inputPrincipal,
+    montos: safeData.montos,
+    limitados: {
+      Fijo: {
+        monto: safeData.limitados.Fijo.monto,
+        numeros: transformarNumeros(safeData.limitados.Fijo.numeros)
+      },
+      Corrido: {
+        monto: safeData.limitados.Corrido.monto,
+        numeros: transformarNumeros(safeData.limitados.Corrido.numeros)
+      },
+      Parlet: {
+        monto: safeData.limitados.Parlet.monto,
+        numeros: transformarNumeros(safeData.limitados.Parlet.numeros)
+      }
+    },
+    noJuega: {
+      Fijo: {
+        numeros: transformarNumeros(safeData.noJuega.Fijo.numeros)
+      },
+      Corrido: {
+        numeros: transformarNumeros(safeData.noJuega.Corrido.numeros)
+      },
+      Parlet: {
+        numeros: transformarNumeros(safeData.noJuega.Parlet.numeros)
+      }
+    },
+    boteActivo: safeData.boteActivo,
+    boteMonto: safeData.boteMonto,
+    hora: safeData.hora
+  };
+};
+
+const guardar = async () => {
+  if (!hayDatosParaGuardar.value) {
+    toastStore.showToast(
+      'Complete todos los campos requeridos',
+      'error',
+      2000,
+      null,
+      'bottom',
+    );
+    return;
+  }
+
+  if (toggleActivo.value === false) {
+    inputBoteFijo.value = 0;
+    inputBoteCorrido.value = 0;
+    inputBoteParlet.value = 0;
+  }
+
   const datosParaGuardar = {
     inputPrincipal: inputPrincipal.value,
     montos: {
@@ -203,30 +330,78 @@ const guardar = () => {
       Parlet: noJuegaParlet.value,
     },
     boteActivo: toggleActivo.value,
+    boteMonto: {
+      Fijo: inputBoteFijo.value || 0,
+      Corrido: inputBoteCorrido.value || 0,
+      Parlet: inputBoteParlet.value || 0,
+    },
     hora: formatForStorage(),
   }
-  
-  console.log('Datos a guardar:', datosParaGuardar)
-  // 1. Obtener datos existentes de localStorage
-  const todosLosDatos = JSON.parse(localStorage.getItem('configPagos') || '{}')
-  
-  // 2. Actualizar solo el horario actual
-  todosLosDatos[horarioSeleccionado.value] = datosParaGuardar
-  
-  // 3. Guardar en localStorage
-  localStorage.setItem('configPagos', JSON.stringify(todosLosDatos))
-  
-  console.log('Datos guardados para horario:', horarioSeleccionado.value)
 
-  // Aquí puedes enviar los datos a tu backend o hacer lo que necesites
-  toastStore.showToast(
-    'Cambios guardados (offline)',
-    'success',
-    2000,
-    CheckIcon,
-    'bottom',
-  )
-  router.push(`/payments/${route.params.id}`)
+  const datosFirestore = transformarParaFirestore(datosParaGuardar);
+  const datosLocal = {
+    ...datosParaGuardar,
+    // Asegurar que los arrays vacíos se mantengan como arrays
+    limitados: {
+      Fijo: { ...datosParaGuardar.limitados.Fijo, numeros: datosParaGuardar.limitados.Fijo.numeros || [] },
+      Corrido: { ...datosParaGuardar.limitados.Corrido, numeros: datosParaGuardar.limitados.Corrido.numeros || [] },
+      Parlet: { ...datosParaGuardar.limitados.Parlet, numeros: datosParaGuardar.limitados.Parlet.numeros || [] }
+    },
+    noJuega: {
+      Fijo: { ...datosParaGuardar.noJuega.Fijo, numeros: datosParaGuardar.noJuega.Fijo.numeros || [] },
+      Corrido: { ...datosParaGuardar.noJuega.Corrido, numeros: datosParaGuardar.noJuega.Corrido.numeros || [] },
+      Parlet: { ...datosParaGuardar.noJuega.Parlet, numeros: datosParaGuardar.noJuega.Parlet.numeros || [] }
+    }
+  };
+
+  // Guardar en localStorage primero
+  const todosLosDatos = JSON.parse(localStorage.getItem('configPagos') || '{}');
+  todosLosDatos[horarioSeleccionado.value] = datosLocal;
+  localStorage.setItem('configPagos', JSON.stringify(todosLosDatos));
+
+
+  try {
+    const docRef = doc(db, "bancos", authStore.bancoId);
+    await setDoc(docRef, {
+      configPagos: {
+        [horarioSeleccionado.value]: datosFirestore
+      }
+    }, { merge: true });
+    
+    toastStore.showToast(
+      'Cambios guardados correctamente',
+      'success',
+      2000,
+      CheckIcon,
+      'bottom',
+    );
+  } catch (error) {
+    console.error("Error guardando en Firestore:", error);
+    
+    // Añadir a cola offline
+    const firestoreOperation = {
+      type: 'updateConfigPagos',
+      data: {
+        bancoId: authStore.bancoId,
+        horario: horarioSeleccionado.value,
+        config: datosFirestore
+      },
+      timestamp: new Date().getTime()
+    };
+    
+    const offlineQueue = useOfflineQueueStore();
+    offlineQueue.addOperation(firestoreOperation);
+    
+    toastStore.showToast(
+      'Cambios guardados (offline). Se sincronizarán cuando haya conexión',
+      'warning',
+      2000,
+      CheckIcon,
+      'top',
+    );
+  }
+  
+  router.push(`/payments/${route.params.id}`);
 }
 
 const cargarConfiguracionExistente = (horario) => {
@@ -240,7 +415,11 @@ const cargarConfiguracionExistente = (horario) => {
     // Cargar datos básicos
     inputPrincipal.value = configHorario.inputPrincipal;
     montos.value = { ...configHorario.montos };
+
     toggleActivo.value = configHorario.boteActivo;
+    inputBoteFijo.value = configHorario.boteMonto?.Fijo || '';
+    inputBoteCorrido.value = configHorario.boteMonto?.Corrido || '';
+    inputBoteParlet.value = configHorario.boteMonto?.Parlet || '';
     
     // Cargar limitados y noJuega
     limitadosFijo.value = { ...configHorario.limitados?.Fijo || { monto: '', numeros: [] } };
@@ -280,7 +459,7 @@ onMounted(() => {
                 <h5 class="label">
                     Horario
                 </h5>
-                <SelectorHorario @update:selected="handleSelect" :horarioEdicion="horarioSeleccionado" :modoEdicion="true"/>
+                <SelectorHorario @update:selected="handleSelect" :horarioEdicion="horarioSeleccionado" :modoEdicion="!!$route.query.edit" :filtrarPorLocalStorage="true"/>
             </div>
             <div class="d-flex justify-content-between align-items-center gap-1 w-100">
                 <h5 class="label d-flex justify-content-start w-50">
@@ -290,31 +469,68 @@ onMounted(() => {
                     <h5 class="input-label">
                         $
                     </h5>
-                    <input v-model="inputPrincipal" class="border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                    <input v-model="inputPrincipal" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
                 </div>
             </div>
             <div class="line"></div>
             <LimitedNumber title="Fijo" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto" :monto-inicial="montos.Fijo"/>
-            <CirclesPayments title="Fijo" tipo="Limitado" :lista="limitadosFijo" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
-            <CirclesPayments title="Fijo" tipo="NoJuega" :lista="noJuegaFijo" @eliminarNumero="handleEliminarNumero"/>
+            <CirclesPayments title="Fijo" tipo="Limitado" :lista="limitadosFijo" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto" @editar="manejarEditar"/>
+            <CirclesPayments title="Fijo" tipo="NoJuega" :lista="noJuegaFijo" @eliminarNumero="handleEliminarNumero" @editar="manejarEditar"/>
             <div class="line"></div>
             <LimitedNumber title="Corrido" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto" :monto-inicial="montos.Corrido"/>
-            <CirclesPayments title="Corrido" tipo="Limitado" :lista="limitadosCorrido" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
-            <CirclesPayments title="Corrido" tipo="NoJuega" :lista="noJuegaCorrido" @eliminarNumero="handleEliminarNumero"/>
+            <CirclesPayments title="Corrido" tipo="Limitado" :lista="limitadosCorrido" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto" @editar="manejarEditar"/>
+            <CirclesPayments title="Corrido" tipo="NoJuega" :lista="noJuegaCorrido" @eliminarNumero="handleEliminarNumero" @editar="manejarEditar"/>
             <div class="line"></div>
             <LimitedNumber title="Parlet" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto" :monto-inicial="montos.Parlet"/>
-            <CirclesPayments title="Parlet" tipo="Limitado" :lista="limitadosParlet" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto"/>
-            <CirclesPayments title="Parlet" tipo="NoJuega" :lista="noJuegaParlet" @eliminarNumero="handleEliminarNumero"/>
+            <CirclesPayments title="Parlet" tipo="Limitado" :lista="limitadosParlet" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto" @editar="manejarEditar"/>
+            <CirclesPayments title="Parlet" tipo="NoJuega" :lista="noJuegaParlet" @eliminarNumero="handleEliminarNumero" @editar="manejarEditar"/>
             <div class="line"></div>
-            <div class="d-flex justify-content-between align-items-center gap-1 w-100">
-                <h5 class="label">
-                    Activar bote
-                </h5>
-                <button class="p-0 btn bg-transparent" @click="cambiarToggle()">
-                    <img :src="toggleActivo ? toggleon : toggleoff" alt="Toggle" width="48" />
-                </button>
+            <div class="d-flex flex-column justify-content-center align-items-center gap-2 w-100">
+                <div class="d-flex justify-content-between align-items-center gap-1 w-100">
+                    <h5 class="label">
+                        Activar bote
+                    </h5>
+                    <button class="p-0 btn bg-transparent" @click="cambiarToggle()">
+                        <img :src="toggleActivo ? toggleon : toggleoff" alt="Toggle" width="48" />
+                    </button>
+                </div>
+                <div v-if="toggleActivo" class="d-flex flex-column justify-content-center align-items-center gap-2 w-100">
+                    <div class="d-flex justify-content-between align-items-center gap-1 w-100">
+                        <h5 class="label d-flex justify-content-start w-50">
+                            Fijo
+                        </h5>
+                        <div class="input d-flex flex-row align-items-center gap-1 w-50">
+                            <h5 class="input-label">
+                                $
+                            </h5>
+                            <input v-model="inputBoteFijo" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-1 w-100">
+                        <h5 class="label d-flex justify-content-start w-50">
+                            Corrido
+                        </h5>
+                        <div class="input d-flex flex-row align-items-center gap-1 w-50">
+                            <h5 class="input-label">
+                                $
+                            </h5>
+                            <input v-model="inputBoteCorrido" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-1 w-100">
+                        <h5 class="label d-flex justify-content-start w-50">
+                            Parlet
+                        </h5>
+                        <div class="input d-flex flex-row align-items-center gap-1 w-50">
+                            <h5 class="input-label">
+                                $
+                            </h5>
+                            <input v-model="inputBoteParlet" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;"/>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <Modal v-if="modalType" :title="title" :type="modalType" @cerrar="modalType = null" @guardarLimitados="guardarDatosLimitados"/>
+            <Modal v-if="modalType" :title="title" :type="modalType" :initialData="modalInitialData" @cerrar="modalType = null" @guardarLimitados="guardarDatosLimitados"/>
         </main>
         <footer>
             <ButtonDouble fistbutton="Cancelar" secondbutton="Guardar" :isEnabled="hayDatosParaGuardar" @accionSegundoBoton="guardar"/>
@@ -351,5 +567,9 @@ onMounted(() => {
     border: 1px solid #F0F0FC;
     flex: none;
     flex-grow: 0;
+}
+input::placeholder {
+  color: #9B9BA2; /* Cambia el color del placeholder */
+  opacity: 1; /* Asegura que el color se vea en todos los navegadores */
 }
 </style>

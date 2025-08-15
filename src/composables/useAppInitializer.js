@@ -2,11 +2,13 @@
 import { useUsuariosCreados } from '../scripts/useUsuariosCreados.js'
 import { cargarInfoBancoSiNoExiste } from '../scripts/fieldValidator.js'
 import { obtenerApuestas } from '../scripts/obtenerApuestas.js'
+import { obtenerConfigPagos } from '../scripts/obtenerConfigPagos.js'
 
 export async function cargarLibreriasIniciales(authStore) {
   let fondoManager = null
   let fondoCreadorManager = null
   let usuariosCreadosManager = null
+  let configPagosManager = null
 
   try {
     // Importaciones dinámicas
@@ -22,7 +24,9 @@ export async function cargarLibreriasIniciales(authStore) {
       usuariosCreadosManager = useUsuariosCreados()
       await usuariosCreadosManager.iniciar()
     }
+    configPagosManager = obtenerConfigPagos()
     if (authStore.bancoId) {
+      await configPagosManager.cargarConfigPagos(authStore.bancoId)
       cargarInfoBancoSiNoExiste(authStore.bancoId)
     }
     
@@ -32,7 +36,8 @@ export async function cargarLibreriasIniciales(authStore) {
     return {
       fondoManager,
       fondoCreadorManager,
-      usuariosCreadosManager
+      usuariosCreadosManager,
+      configPagosManager,
     }
   } catch (error) {
     console.error('Error durante carga inicial:', error)

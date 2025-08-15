@@ -8,6 +8,7 @@ import { cargarLibreriasIniciales } from './composables/useAppInitializer.js'
 import { useInicializarHorarios } from './composables/useInicializarHorarios.js'
 import { useVerificarTirosLocales } from './composables/useVerificarTirosLocales.js'
 import { useSincronizarGanadores } from './composables/useSincronizarGanadores.js'
+import { useOfflineQueueStore } from './stores/offlineQueue'
 import ToastManager from './components/ToastManager.vue'
 
 const router = useRouter()
@@ -17,12 +18,36 @@ const isAppReady = ref(false)
 const { inicializar } = useInicializarHorarios()
 const { tirosRecibidos, verificarTirosLocales } = useVerificarTirosLocales()
 
+const offlineQueue = useOfflineQueueStore()
+const isOnline = ref(navigator.onLine)
+
 let fondoManager = null
 let fondoCreadorManager = null
 let usuariosCreadosManager = null
 
+const checkConnection = () => {
+  isOnline.value = navigator.onLine
+  if (isOnline.value) {
+    offlineQueue.processQueue()
+  }
+}
+
 onMounted(async () => {
   try {
+        // Configurar listeners de conexión
+    window.addEventListener('online', checkConnection)
+    window.addEventListener('offline', checkConnection)
+    
+    // Procesar cola al cargar si hay conexión
+    if (isOnline.value) {
+      offlineQueue.processQueue()
+    }
+    
+    // Limpiar listeners al desmontar
+    onUnmounted(() => {
+      window.removeEventListener('online', checkConnection)
+      window.removeEventListener('offline', checkConnection)
+    })
     verificarTirosLocales()
     isAppReady.value = true
   } catch (error) {

@@ -33,12 +33,12 @@ const cancelarButton = () => {
 </script>
 <template>
     <div class="container-buttons d-flex flex-row justify-content-between align-items-center w-100">
-        <div class="button d-flex flex-row justify-content-center align-items-center" @click="cancelarButton()">
+        <div class="button d-flex flex-row justify-content-center align-items-center" @click="cancelarButton()" style="cursor: pointer;">
             <h5 class="label">
                 {{ props.fistbutton }}
             </h5>
         </div>
-        <div class="button d-flex flex-row justify-content-center align-items-center" :disabled="!isEnabled" :class="isEnabled ? 'enabled' : 'disabled'" @click="isEnabled && $emit('accionSegundoBoton')">
+        <div class="button d-flex flex-row justify-content-center align-items-center" :disabled="!isEnabled" :class="isEnabled ? 'enabled' : 'disabled'" @click="isEnabled && $emit('accionSegundoBoton')" style="cursor: pointer;">
             <h5 class="label" :class="isEnabled ? 'enabled' : 'disabled'">
                 {{ props.secondbutton }}
             </h5>

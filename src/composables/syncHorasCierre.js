@@ -10,7 +10,8 @@ export async function sincronizarHorasDeCierre() {
     if (!bancoId) return
 
     const horarios = ['dia', 'tarde', 'noche']
-    let cache = {}
+    let horaCierreCache = {}
+    let horariosCache = {}
 
     for (const horarioKey of horarios) {
         try {
@@ -25,7 +26,8 @@ export async function sincronizarHorasDeCierre() {
             if (hora instanceof Timestamp || (hora && typeof hora.toDate === 'function')) {
                 const horaDate = hora.toDate()
                 const horaStr = horaDate.toTimeString().slice(0, 5) // 'HH:MM'
-                cache[horarioKey] = { hora: horaStr, activo }
+                horaCierreCache[horarioKey] = { hora: horaStr, activo }
+                horariosCache[horarioKey] = { activo, sobrepasado: false }
             }
         }
         } catch (err) {
@@ -33,5 +35,6 @@ export async function sincronizarHorasDeCierre() {
         }
     }
 
-    localStorage.setItem('horaCierreCache', JSON.stringify(cache))
+    localStorage.setItem('horaCierreCache', JSON.stringify(horaCierreCache))
+    localStorage.setItem('horariosCache', JSON.stringify(horariosCache))
 }

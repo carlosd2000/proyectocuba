@@ -54,7 +54,7 @@ watch(() => props.montoInicial, (newVal) => {
                 <h5 class="input-label">
                     $
                 </h5>
-                <input v-model="monto" class="border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                <input v-model="monto" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
             </div>
             <div class="button-circle" @click="$emit('accionPimerBoton', title)">
                 <img src="../assets/icons/Fecha.svg" alt="">
@@ -92,5 +92,9 @@ watch(() => props.montoInicial, (newVal) => {
     border: 1px solid #CDCDD1;
     border-radius: 30px;
     flex-grow: 1;
+}
+input::placeholder {
+  color: #9B9BA2; /* Cambia el color del placeholder */
+  opacity: 1; /* Asegura que el color se vea en todos los navegadores */
 }
 </style>

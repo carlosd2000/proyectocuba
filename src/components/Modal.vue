@@ -48,6 +48,10 @@ const props = defineProps({
         type: String,
         default: null
     },
+    initialData: {
+        type: Object,
+        default: null
+    }
 })
 
 const inputsNumeros = ref([{ id: 1, value: props.title === 'Parlet' ? { primero: '', segundo: '' } : '' }]);
@@ -363,11 +367,8 @@ const guardarHoraEnFirebase = async (turnoNombre, hora) => {
 
 const lanzarToast = () => {
     // DESPUÉS DE 3 SEGUNDOS, OCULTA EL TOAST
-    setTimeout(() => {
-        mostrarToastSave.value = false;
-        mostrarToastError.value = false;
-        mostrarToastComplete.value = false;
-    }, 3000);
+    emit('cerrar')
+    toastStore.showToast('Guardado correctamente', 'success', 3000, CheckIcon, 'top');
 };
 
 const typeHeight = computed(() => {
@@ -432,6 +433,30 @@ onMounted(() => {
     } catch (err) {
         console.error('Error cargando caches:', err);
     }
+    if (props.initialData) {
+        console.log('Datos iniciales:', props.initialData);
+        if (['Limitado'].includes(props.type)) {
+            montoLimitado.value = props.initialData.monto || '';
+        }
+        // Precargar números
+        if (props.title === 'Parlet') {
+            inputsNumeros.value = (props.initialData.numeros || []).map(pair => ({
+                id: Date.now() + Math.random(),
+                value: { primero: pair[0], segundo: pair[1] }
+            }))
+            if (inputsNumeros.value.length === 0) {
+                inputsNumeros.value = [{ id: 1, value: { primero: '', segundo: '' } }]
+            }
+        } else {
+            inputsNumeros.value = (props.initialData.numeros || []).map(num => ({
+                id: Date.now() + Math.random(),
+                value: num
+            }))
+            if (inputsNumeros.value.length === 0) {
+                inputsNumeros.value = [{ id: 1, value: '' }]
+            }
+        }
+    }
 });
 </script>
 <template>
@@ -459,10 +484,10 @@ onMounted(() => {
                 <option value="Noche">Noche</option>
             </select>
             <div class="d-flex flex-row justify-content-between align-items-center gap-1 w-100">
-                <input type="text" v-model="input1" class="input-tiro text-center" style="max-width: 105px;" />
+                <input type="text" v-model="input1" class="label input-tiro text-center" placeholder="000" style="max-width: 105px;" />
                 <p class="m-0 p-0">-</p>
-                <input type="text" v-model="input2" class="input-tiro text-center" style="max-width: 80px;" />
-                <input type="text" v-model="input3" class="input-tiro text-center" style="max-width: 80px;" />
+                <input type="text" v-model="input2" class="label input-tiro text-center" placeholder="00" style="max-width: 80px;" />
+                <input type="text" v-model="input3" class="label input-tiro text-center" placeholder="00" style="max-width: 80px;" />
             </div>
             <div class="w-100">
                 <button-send title="Enviar" :disabled="disabled" @click="enviarTiro"/>
@@ -667,12 +692,13 @@ onMounted(() => {
     justify-content: center;
     align-items: center;
     background: transparent;
+    height: 48px;
     width: 100%;
-    padding: 8px 24px;
+    padding: 8px 24px !important;
     gap: 12px;
     border: 1px solid #CDCDD1;
     border-radius: 30px;
-    letter-spacing: 6px;
+    letter-spacing: 6px !important;
     flex: none;
     flex-grow: 1;
 }

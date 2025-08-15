@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '../stores/authStore';
 import PayDetails from './PayDetails.vue';
 import Dia from '../assets/icons/Dia.svg'
 import Tarde from '../assets/icons/Tarde.svg'
@@ -22,6 +23,10 @@ const props = defineProps({
 const router = useRouter();
 const route = useRoute();
 const isExpanded = ref(false)
+
+const authStore = useAuthStore()
+
+const userType = computed(() => authStore.userType)
 
 const IconoPayCard = computed(() => {
     return {
@@ -68,13 +73,13 @@ const formatoHora = computed(() => {
                 <img :src="IconoPayCard" alt="" width="20">
                 <div class="d-flex flex-row justify-content-start align-items-center gap-2 w-100">
                     <h5 class="body-bold">
-                        Pago {{ horario }}
+                        Pago {{ {Dia: 'mañana', Tarde: 'tarde', Noche: 'noche'}[props.horario] }}
                     </h5>
                     <h5 class="small">
                         {{ formatoHora }}
                     </h5>
                 </div>
-                <img src="../assets/icons/Editar.svg" alt="Editar" @click="editarConfiguracion" style="cursor: pointer;">
+                <img v-if="userType === 'bancos'" src="../assets/icons/Editar.svg" alt="Editar" @click="editarConfiguracion" style="cursor: pointer;">
             </div>
             <div class="d-flex flex-row justify-content-between align-items-center w-100">
                 <h5 class="small">
@@ -113,7 +118,7 @@ const formatoHora = computed(() => {
                 </h5>
             </div>
         </div>
-        <PayDetails v-if="isExpanded" :DataPay="DataPay"/>
+        <PayDetails v-if="isExpanded" :DataPay="DataPay" @click="ShowDetails()"/>
         <div class="p-2 d-flex justify-content-center align-items-center border-top w-100" @click="ShowDetails()">
             <img :src="isExpanded ? Cotraer : Expand" alt="" width="20">
         </div>

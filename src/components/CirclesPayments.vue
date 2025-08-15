@@ -20,7 +20,6 @@ const editar = () => {
     emit('editar', { 
         tipo: props.tipo,
         title: props.title,
-        lista: props.lista
     })
 }
 
@@ -48,7 +47,7 @@ const eliminarNumero = (index) => {
                 ${{ lista.monto }}
             </h5>
         </div>
-        <div class="d-flex flex-row justify-content-start align-items-center gap-1 w-100">
+        <div class="d-flex flex-row justify-content-start align-items-center flex-wrap gap-1 w-100">
             <div v-for="value in lista.numeros" class="d-flex flex-row justify-content-start align-items-center">
                 <div class="circle-numeros">
                     <h5 v-if="props.title !== 'Parlet'" class="small">

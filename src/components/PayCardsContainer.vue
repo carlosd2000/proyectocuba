@@ -18,7 +18,7 @@ onMounted(() => {
 });
 </script>
 <template>
-    <div class="d-flex flex-column gap-1 w-100">
+    <div class="d-flex flex-column gap-2 w-100">
         <template v-for="horario in horarios" :key="horario">
             <PayCard 
                 v-if="configPagos[horario]"

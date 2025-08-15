@@ -11,6 +11,7 @@ import Noche from '../assets/icons/Noche.svg'
 const props = defineProps({
   horarioEdicion: { type: String, default: 'Dia' },
   modoEdicion: { type: Boolean, default: false },
+  filtrarPorLocalStorage: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:selected', 'no-horarios-disponibles'])
@@ -50,6 +51,16 @@ function valueToIcon(value) {
   }
 }
 
+function horarioTieneDatos(nombreHorario) {
+  if (!props.filtrarPorLocalStorage) return false
+  try {
+    const configPagos = JSON.parse(localStorage.getItem('configPagos') || '{}')
+    return !!configPagos[nombreHorario]
+  } catch {
+    return false
+  }
+}
+
 async function actualizarHorarios() {
   isLoading.value = true
   try {
@@ -73,6 +84,30 @@ async function actualizarHorarios() {
     for (const h of horarios) {
       const estado = cache[h.firebaseKey]
       if (!estado) continue
+
+      // Solo aplicamos esta lógica si filtrarPorLocalStorage es true
+      if (props.filtrarPorLocalStorage) {
+        const tieneDatos = horarioTieneDatos(h.nombre)
+        const esHorarioEdicion = h.nombre === props.horarioEdicion
+        
+        // Modo edición: mostramos el horario actual + horarios sin datos
+        if (props.modoEdicion) {
+          if (esHorarioEdicion) {
+            // Siempre mostramos el horario que se está editando
+            const op = allOptions.find(o => o.nombre === h.nombre)
+            if (op) activos.push(op)
+          } else if (!tieneDatos && estado.activo) {
+            // Mostramos otros horarios solo si no tienen datos
+            const op = allOptions.find(o => o.nombre === h.nombre)
+            if (op) activos.push(op)
+          }
+          continue
+        }
+        // Modo normal: solo mostramos horarios sin datos
+        else if (tieneDatos) {
+          continue
+        }
+      }
 
       if (esRutaAñadirJugada) {
         if (estado.activo && !estado.sobrepasado) {
