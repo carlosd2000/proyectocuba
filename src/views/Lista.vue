@@ -66,6 +66,7 @@ function handleSelect(valor) {
     default: horarioSeleccionado.value = 'Dia'
   }
 }
+
 watch(apuestasFiltradas, (newVal) => {
   console.log('Apuestas filtradas actualizadas:', newVal.map(a => ({
     id: a.id,

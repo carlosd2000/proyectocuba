@@ -150,7 +150,6 @@ export function validarNumeroRestringido(numero, tipoCampo, index = null, tipoFi
   let campoConfig = ''
   if (tipoCampo === 'circulo1') campoConfig = 'Fijo'
   else if (tipoCampo === 'circulo2') campoConfig = 'Corrido'
-  else if (tipoCampo === 'circuloSolo') campoConfig = 'Parlet'
   else return { esValido: true, restriccion: null, mensaje: '' }
 
   // Obtener los números restringidos
@@ -282,6 +281,80 @@ export function revalidarTodosLosNumeros(filasFijas, filasExtra) {
       camposInvalidos.numerosRestringidos.set('circulo-solo', resultado.mensaje)
     }
   }
+}
+
+// AGREGAR después de la función validarNumeroRestringido:
+export function verificarCombinacionParlet(combinacion, horario = null) {
+  const configPagos = JSON.parse(localStorage.getItem('configPagos')) || {}
+  const configHorario = horario ? configPagos[horario] : (horarioActual.value ? configPagos[horarioActual.value] : null)
+
+  if (!configHorario) {
+    return { esValido: true, restriccion: null, mensaje: '' }
+  }
+
+  // Obtener combinaciones de parlet restringidas
+  let parletNoJuega = []
+  let parletLimitados = []
+  
+  // Función para convertir arrays a strings con comas
+  const convertirAString = (item) => {
+    if (Array.isArray(item)) {
+      return item.join(',') // Convertir [88, 99] a "88,99"
+    }
+    return item
+  }
+
+  // Obtener noJuega.Parlet
+  if (configHorario.noJuega && configHorario.noJuega.Parlet) {
+    
+    if (configHorario.noJuega.Parlet.numeros && Array.isArray(configHorario.noJuega.Parlet.numeros)) {
+      parletNoJuega = configHorario.noJuega.Parlet.numeros.map(convertirAString)
+    } else if (Array.isArray(configHorario.noJuega.Parlet)) {
+      parletNoJuega = configHorario.noJuega.Parlet.map(convertirAString)
+    } else if (typeof configHorario.noJuega.Parlet === 'object') {
+      parletNoJuega = Object.values(configHorario.noJuega.Parlet).map(convertirAString)
+    }
+  }
+  
+  // Obtener limitados.Parlet
+  if (configHorario.limitados && configHorario.limitados.Parlet) {
+    
+    if (configHorario.limitados.Parlet.numeros && Array.isArray(configHorario.limitados.Parlet.numeros)) {
+      parletLimitados = configHorario.limitados.Parlet.numeros.map(convertirAString)
+    } else if (Array.isArray(configHorario.limitados.Parlet)) {
+      parletLimitados = configHorario.limitados.Parlet.map(convertirAString)
+    } else if (typeof configHorario.limitados.Parlet === 'object') {
+      parletLimitados = Object.values(configHorario.limitados.Parlet).map(convertirAString)
+    }
+  }
+
+  // Verificar ambas direcciones de la combinación (88,99 y 99,88)
+  const partes = combinacion.split(',')
+  if (partes.length !== 2) {
+    return { esValido: true, restriccion: null, mensaje: '' }
+  }
+  
+  const combinacionInversa = `${partes[1]},${partes[0]}`
+
+  // Verificar en noJuega (bloqueo completo)
+  if (parletNoJuega.includes(combinacion) || parletNoJuega.includes(combinacionInversa)) {
+    return {
+      esValido: false,
+      restriccion: 'NoJuega',
+      mensaje: `La combinación ${combinacion} está bloqueada`
+    }
+  }
+
+  // Verificar en limitados (solo advertencia)
+  if (parletLimitados.includes(combinacion) || parletLimitados.includes(combinacionInversa)) {
+    return {
+      esValido: true,
+      restriccion: 'Limitado',
+      mensaje: `La combinación ${combinacion} será limitada para esta jugada`
+    }
+  }
+
+  return { esValido: true, restriccion: null, mensaje: '' }
 }
 
 // Saber si hay errores

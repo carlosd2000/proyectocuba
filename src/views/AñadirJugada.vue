@@ -1,4 +1,5 @@
 <script setup>
+//AñadirJugada.vue
 import { useRoute } from 'vue-router';
 import { computed, ref, onMounted, watch } from 'vue';
 import { doc, getDoc } from 'firebase/firestore';
