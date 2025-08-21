@@ -26,7 +26,7 @@ const horarioSeleccionado = ref(null)
 const authStore = useAuthStore();
 const toastStore = useToastStore()
 
-const inputPrincipal = ref('')
+const limitePorJugada = ref('')
 const modalInitialData = ref(null);
 
 const inputBoteFijo = ref('');
@@ -71,10 +71,14 @@ const noJuegaParlet = ref({
     numeros: []
 });
 
+const esModoEdicion = computed(() => {
+  return !!route.query.edit && !!route.query.horario;
+});
+
 const hayDatosParaGuardar = computed(() => {
   if (!horarioSeleccionado.value) return false;
   // Validar datos básicos
-  if (!inputPrincipal.value || inputPrincipal.value.trim() === '') return false;
+  if (!limitePorJugada.value || limitePorJugada.value.trim() === '') return false;
   if (!Object.values(montos.value).every(monto => monto.trim() !== '')) return false;
   
   // Si el bote está activo, validar que todos los montos del bote estén completos
@@ -261,7 +265,7 @@ const transformarParaFirestore = (data) => {
   };
 
   return {
-    inputPrincipal: safeData.inputPrincipal,
+    limitePorJugada: safeData.limitePorJugada,
     montos: safeData.montos,
     limitados: {
       Fijo: {
@@ -313,7 +317,7 @@ const guardar = async () => {
   }
 
   const datosParaGuardar = {
-    inputPrincipal: inputPrincipal.value,
+    limitePorJugada: limitePorJugada.value,
     montos: {
       Fijo: montos.value.Fijo,
       Corrido: montos.value.Corrido,
@@ -368,10 +372,14 @@ const guardar = async () => {
       }
     }, { merge: true });
     
+    const mensaje = esModoEdicion.value 
+      ? 'Pago actualizado exitosamente' 
+      : 'Pago creado exitosamente';
+    
     toastStore.showToast(
-      'Cambios guardados correctamente',
+      mensaje,
       'success',
-      2000,
+      2000, // Cambié de 20000 a 2000 (20 segundos era demasiado)
       CheckIcon,
       'bottom',
     );
@@ -393,7 +401,7 @@ const guardar = async () => {
     offlineQueue.addOperation(firestoreOperation);
     
     toastStore.showToast(
-      'Cambios guardados (offline). Se sincronizarán cuando haya conexión',
+      'Pago creado exitosamente (offline)',
       'warning',
       2000,
       CheckIcon,
@@ -413,7 +421,7 @@ const cargarConfiguracionExistente = (horario) => {
     horarioSeleccionado.value = horario;
 
     // Cargar datos básicos
-    inputPrincipal.value = configHorario.inputPrincipal;
+    limitePorJugada.value = configHorario.limitePorJugada;
     montos.value = { ...configHorario.montos };
 
     toggleActivo.value = configHorario.boteActivo;
@@ -449,7 +457,7 @@ onMounted(() => {
         <main class="container-main">
             <div class="d-flex flex-column align-items-start gap-2 w-100">
                 <h3>
-                    Configurar nuevo pago
+                    {{ esModoEdicion ? 'Editar pago' : 'Configurar nuevo pago' }}
                 </h3>
                 <h5 class="body">
                     Configura el horario y los pagos que se aplicaran a las proximas tiradas
@@ -469,7 +477,7 @@ onMounted(() => {
                     <h5 class="input-label">
                         $
                     </h5>
-                    <input v-model="inputPrincipal" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
+                    <input v-model="limitePorJugada" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;">
                 </div>
             </div>
             <div class="line"></div>

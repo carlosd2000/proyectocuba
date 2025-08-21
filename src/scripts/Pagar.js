@@ -3,6 +3,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { filasFijas, filasExtra, calcularTotalesCombinados, limpiarCampos, validarFilas} from '../scripts/operaciones.js'
 import { guardarDatos, setNombre, modoEdicion } from '../scripts/añadir.js'
 import { useToastStore } from '../stores/toast'
+import { configHorarioActual, superaLimiteGeneral } from '../scripts/fieldValidator.js'
 import CheckIcon from '../assets/icons/Check.svg'
 import ErrorIcon from '../assets/icons/Error.svg'
 import Alert from '../assets/icons/alert.svg'
@@ -73,28 +74,10 @@ export function usePagar() {
       try {
         mostrarEnviando.value = true
         // Leer valores de localStorage
-        const valorBote = Number(localStorage.getItem('valorBote'))
-        const boteActivo = localStorage.getItem('boteActivo') === 'true'
-
-        // Recolectar todos los valores de apuestas
-        const valores = [
-          ...filasFijas.value.map(f => Number(f.circulo1) || 0),
-          ...filasFijas.value.map(f => Number(f.circulo2) || 0),
-          ...filasExtra.value.map(f => Number(f.circulo1) || 0),
-          ...filasExtra.value.map(f => Number(f.circulo2) || 0),
-        ]
-        if (filasFijas.value[2]?.circuloSolo !== '' && filasFijas.value[2]?.circuloSolo !== null) {
-          valores.push(Number(filasFijas.value[2].circuloSolo) || 0)
-        }
-
-        // Validación: si algún valor supera el valorBote y boteActivo es false, bloquear envío
-        if (
-          valorBote &&
-          !boteActivo &&
-          valores.some(v => v > valorBote)
-        ) {
+        // Validar si hay errores críticos (superan el límite general)
+        if (superaLimiteGeneral.value) {
           toastStore.showToast(
-            `Limite alcanzado !! El valor ingresado supera $${valorBote} al limite permitido para esta jugada.`,
+            `Límite alcanzado !! El valor ingresado supera $${configHorarioActual.limitePorJugada} al límite permitido para esta jugada.`,
             'double-message',
             4000,
             Alert,
@@ -104,12 +87,6 @@ export function usePagar() {
           return
         }
 
-        // Si boteActivo es true y algún valor supera el valorBote, mostrar el otro toast (pero permitir enviar)
-        if (
-          valorBote &&
-          boteActivo &&
-          valores.some(v => v > valorBote)
-        )
         if (!(await validarAntesDeEnviar())) {
               toastStore.showToast(
                 errorMessage.value, 

@@ -37,7 +37,7 @@ const props = defineProps({
                 </div>
             </div>
         </div>
-        <div class="line"></div>
+        <div v-if="DataPay.noJuega.Fijo.numeros.length && (DataPay.limitados.Corrido.numeros.length || DataPay.limitados.Parlet.numeros.length)" class="line"></div>
         <div v-if="DataPay.limitados.Corrido.numeros.length" class="d-flex flex-row justify-content-between align-items-start w-100">
             <div class="d-flex flex-column justify-content-center align-items-start w-50">
                 <h5 class="input-label">
@@ -67,7 +67,7 @@ const props = defineProps({
                 </div>
             </div>
         </div>
-        <div class="line"></div>
+        <div v-if="DataPay.limitados.Parlet.numeros.length && (DataPay.limitados.Corrido.numeros.length || DataPay.noJuega.Parlet.numeros.length)" class="line"></div>
         <div v-if="DataPay.limitados.Parlet.numeros.length" class="d-flex flex-row justify-content-between align-items-start w-100">
             <div class="d-flex flex-column justify-content-center align-items-start w-50">
                 <h5 class="input-label">

@@ -24,7 +24,6 @@ async function obtenerHoraFirestore() {
     if (data?.timestamp?.toDate) {
       const horaServidor = data.timestamp.toDate().toISOString()
       const horaAjustada = sumarUnaHora(horaServidor)
-      console.log('🕒 Hora desde Firestore (ajustada +1h):', horaAjustada)
       return horaAjustada
     }
     throw new Error('No se pudo obtener hora de Firestore')
@@ -43,7 +42,6 @@ export async function obtenerHora() {
       const horaISO = data.datetime || data.dateTime
       const horaAjustada = sumarUnaHora(horaISO)
       localStorage.setItem(HORA_KEY, horaAjustada)
-      console.log('🕒 Hora desde WorldTimeAPI (ajustada +1h):', horaAjustada)
       return horaAjustada
     } catch (apiError) {
       console.warn('⚠️ Falló WorldTimeAPI, intentando Firestore:', apiError)

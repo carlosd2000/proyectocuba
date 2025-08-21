@@ -1,19 +1,27 @@
 <script setup>
 import PayCard from './PayCard.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
-// Definimos los horarios posibles
 const horarios = ['Dia', 'Tarde', 'Noche'];
 const configPagos = ref({});
+let intervalId = null;
 
-// Cargamos los datos al montar el componente
-onMounted(() => {
+const loadConfig = () => {
     const datosGuardados = localStorage.getItem('configPagos');
     if (datosGuardados) {
         configPagos.value = JSON.parse(datosGuardados);
-        console.log('Datos cargados desde localStorage:', configPagos.value);
-    } else {
-        console.log('No hay datos de configuración guardados');
+    }
+};
+
+onMounted(() => {
+    loadConfig();
+    // Verificar cambios cada segundo
+    intervalId = setInterval(loadConfig, 1000);
+});
+
+onUnmounted(() => {
+    if (intervalId) {
+        clearInterval(intervalId);
     }
 });
 </script>

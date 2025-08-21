@@ -34,7 +34,7 @@ const toggleDetails = () => {
 <template>
   <div class="card-price-container p-0 container d-flex flex-column justify-content-start align-items-center gap-2 w-100">
     <div class="d-flex flex-row justify-content-between gap-2 w-100">
-      <div @click="toggleDetails" class="card-price flex-grow-1 w-100" :class="{ 'horizontal-layout': !isListerosRoute }">
+      <div @click="toggleDetails" class="card-price flex-grow-1" :class="{ 'horizontal-layout': !isListerosRoute }">
         <!-- Valor/Precio -->
         <h1 v-if="isListerosRoute" class="price-value">
           ${{ fondoActual  }}
@@ -109,6 +109,7 @@ const toggleDetails = () => {
   align-items: center;
   padding: 10px;
   gap: 8px;
+  width: auto;
   height: 124px;
   background: #EFF779;
   border-radius: 12px;

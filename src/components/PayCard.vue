@@ -86,7 +86,7 @@ const formatoHora = computed(() => {
                     Limite por jugada
                 </h5>
                 <h5 class="body-bold">
-                    ${{ DataPay.inputPrincipal }}
+                    ${{ DataPay.limitePorJugada }}
                 </h5>
             </div>
         </div>
