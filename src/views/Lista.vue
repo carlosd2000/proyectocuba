@@ -34,27 +34,54 @@ const handleGanadoresActualizados = async () => {
   }
 }
 // Función para verificar si supera el bote (se mantiene igual)
-const superaBote = (apuesta) => {
-  if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > valorBote.value) return true
+const superaBote = (apuesta, horario) => {
+  // Obtener configuración de pagos del horario
+  const configPagos = JSON.parse(localStorage.getItem('configPagos') || '{}');
+  const configHorario = configPagos[horario] || {};
+  
+  // Si bote no está activo para este horario, no supera bote
+  if (!configHorario.boteActivo) return false;
+  
+  // Tipos de apuestas que NO deben ir a bote
+  const tiposExcluidos = ['centena']; // Fácil de agregar más tipos
+  
+  // Si el tipo está excluido, no va a bote
+  if (apuesta.tipo && tiposExcluidos.includes(apuesta.tipo.toLowerCase())) {
+    return false;
+  }
+  
+  const { Fijo = 0, Corrido = 0, Parlet = 0 } = configHorario.boteMonto || {};
+  
+  // Verificar círculo solo (Parlet)
+  if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > Parlet) {
+    return true;
+  }
+  
+  // Verificar datos de apuesta
   if (apuesta.datos) {
     return apuesta.datos.some(d => {
-      const c1 = d.circulo1 ? Number(d.circulo1) : 0
-      const c2 = d.circulo2 ? Number(d.circulo2) : 0
-      return c1 > valorBote.value || c2 > valorBote.value
-    })
+      const c1 = d.circulo1 ? Number(d.circulo1) : 0;
+      const c2 = d.circulo2 ? Number(d.circulo2) : 0;
+      return c1 > Fijo || c2 > Corrido;
+    });
   }
-  return false
+  
+  return false;
 }
 
 // Filtrado completo que funciona con ListaComponent
 const apuestasFiltradas = computed(() => {
   return listaLogic.apuestasCombinadas.value.filter(apuesta => {
-    const horarioMatch = apuesta.horario?.toLowerCase() === horarioSeleccionado.value.toLowerCase()
-    if (!horarioMatch) return false
+    const horarioMatch = apuesta.horario?.toLowerCase() === horarioSeleccionado.value.toLowerCase();
+    if (!horarioMatch) return false;
     
-    if (opcionSeleccionada.value === 'Bote') return superaBote(apuesta)
-    if (opcionSeleccionada.value === 'Lista') return !superaBote(apuesta)
-    return true
+    if (opcionSeleccionada.value === 'Bote') {
+      return superaBote(apuesta, horarioSeleccionado.value);
+    }
+    if (opcionSeleccionada.value === 'Lista') {
+      return !superaBote(apuesta, horarioSeleccionado.value);
+    }
+    return true;
   })
 })
 
