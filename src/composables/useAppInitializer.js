@@ -1,6 +1,5 @@
 // scripts/useAppInitializer.js
 import { useUsuariosCreados } from '../scripts/useUsuariosCreados.js'
-import { cargarInfoBancoSiNoExiste } from '../scripts/fieldValidator.js'
 import { obtenerApuestas } from '../scripts/obtenerApuestas.js'
 import { obtenerConfigPagos } from '../scripts/obtenerConfigPagos.js'
 
@@ -27,7 +26,6 @@ export async function cargarLibreriasIniciales(authStore) {
     configPagosManager = obtenerConfigPagos()
     if (authStore.bancoId) {
       await configPagosManager.cargarConfigPagos(authStore.bancoId)
-      cargarInfoBancoSiNoExiste(authStore.bancoId)
     }
     
     if (authStore.user?.uid) {

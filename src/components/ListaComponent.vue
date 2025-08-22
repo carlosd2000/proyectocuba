@@ -17,7 +17,6 @@ const props = defineProps({
 
 const fechaRef = toRef(props, 'fecha')
 const detallesVisibles = reactive(new Set())
-const valorBote = computed(() => Number(localStorage.getItem('valorBote')) || 100)
 
 const toggleDetalles = (personaId) => {
   const apuesta = props.apuestas.find(a => a.id === personaId)
@@ -97,7 +96,7 @@ const apuestasFiltradas = computed(() => {
 })
 
 const esNumeroGanador = (persona, tipoNumero, valor, mapa) => {
-  if (tipoNumero !== 'cuadrado' || !persona.ganador) return false;
+  if (tipoNumero !== 'cuadrado') return false;
 
   const hoy = new Date().toISOString().slice(0, 10);
   const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}');
@@ -105,22 +104,82 @@ const esNumeroGanador = (persona, tipoNumero, valor, mapa) => {
   
   if (!tiroGanador) return false;
 
-  const [fijo, corrido1, corrido2] = tiroGanador.split('-');
-  const decenaFijo = fijo.slice(-2);
+  const [primerNumero, corrido1, corrido2] = tiroGanador.split('-');
+  const fijo = primerNumero.slice(-2); // Últimos 2 dígitos del primer número
   const cuadradoStr = valor.toString().padStart(2, '0');
 
-  // Condición 1: Decena del fijo (requiere circulo1)
-  if (cuadradoStr === decenaFijo) {
-    return mapa.circulo1 !== undefined && mapa.circulo1 !== null && mapa.circulo1 !== '';
-  }
+  // Verificar si es ganador independientemente del estado de persona.ganador
+  const esFijoGanador = cuadradoStr === fijo && 
+                        mapa.circulo1 !== undefined && 
+                        mapa.circulo1 !== null && 
+                        mapa.circulo1 !== '';
   
-  // Condición 2: Números corridos (requiere circulo2)
-  if (cuadradoStr === corrido1 || cuadradoStr === corrido2) {
-    return mapa.circulo2 !== undefined && mapa.circulo2 !== null && mapa.circulo2 !== '';
-  }
+  const esCorridoGanador = (cuadradoStr === corrido1 || cuadradoStr === corrido2) && 
+                          mapa.circulo2 !== undefined && 
+                          mapa.circulo2 !== null && 
+                          mapa.circulo2 !== '';
 
-  return false;
+  return esFijoGanador || esCorridoGanador;
 };
+
+const calcularPremio = (persona) => {
+  if (!persona.ganador) return 0;
+  
+  const hoy = new Date().toISOString().slice(0, 10);
+  const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}');
+  const tiroGanador = tirosLocales[hoy]?.[persona.horario]?.tiro;
+  
+  if (!tiroGanador) return 0;
+  
+  const [primerNumero, corrido1, corrido2] = tiroGanador.split('-');
+  const fijo = primerNumero.slice(-2); // Últimos 2 dígitos del primer número
+  
+  // Obtener configuración del horario
+  const configPagos = JSON.parse(localStorage.getItem('configPagos') || '{}');
+  const configHorario = configPagos[persona.horario] || {};
+  const { montos = {}, limitados = {}, noJuega = {} } = configHorario;
+  
+  let premioTotal = 0;
+  
+  // Verificar cada fila de datos de la apuesta
+  persona.datos?.forEach(mapa => {
+    if (!mapa.cuadrado) return;
+    
+    const cuadradoStr = mapa.cuadrado.toString().padStart(2, '0');
+    const circulo1 = Number(mapa.circulo1) || 0;
+    const circulo2 = Number(mapa.circulo2) || 0;
+    
+    // Verificar si es Fijo ganador
+    if (cuadradoStr === fijo && circulo1 > 0) {
+      if (noJuega.Fijo?.numeros?.includes(cuadradoStr)) {
+        return; // No juega, no suma
+      }
+      
+      let multiplicador = montos.Fijo || 0;
+      if (limitados.Fijo?.numeros?.includes(cuadradoStr)) {
+        multiplicador = limitados.Fijo.monto || multiplicador;
+      }
+      
+      premioTotal += circulo1 * multiplicador;
+    }
+    
+    // Verificar si es Corrido ganador
+    if ((cuadradoStr === corrido1 || cuadradoStr === corrido2) && circulo2 > 0) {
+      if (noJuega.Corrido?.numeros?.includes(cuadradoStr)) {
+        return; // No juega, no suma
+      }
+      
+      let multiplicador = montos.Corrido || 0;
+      if (limitados.Corrido?.numeros?.includes(cuadradoStr)) {
+        multiplicador = limitados.Corrido.monto || multiplicador;
+      }
+      
+      premioTotal += circulo2 * multiplicador;
+    }
+  });
+  
+  return premioTotal;
+}
 
 onMounted(() => {
   console.log('📋 Apuestas combinadas:', apuestasCombinadas.value)
@@ -236,14 +295,14 @@ const handleEditClick = (persona, event) => {
           </div>
         </div>
         <div class="d-flex flex-column justify-content-center align-items-center gap-1">
-          <h5 class="label">${{ Number(persona.totalGlobal) || 0 }}</h5>
+          <h5 class="label">${{ calcularPremio(persona) || 0 }}</h5>
           <div class="d-flex flex-row justify-content-center align-items-center gap-1">
             <img src="../assets/icons/Star.svg" alt="">
             <h5 class="body">Premio</h5>
           </div>
         </div>
         <div class="d-flex flex-column justify-content-center align-items-center gap-1">
-          <h5 class="label">${{ Number(persona.totalGlobal) - Number(persona.totalGlobal) }}</h5>
+          <h5 class="label">${{ Number(persona.totalGlobal) - calcularPremio(persona) || 0 }}</h5>
           <div class="d-flex flex-row justify-content-center align-items-center gap-1">
             <img src="../assets/icons/Ganancia.svg" alt="">
             <h5 class="body">Neto</h5>

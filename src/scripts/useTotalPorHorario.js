@@ -103,8 +103,6 @@ async function cargarApuestasLocales() {
       
       apuestasLocales.value = [...apuestasLocales.value, ...nuevasApuestasPendientes];
     }
-    
-    console.log(`[LocalForage] ${apuestasLocales.value.length} apuestas cargadas para ${fechaSeleccionadaStr}`);
   } catch (error) {
     console.error('Error cargando apuestas locales:', error);
     apuestasLocales.value = [];

@@ -20,7 +20,6 @@ const route = useRoute()
 const fechaSeleccionada = ref(new Date())
 const opcionSeleccionada = ref('Lista') 
 const horarioSeleccionado = ref('Dia')
-const valorBote = computed(() => Number(localStorage.getItem('valorBote')) || 100)
 
 const { candadoAbierto } = useCandadoHorario(fechaSeleccionada, horarioSeleccionado)
 const listaLogic = useLista(fechaSeleccionada, router, route)
