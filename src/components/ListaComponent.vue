@@ -107,6 +107,7 @@ const esNumeroGanador = (persona, tipoNumero, valor, mapa) => {
   const [primerNumero, corrido1, corrido2] = tiroGanador.split('-');
   const fijo = primerNumero.slice(-2); // Últimos 2 dígitos del primer número
   const cuadradoStr = valor.toString().padStart(2, '0');
+  const cuadrado3Str = valor.toString().padStart(3, '0');
 
   // Verificar si es ganador independientemente del estado de persona.ganador
   const esFijoGanador = cuadradoStr === fijo && 
@@ -119,7 +120,35 @@ const esNumeroGanador = (persona, tipoNumero, valor, mapa) => {
                           mapa.circulo2 !== null && 
                           mapa.circulo2 !== '';
 
-  return esFijoGanador || esCorridoGanador;
+  const esCentenaGanador = cuadrado3Str === primerNumero && 
+                          persona.circuloSolo !== undefined && 
+                          persona.circuloSolo !== null && 
+                          persona.circuloSolo !== '';
+
+  // VERIFICAR PARLET - Si el número es parte de una combinación ganadora
+  let esParletGanador = false;
+  if (persona.circuloSolo !== undefined && persona.circuloSolo !== null && persona.circuloSolo !== '') {
+    // Obtener todos los cuadrados de la apuesta
+    const cuadrados = persona.datos
+      ?.map(mapa => mapa.cuadrado?.toString().padStart(2, '0'))
+      .filter(Boolean) || [];
+    
+    // Números del tiro para parlet (solo corrido1 y corrido2)
+    const numerosTiroParlet = [corrido1, corrido2];
+    
+    // Contar cuántos cuadrados coinciden con los números del tiro
+    const coincidencias = cuadrados.filter(cuadrado => 
+      numerosTiroParlet.includes(cuadrado)
+    );
+    
+    // Verificar si este número específico es parte de las coincidencias
+    // Y si hay al menos 2 coincidencias en total (para formar parlet)
+    esParletGanador = numerosTiroParlet.includes(cuadradoStr) && 
+                     coincidencias.length >= 2 &&
+                     coincidencias.includes(cuadradoStr);
+  }
+
+  return esFijoGanador || esCorridoGanador || esParletGanador || esCentenaGanador;
 };
 
 const calcularPremio = (persona) => {
@@ -177,6 +206,57 @@ const calcularPremio = (persona) => {
       premioTotal += circulo2 * multiplicador;
     }
   });
+
+  // CALCULAR PARLET - Combinaciones ganadoras
+  if (persona.circuloSolo !== undefined && persona.circuloSolo !== null && persona.circuloSolo !== '') {
+    const circuloSolo = Number(persona.circuloSolo) || 0;
+    
+    if (circuloSolo > 0) {
+      // Obtener todos los cuadrados de la apuesta
+      const cuadrados = persona.datos
+        ?.map(mapa => mapa.cuadrado?.toString().padStart(2, '0'))
+        .filter(Boolean) || [];
+      
+      // Números del tiro para parlet (solo corrido1 y corrido2)
+      const numerosTiroParlet = [corrido1, corrido2];
+      
+      // Contar cuántos cuadrados coinciden con los números del tiro
+      const coincidencias = cuadrados.filter(cuadrado => 
+        numerosTiroParlet.includes(cuadrado)
+      );
+      
+      // Calcular combinaciones ganadoras (n choose k = n! / (k!(n-k)!))
+      // Para parlet, necesitamos al menos 2 coincidencias
+      if (coincidencias.length >= 2) {
+        const n = coincidencias.length;
+        const combinacionesGanadoras = (n * (n - 1)) / 2; // n choose 2
+        
+        let multiplicadorParlet = montos.Parlet || 0;
+        
+        // Aplicar multiplicador por cada combinación ganadora
+        premioTotal += circuloSolo * multiplicadorParlet * combinacionesGanadoras;
+      }
+    }
+  }
+  
+  // CALCULAR CENTENA - Número de 3 dígitos que coincide con el fijo completo
+  if (persona.circuloSolo !== undefined && persona.circuloSolo !== null && persona.circuloSolo !== '') {
+    const circuloSolo = Number(persona.circuloSolo) || 0;
+    
+    if (circuloSolo > 0) {
+      // Buscar si algún cuadrado es la centena completa
+      const tieneCentena = persona.datos?.some(mapa => {
+        if (!mapa.cuadrado) return false;
+        const cuadrado3Str = mapa.cuadrado.toString().padStart(3, '0');
+        return cuadrado3Str === primerNumero;
+      });
+      
+      if (tieneCentena) {
+        let multiplicadorCentena = montos.Centena || 0;
+        premioTotal += circuloSolo * multiplicadorCentena;
+      }
+    }
+  }
   
   return premioTotal;
 }
@@ -224,7 +304,6 @@ const handleEditClick = (persona, event) => {
          'apuesta-editada': persona.estado === 'EditadoOffline',
          'eliminando': persona.estado === 'Eliminando'
        }" @click="toggleDetalles(persona.id)">
-    
     <header class="d-flex flex-row justify-content-between align-items-center h-100">
       <div class="container-title d-flex justify-content-center align-items-center">
         <img v-if="persona.ganador === true" src="../assets/icons/Star_fill.svg" alt="Avatar" class="avatar px-2">        
@@ -236,7 +315,6 @@ const handleEditClick = (persona, event) => {
         <img src="../assets/icons/Expand.svg" alt="">
       </div>
     </header>
-    
     <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100 gap-1">
       <div class="col-12 container-apuestas p-0 py-1 d-flex flex-row justify-content-center align-items-center">
         <div class="col-1 d-flex justify-content-center align-items-start h-100">
@@ -283,9 +361,7 @@ const handleEditClick = (persona, event) => {
           </div>
         </div>
       </div>
-      
       <div class="line"></div>
-      
       <div class="p-2 d-flex flex-row justify-content-between align-items-center w-100">
         <div class="d-flex flex-column justify-content-center align-items-center gap-1">
           <h5 class="label">${{ Number(persona.totalGlobal) || 0 }}</h5>
@@ -310,7 +386,6 @@ const handleEditClick = (persona, event) => {
         </div>
       </div>
     </main>
-    
     <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
       <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
         <div class="mx-2 d-flex justify-content-center align-items-center">
@@ -325,7 +400,6 @@ const handleEditClick = (persona, event) => {
       </div>
     </footer>
   </div>
-
   <!-- Modal personalizado -->
   <div v-if="mostrarModal" class="custom-modal-backdrop" @click="cerrarModal">
     <div class="custom-modal" @click.stop>
@@ -339,7 +413,6 @@ const handleEditClick = (persona, event) => {
       </div>
     </div>
   </div>
-
   <!-- Modal de confirmación de eliminación -->
   <div v-if="mostrarConfirmacionEliminar" class="custom-modal-backdrop" @click="mostrarConfirmacionEliminar = false">
     <div class="custom-modal-aceptar" @click.stop>

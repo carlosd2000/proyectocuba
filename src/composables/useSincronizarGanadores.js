@@ -4,6 +4,17 @@ import { collection, query, where, getDocs } from 'firebase/firestore'
 import { useAuthStore } from '@/stores/authStore'
 import localforage from '@/stores/localStorage'
 
+function esParletGanador(cuadradoStr, corrido1, corrido2) {
+  // Crear todas las combinaciones posibles de 2 números
+  const combinaciones = [
+    `${corrido1}-${corrido2}`,
+    `${corrido2}-${corrido1}`
+  ];
+  
+  // Verificar si el cuadrado coincide con alguna combinación
+  return combinaciones.includes(cuadradoStr);
+}
+
 export async function useSincronizarGanadores() {
   const authStore = useAuthStore()
   const bancoId = authStore.bancoId
@@ -55,7 +66,18 @@ export async function useSincronizarGanadores() {
 
       if (fechaSincronizado !== fechaTiro) continue // 💡 Saltar si la sincronización fue otro día
 
-// useSincronizarGanadores.js (SOLO MODIFICAR LAS CONDICIONES)
+      const circuloSolo = data.circuloSolo // ✅ Correcto - está a nivel de apuesta
+
+      // ANALIZAR TODOS LOS CUADRADOS JUNTOS para parlet
+      const cuadradosDeLaApuesta = data.datos.map(fila => {
+        if (typeof fila.cuadrado !== 'number') return null;
+        return fila.cuadrado.toString().padStart(2, '0');
+      }).filter(Boolean);
+
+      const [fijo, corrido1, corrido2] = tiro.split('-');
+      const decenaFijo = fijo.slice(-2);
+      const numerosDelTiro = [decenaFijo, corrido1, corrido2];
+
       for (const fila of data.datos) {
         const cuadrado = fila.cuadrado
         const circulo1 = fila.circulo1
@@ -64,8 +86,7 @@ export async function useSincronizarGanadores() {
         if (typeof cuadrado !== 'number') continue
 
         const cuadradoStr = cuadrado.toString().padStart(2, '0')
-        const [fijo, corrido1, corrido2] = tiro.split('-')
-        const decenaFijo = fijo.slice(-2)
+        const cuadrado3Str = cuadrado.toString().padStart(3, '0') 
 
         let esGanador = false
 
@@ -77,6 +98,19 @@ export async function useSincronizarGanadores() {
         // CONDICIÓN 2: Cuadrado igual a corrido1 o corrido2 Y tiene circulo2
         if ((cuadradoStr === corrido1 || cuadradoStr === corrido2) && circulo2 !== undefined) {
           esGanador = true
+        }
+
+        const coincidencias = cuadradosDeLaApuesta.filter(cuadrado => 
+          numerosDelTiro.includes(cuadrado)
+        );
+        
+        if (coincidencias.length >= 2 && circuloSolo !== undefined) {
+          esGanador = true;
+        }
+
+        // CONDICIÓN 4: CENTENA - 3 dígitos coincidiendo con primer número
+        if (cuadrado3Str === fijo && circuloSolo !== undefined) {
+          esGanador = true;
         }
 
         if (esGanador) {

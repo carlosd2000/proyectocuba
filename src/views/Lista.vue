@@ -98,7 +98,6 @@ watch(apuestasFiltradas, (newVal) => {
     id: a.id,
     nombre: a.nombre,
     ganador: a.ganador,
-    tipoGanador: typeof a.ganador
   })))
 }, { deep: true })
 

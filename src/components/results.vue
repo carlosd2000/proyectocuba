@@ -78,6 +78,58 @@ const calcularPremioApuesta = (apuesta) => {
         }
     });
     
+
+    // CALCULAR PARLET - Combinaciones ganadoras
+    if (apuesta.circuloSolo !== undefined && apuesta.circuloSolo !== null && apuesta.circuloSolo !== '') {
+        const circuloSolo = Number(apuesta.circuloSolo) || 0;
+        
+        if (circuloSolo > 0) {
+            // Obtener todos los cuadrados de la apuesta
+            const cuadrados = apuesta.datos
+                ?.map(mapa => mapa.cuadrado?.toString().padStart(2, '0'))
+                .filter(Boolean) || [];
+            
+            // Números del tiro para parlet (solo corrido1 y corrido2)
+            const numerosTiroParlet = [corrido1, corrido2];
+            
+            // Contar cuántos cuadrados coinciden con los números del tiro
+            const coincidencias = cuadrados.filter(cuadrado => 
+                numerosTiroParlet.includes(cuadrado)
+            );
+            
+            // Calcular combinaciones ganadoras (n choose k = n! / (k!(n-k)!))
+            // Para parlet, necesitamos al menos 2 coincidencias
+            if (coincidencias.length >= 2) {
+                const n = coincidencias.length;
+                const combinacionesGanadoras = (n * (n - 1)) / 2; // n choose 2
+                
+                let multiplicadorParlet = montos.Parlet || 0;
+                
+                // Aplicar multiplicador por cada combinación ganadora
+                premioTotal += circuloSolo * multiplicadorParlet * combinacionesGanadoras;
+            }
+        }
+    }
+    
+    // CALCULAR CENTENA - Número de 3 dígitos que coincide con el fijo completo
+    if (apuesta.circuloSolo !== undefined && apuesta.circuloSolo !== null && apuesta.circuloSolo !== '') {
+        const circuloSolo = Number(apuesta.circuloSolo) || 0;
+        
+        if (circuloSolo > 0) {
+            // Buscar si algún cuadrado es la centena completa
+            const tieneCentena = apuesta.datos?.some(mapa => {
+                if (!mapa.cuadrado) return false;
+                const cuadrado3Str = mapa.cuadrado.toString().padStart(3, '0');
+                return cuadrado3Str === primerNumero;
+            });
+            
+            if (tieneCentena) {
+                let multiplicadorCentena = montos.Centena || 0;
+                premioTotal += circuloSolo * multiplicadorCentena;
+            }
+        }
+    }
+    
     return premioTotal;
 }
 

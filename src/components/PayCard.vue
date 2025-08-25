@@ -90,7 +90,7 @@ const formatoHora = computed(() => {
                 </h5>
             </div>
         </div>
-        <div class="px-3 py-2 d-flex flex-row justify-content-center align-items-center border-top gap-2 w-100">
+        <div class="px-3 d-flex flex-row justify-content-center align-items-center border-top gap-2 w-100" style="padding: 12px 0px;">
             <div class="d-flex flex-column justify-content-center align-items-center gap-1 w-100">
                 <h5 class="label">
                     ${{ DataPay.montos.Fijo }}
@@ -117,9 +117,18 @@ const formatoHora = computed(() => {
                     Parlet
                 </h5>
             </div>
+            <div class="line"></div>
+            <div class="d-flex flex-column justify-content-center align-items-center gap-1 w-100">
+                <h5 class="label">
+                    ${{ DataPay.montos.Centena }}
+                </h5>
+                <h5 class="small">
+                    Centena
+                </h5>
+            </div>
         </div>
         <PayDetails v-if="isExpanded" :DataPay="DataPay" @click="ShowDetails()"/>
-        <div class="p-2 d-flex justify-content-center align-items-center border-top w-100" @click="ShowDetails()">
+        <div class="p-2 d-flex justify-content-center align-items-center border-top w-100" @click="ShowDetails()" style="padding-top: 12px;">
             <img :src="isExpanded ? Cotraer : Expand" alt="" width="20">
         </div>
     </div>

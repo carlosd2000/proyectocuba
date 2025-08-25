@@ -1,9 +1,26 @@
 <script setup>
 const props = defineProps({
-    DataPay: {
-        type: Object,
-        default: 'Home'
-    }
+  DataPay: {
+    type: Object,
+    default: () => ({
+      boteActivo: false,
+      boteMonto: { Fijo: 0, Corrido: 0, Parlet: 0, Centena: 0 },
+      limitados: {
+        Fijo: { numeros: [], monto: 0 },
+        Corrido: { numeros: [], monto: 0 },
+        Parlet: { numeros: [], monto: 0 },
+        Centena: { numeros: [], monto: 0 }
+      },
+      noJuega: {
+        Fijo: { numeros: [] },
+        Corrido: { numeros: [] },
+        Parlet: { numeros: [] },
+        Centena: { numeros: [] }
+      },
+      limitePorJugada: 0,
+      montos: {}
+    })
+  }
 })
 </script>
 <template>
@@ -37,7 +54,7 @@ const props = defineProps({
                 </div>
             </div>
         </div>
-        <div v-if="DataPay.noJuega.Fijo.numeros.length && (DataPay.limitados.Corrido.numeros.length || DataPay.limitados.Parlet.numeros.length)" class="line"></div>
+        <div v-if="(DataPay.limitados.Fijo.numeros.length || DataPay.noJuega.Fijo.numeros.length) && (DataPay.limitados.Corrido.numeros.length || DataPay.noJuega.Corrido.numeros.length || DataPay.limitados.Parlet.numeros.length || DataPay.noJuega.Parlet.numeros.length || DataPay.limitados.Centena.numeros.length || DataPay.noJuega.Centena.numeros.length)" class="line"></div>
         <div v-if="DataPay.limitados.Corrido.numeros.length" class="d-flex flex-row justify-content-between align-items-start w-100">
             <div class="d-flex flex-column justify-content-center align-items-start w-50">
                 <h5 class="input-label">
@@ -67,7 +84,7 @@ const props = defineProps({
                 </div>
             </div>
         </div>
-        <div v-if="DataPay.limitados.Parlet.numeros.length && (DataPay.limitados.Corrido.numeros.length || DataPay.noJuega.Parlet.numeros.length)" class="line"></div>
+        <div v-if="(DataPay.limitados.Parlet.numeros.length || DataPay.noJuega.Parlet.numeros.length) && (DataPay.limitados.Fijo.numeros.length || DataPay.noJuega.Fijo.numeros.length || DataPay.limitados.Corrido.numeros.length || DataPay.noJuega.Corrido.numeros.length)" class="line"></div>
         <div v-if="DataPay.limitados.Parlet.numeros.length" class="d-flex flex-row justify-content-between align-items-start w-100">
             <div class="d-flex flex-column justify-content-center align-items-start w-50">
                 <h5 class="input-label">
@@ -93,6 +110,36 @@ const props = defineProps({
                 <div v-for="(numero, index) in DataPay.noJuega.Parlet.numeros" :key="index" class="circle-number-parlet">
                     <h5 class="small">
                         {{ numero[0] }} - {{ numero[1] }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+        <div v-if="(DataPay.limitados.Centena.numeros.length || DataPay.noJuega.Centena.numeros.length) && (DataPay.limitados.Fijo.numeros.length || DataPay.noJuega.Fijo.numeros.length || DataPay.limitados.Corrido.numeros.length || DataPay.noJuega.Corrido.numeros.length || DataPay.limitados.Parlet.numeros.length || DataPay.noJuega.Parlet.numeros.length)" class="line"></div>
+        <div v-if="DataPay.limitados.Centena.numeros.length" class="d-flex flex-row justify-content-between align-items-start w-100">
+            <div class="d-flex flex-column justify-content-center align-items-start w-50">
+                <h5 class="input-label">
+                    Centena limitada
+                </h5>
+                <h5 class="label">
+                    ${{ DataPay.limitados.Centena.monto }}
+                </h5>
+            </div>
+            <div class="d-flex flex-row justify-content-end align-items-center gap-1 flex-wrap w-50">
+                <div v-for="(numero, index) in DataPay.limitados.Centena.numeros" :key="index" class="circle-number">
+                    <h5 class="small">
+                        {{ numero }}
+                    </h5>
+                </div>
+            </div>
+        </div>
+        <div v-if="DataPay.noJuega.Centena.numeros.length" class="d-flex flex-row justify-content-between align-items-center w-100">
+            <h5 class="input-label">
+                No juega
+            </h5>
+            <div class="d-flex flex-row justify-content-end align-items-center gap-1 flex-wrap w-50">
+                <div v-for="(numero, index) in DataPay.noJuega.Centena.numeros" :key="index" class="circle-number">
+                    <h5 class="small">
+                        {{ numero }}
                     </h5>
                 </div>
             </div>
@@ -133,6 +180,15 @@ const props = defineProps({
                     </h5>
                     <h5 class="small small-gray">
                         Parlet
+                    </h5>
+                </div>
+                <div class="line-horizontal"></div>
+                <div class="d-flex flex-column justify-content-center align-items-center gap-1 w-100">
+                    <h5 class="body-bold">
+                        ${{ DataPay.boteMonto.Centena }}
+                    </h5>
+                    <h5 class="small small-gray">
+                        Centena
                     </h5>
                 </div>
             </div>

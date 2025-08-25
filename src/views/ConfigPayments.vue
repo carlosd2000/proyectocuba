@@ -32,11 +32,13 @@ const modalInitialData = ref(null);
 const inputBoteFijo = ref('');
 const inputBoteCorrido = ref('');
 const inputBoteParlet = ref('');
+const inputBoteCentena = ref('');
 
 const montos = ref({
   Fijo: '',
   Corrido: '',
-  Parlet: ''
+  Parlet: '',
+  Centena: ''
 })
 
 // Estado para los limitados
@@ -51,6 +53,11 @@ const limitadosCorrido = ref({
 });
 
 const limitadosParlet = ref({
+    monto: '',
+    numeros: []
+});
+
+const limitadosCentena = ref({
     monto: '',
     numeros: []
 });
@@ -71,6 +78,11 @@ const noJuegaParlet = ref({
     numeros: []
 });
 
+const noJuegaCentena = ref({
+    monto: '',
+    numeros: []
+});
+
 const esModoEdicion = computed(() => {
   return !!route.query.edit && !!route.query.horario;
 });
@@ -83,7 +95,7 @@ const hayDatosParaGuardar = computed(() => {
   
   // Si el bote está activo, validar que todos los montos del bote estén completos
   if (toggleActivo.value) {
-    if (!inputBoteFijo.value || !inputBoteCorrido.value || !inputBoteParlet.value) {
+    if (!inputBoteFijo.value || !inputBoteCorrido.value || !inputBoteParlet.value || !inputBoteCentena.value) {
       return false;
     }
   }
@@ -131,10 +143,12 @@ const manejarEditar = ({ tipo, title: titulo }) => {
     if (titulo === 'Fijo') datos = { ...limitadosFijo.value };
     else if (titulo === 'Corrido') datos = { ...limitadosCorrido.value };
     else if (titulo === 'Parlet') datos = { ...limitadosParlet.value };
+    else if (titulo === 'Centena') datos = { ...limitadosCentena.value };
   } else if (tipo === 'NoJuega') {
     if (titulo === 'Fijo') datos = { ...noJuegaFijo.value };
     else if (titulo === 'Corrido') datos = { ...noJuegaCorrido.value };
     else if (titulo === 'Parlet') datos = { ...noJuegaParlet.value };
+    else if (titulo === 'Centena') datos = { ...noJuegaCentena.value };
   }
   modalInitialData.value = datos;
 }
@@ -170,6 +184,13 @@ const guardarDatosLimitados = (datos) => {
       limitadosParlet.value = datos;
     }
   }
+  else if (title.value === 'Centena') {
+    if (esNoJuega) {
+      noJuegaCentena.value = datos;
+    } else {
+      limitadosCentena.value = datos;
+    }
+  }
   
   // Cierra el modal
   modalType.value = null;
@@ -196,6 +217,12 @@ const handleEliminarNumero = ({ tipo, title, index }) => {
           limitadosParlet.value.monto = '';
         }
         break;
+      case 'Centena':
+        limitadosCentena.value.numeros.splice(index, 1);
+        if (limitadosCentena.value.numeros.length === 0) {
+          limitadosCentena.value.monto = '';
+        }
+        break;
     }
   } else { // NoJuega
     switch(title) {
@@ -207,6 +234,9 @@ const handleEliminarNumero = ({ tipo, title, index }) => {
         break;
       case 'Parlet':
         noJuegaParlet.value.numeros.splice(index, 1);
+        break;
+      case 'Centena':
+        noJuegaCentena.value.numeros.splice(index, 1);
         break;
     }
   }
@@ -223,6 +253,9 @@ const handleResetearMonto = ({ tipo, title }) => {
         break;
       case 'Parlet':
         limitadosParlet.value.monto = '';
+        break;
+      case 'Centena':
+        limitadosCentena.value.monto = '';
         break;
     }
   }
@@ -255,12 +288,14 @@ const transformarParaFirestore = (data) => {
     limitados: {
       Fijo: data.limitados?.Fijo || { monto: '', numeros: [] },
       Corrido: data.limitados?.Corrido || { monto: '', numeros: [] },
-      Parlet: data.limitados?.Parlet || { monto: '', numeros: [] }
+      Parlet: data.limitados?.Parlet || { monto: '', numeros: [] },
+      Centena: data.limitados?.Centena || { monto: '', numeros: [] }
     },
     noJuega: {
       Fijo: data.noJuega?.Fijo || { numeros: [] },
       Corrido: data.noJuega?.Corrido || { numeros: [] },
-      Parlet: data.noJuega?.Parlet || { numeros: [] }
+      Parlet: data.noJuega?.Parlet || { numeros: [] },
+      Centena: data.noJuega?.Centena || { numeros: [] }
     }
   };
 
@@ -279,6 +314,10 @@ const transformarParaFirestore = (data) => {
       Parlet: {
         monto: safeData.limitados.Parlet.monto,
         numeros: transformarNumeros(safeData.limitados.Parlet.numeros)
+      },
+      Centena: {
+        monto: safeData.limitados.Centena.monto,
+        numeros: transformarNumeros(safeData.limitados.Centena.numeros)
       }
     },
     noJuega: {
@@ -290,6 +329,9 @@ const transformarParaFirestore = (data) => {
       },
       Parlet: {
         numeros: transformarNumeros(safeData.noJuega.Parlet.numeros)
+      },
+      Centena: {
+        numeros: transformarNumeros(safeData.noJuega.Centena.numeros)
       }
     },
     boteActivo: safeData.boteActivo,
@@ -314,6 +356,7 @@ const guardar = async () => {
     inputBoteFijo.value = 0;
     inputBoteCorrido.value = 0;
     inputBoteParlet.value = 0;
+    inputBoteCentena.value = 0;
   }
 
   const datosParaGuardar = {
@@ -322,22 +365,26 @@ const guardar = async () => {
       Fijo: montos.value.Fijo,
       Corrido: montos.value.Corrido,
       Parlet: montos.value.Parlet,
+      Centena: montos.value.Centena,
     },
     limitados: {
       Fijo: limitadosFijo.value,
       Corrido: limitadosCorrido.value,
       Parlet: limitadosParlet.value,
+      Centena: limitadosCentena.value,
     },
     noJuega: {
       Fijo: noJuegaFijo.value,
       Corrido: noJuegaCorrido.value,
       Parlet: noJuegaParlet.value,
+      Centena: noJuegaCentena.value,
     },
     boteActivo: toggleActivo.value,
     boteMonto: {
       Fijo: inputBoteFijo.value || 0,
       Corrido: inputBoteCorrido.value || 0,
       Parlet: inputBoteParlet.value || 0,
+      Centena: inputBoteCentena.value || 0,
     },
     hora: formatForStorage(),
   }
@@ -349,12 +396,14 @@ const guardar = async () => {
     limitados: {
       Fijo: { ...datosParaGuardar.limitados.Fijo, numeros: datosParaGuardar.limitados.Fijo.numeros || [] },
       Corrido: { ...datosParaGuardar.limitados.Corrido, numeros: datosParaGuardar.limitados.Corrido.numeros || [] },
-      Parlet: { ...datosParaGuardar.limitados.Parlet, numeros: datosParaGuardar.limitados.Parlet.numeros || [] }
+      Parlet: { ...datosParaGuardar.limitados.Parlet, numeros: datosParaGuardar.limitados.Parlet.numeros || [] },
+      Centena: { ...datosParaGuardar.limitados.Centena, numeros: datosParaGuardar.limitados.Centena.numeros || [] }
     },
     noJuega: {
       Fijo: { ...datosParaGuardar.noJuega.Fijo, numeros: datosParaGuardar.noJuega.Fijo.numeros || [] },
       Corrido: { ...datosParaGuardar.noJuega.Corrido, numeros: datosParaGuardar.noJuega.Corrido.numeros || [] },
-      Parlet: { ...datosParaGuardar.noJuega.Parlet, numeros: datosParaGuardar.noJuega.Parlet.numeros || [] }
+      Parlet: { ...datosParaGuardar.noJuega.Parlet, numeros: datosParaGuardar.noJuega.Parlet.numeros || [] },
+      Centena: { ...datosParaGuardar.noJuega.Centena, numeros: datosParaGuardar.noJuega.Centena.numeros || [] }
     }
   };
 
@@ -428,15 +477,18 @@ const cargarConfiguracionExistente = (horario) => {
     inputBoteFijo.value = configHorario.boteMonto?.Fijo || '';
     inputBoteCorrido.value = configHorario.boteMonto?.Corrido || '';
     inputBoteParlet.value = configHorario.boteMonto?.Parlet || '';
+    inputBoteCentena.value = configHorario.boteMonto?.Centena || '';
     
     // Cargar limitados y noJuega
     limitadosFijo.value = { ...configHorario.limitados?.Fijo || { monto: '', numeros: [] } };
     limitadosCorrido.value = { ...configHorario.limitados?.Corrido || { monto: '', numeros: [] } };
     limitadosParlet.value = { ...configHorario.limitados?.Parlet || { monto: '', numeros: [] } };
+    limitadosCentena.value = { ...configHorario.limitados?.Centena || { monto: '', numeros: [] } };
     
     noJuegaFijo.value = { ...configHorario.noJuega?.Fijo || { monto: '', numeros: [] } };
     noJuegaCorrido.value = { ...configHorario.noJuega?.Corrido || { monto: '', numeros: [] } };
     noJuegaParlet.value = { ...configHorario.noJuega?.Parlet || { monto: '', numeros: [] } };
+    noJuegaCentena.value = { ...configHorario.noJuega?.Centena || { monto: '', numeros: [] } };
   }
 };
 
@@ -493,6 +545,10 @@ onMounted(() => {
             <CirclesPayments title="Parlet" tipo="Limitado" :lista="limitadosParlet" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto" @editar="manejarEditar"/>
             <CirclesPayments title="Parlet" tipo="NoJuega" :lista="noJuegaParlet" @eliminarNumero="handleEliminarNumero" @editar="manejarEditar"/>
             <div class="line"></div>
+            <LimitedNumber title="Centena" @accionPimerBoton="manejarPrimerBoton" @accionSegundoBoton="manejarSegundoBoton" @update:value="actualizarMonto" :monto-inicial="montos.Centena"/>
+            <CirclesPayments title="Centena" tipo="Limitado" :lista="limitadosCentena" @eliminarNumero="handleEliminarNumero" @resetearMonto="handleResetearMonto" @editar="manejarEditar"/>
+            <CirclesPayments title="Centena" tipo="NoJuega" :lista="noJuegaCentena" @eliminarNumero="handleEliminarNumero" @editar="manejarEditar"/>
+            <div class="line"></div>
             <div class="d-flex flex-column justify-content-center align-items-center gap-2 w-100">
                 <div class="d-flex justify-content-between align-items-center gap-1 w-100">
                     <h5 class="label">
@@ -534,6 +590,17 @@ onMounted(() => {
                                 $
                             </h5>
                             <input v-model="inputBoteParlet" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;"/>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-1 w-100">
+                        <h5 class="label d-flex justify-content-start w-50">
+                            Centena
+                        </h5>
+                        <div class="input d-flex flex-row align-items-center gap-1 w-50">
+                            <h5 class="input-label">
+                                $
+                            </h5>
+                            <input v-model="inputBoteCentena" class="label border-0 bg-transparent" placeholder="0,00" type="text" style="max-width: 90%;"/>
                         </div>
                     </div>
                 </div>
