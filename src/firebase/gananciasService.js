@@ -8,7 +8,9 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  Timestamp, // Añade esta importación
+  orderBy 
 } from 'firebase/firestore'
 
 export const GananciasService = {
@@ -37,16 +39,16 @@ export const GananciasService = {
         'bancos', bancoId, 'wallets', userId, `Transacciones_${horario}`
       )
 
-      // Crear el documento de ganancia
+      // Crear el documento de ganancia con estructura compatible con listamovimientos.vue
       const nuevoDoc = doc(periodoRef)
       await setDoc(nuevoDoc, {
-        id_transaccion: nuevoDoc.id,
-        tipo: 'ganancia',
+        tipo: 'Ganancia', // Usar mayúscula para coincidir con iconoPorTipo
+        monto: Number(ganancia), // Campo requerido por listamovimientos.vue
+        fecha: serverTimestamp(),
+        // Campos adicionales específicos de ganancia
         apuestaId,
-        bancoId,
-        TotalGlobal: Number(totalGlobal),
-        Ganancia: Number(ganancia),
-        fecha: serverTimestamp()
+        totalGlobal: Number(totalGlobal),
+        horario
       })
 
       return { 
@@ -86,7 +88,7 @@ export const GananciasService = {
       // Buscar la transacción de ganancia asociada a esta apuesta
       const q = query(
         transaccionesRef, 
-        where('tipo', '==', 'ganancia'), 
+        where('tipo', '==', 'Ganancia'), 
         where('apuestaId', '==', apuestaId)
       )
       const querySnapshot = await getDocs(q)
@@ -108,6 +110,59 @@ export const GananciasService = {
       throw error
     }
   },
+
+  /**
+   * Obtiene todas las ganancias de un usuario por día
+   */
+async obtenerGananciasDiarias(userId, bancoId, fecha = new Date()) {
+  try {
+    const horarios = ['Dia', 'Tarde', 'Noche']
+    let ganancias = []
+
+    // Configurar rango de fechas
+    const inicioDia = new Date(fecha)
+    inicioDia.setHours(0, 0, 0, 0)
+
+    const finDia = new Date(fecha)
+    finDia.setHours(23, 59, 59, 999)
+
+    for (const horario of horarios) {
+      const colRef = collection(
+        db, 
+        `bancos/${bancoId}/wallets/${userId}/Transacciones_${horario}`
+      )
+      
+      const q = query(
+        colRef,
+        where('tipo', '==', 'Ganancia'),
+        where('fecha', '>=', Timestamp.fromDate(inicioDia)),
+        where('fecha', '<=', Timestamp.fromDate(finDia)),
+        orderBy('fecha', 'desc')
+      )
+      
+      const snapshot = await getDocs(q)
+      console.log(`[GananciasService] Ganancias encontradas en ${horario}:`, snapshot.size,snapshot);
+      
+      snapshot.forEach(doc => {
+        const data = doc.data()
+        ganancias.push({
+          id: doc.id,
+          tipo: 'Ganancia',
+          monto: data.monto || data.Ganancia, // Asegura compatibilidad
+          fecha: data.fecha?.toDate() || new Date(),
+          // Mantén otros campos importantes
+          horario: data.horario,
+          apuestaId: data.apuestaId
+        })
+      })
+    }
+
+    return ganancias
+  } catch (error) {
+    console.error('[GananciasService] Error obteniendo ganancias:', error)
+    return []
+  }
+},
 
   /**
    * Calcula y registra la ganancia basada en una apuesta existente

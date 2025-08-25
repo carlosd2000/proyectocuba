@@ -9,6 +9,7 @@ import {
   runTransaction
 } from 'firebase/firestore'
 import { TransactionsService } from './transactionsService'
+import { GananciasService } from './gananciasService'
 
 export const WalletService = {
   /**
@@ -152,30 +153,38 @@ export const WalletService = {
   /**
    * Obtiene movimientos formateados (versión corregida)
    */
-  async obtenerMovimientos(userId, bancoId) {
-    try {
-      if (!bancoId) return []
-      
-      // Obtener todas las transacciones diarias
-      const transacciones = await TransactionsService.getDailyTransactions(userId, bancoId)
-      
-      // Filtrar solo transacciones de valores (depósitos/retiros) y mapear
-      const movimientos = transacciones
-        .filter(t => t.periodo === 'Valores' && (t.tipo === 'deposito' || t.tipo === 'retiro'))
-        .map(t => ({
-          id: t.id,
-          tipo: t.tipo === 'deposito' ? 'Depósito' : 'Retiro',
-          monto: t.tipo === 'deposito' ? t.monto : -t.monto,
-          fecha: t.fecha
-        }))
-        .sort((a, b) => b.fecha - a.fecha)
-      
-      return movimientos
-    } catch (error) {
-      console.error('Error obteniendo movimientos:', error)
-      return []
-    }
-  },
+
+
+
+
+/**
+ * Obtiene movimientos formateados (versión corregida)
+ */
+async obtenerMovimientos(userId, bancoId) {
+  try {
+    if (!bancoId) return []
+    
+    // Obtener transacciones normales
+    const transacciones = await TransactionsService.getDailyTransactions(userId, bancoId)
+    const transaccionesValores = transacciones
+      .filter(t => t.periodo === 'Valores' && (t.tipo === 'deposito' || t.tipo === 'retiro'))
+      .map(t => ({
+        id: t.id,
+        tipo: t.tipo === 'deposito' ? 'Depósito' : 'Retiro',
+        monto: t.tipo === 'deposito' ? t.monto : -t.monto,
+        fecha: t.fecha
+      }))
+    
+
+    
+    // Combinar y ordenar
+    return [...transaccionesValores]
+      .sort((a, b) => b.fecha - a.fecha)
+  } catch (error) {
+    console.error('Error obteniendo movimientos:', error)
+    return []
+  }
+},
 
   /**
    * Actualiza fondos con transacción
