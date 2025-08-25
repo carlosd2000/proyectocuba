@@ -8,6 +8,7 @@ import CardPrice from '../components/CardPrice.vue'
 import ButtonFilter from '../components/ButtonFilter.vue'
 import ListaMovimientos from '../components/ListaMovimientos.vue'
 import WalletService from '@/firebase/walletService'
+import { GananciasService } from '@/firebase/gananciasService' // Importa el servicio
 
 const authStore = useAuthStore()
 const isLoading = ref(true)
@@ -15,6 +16,7 @@ const error = ref(null)
 const userfondo = ref(0)
 const walletData = ref(null)
 const movimientos = ref([])
+const ganancias = ref([]) // Nuevo ref para ganancias
 const unsubscribe = ref(null)
 
 onMounted(async () => {
@@ -35,8 +37,14 @@ onMounted(async () => {
             walletData.value = wallet
             userfondo.value = wallet.fondo_recaudado || 0
             
-            // Obtener movimientos (si no hay, devolverá array vacío)
+            // Obtener movimientos
             movimientos.value = await WalletService.obtenerMovimientos(
+              authStore.userId,
+              authStore.bancoId
+            )
+            
+            // Obtener ganancias (nuevo)
+            ganancias.value = await GananciasService.obtenerGananciasDiarias(
               authStore.userId,
               authStore.bancoId
             )
@@ -44,12 +52,14 @@ onMounted(async () => {
         } catch (e) {
           console.log("Error obteniendo datos de wallet:", e)
           movimientos.value = []
+          ganancias.value = []
         }
       } else {
         console.log("Usuario cerró sesión")
         userfondo.value = 0
         walletData.value = null
         movimientos.value = []
+        ganancias.value = []
       }
     }
     
@@ -80,7 +90,10 @@ onUnmounted(() => {
         <ButtonFilter/>
       </div>
       <div class="d-flex flex-column align-items-center w-100 h-100 overflow-y-auto">
-        <ListaMovimientos :movimientos="movimientos"/>
+        <ListaMovimientos 
+          :movimientos="movimientos"
+          :ganancias="ganancias"
+        />
       </div>
     </main>
     <footer>
@@ -90,6 +103,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Tus estilos se mantienen igual */
 .container-main {
   display: flex;
   flex-direction: column;
@@ -99,4 +113,4 @@ onUnmounted(() => {
   width: 100%;
   height: calc(100vh - 7% - 88px);
 }
-</style>  
+</style>
