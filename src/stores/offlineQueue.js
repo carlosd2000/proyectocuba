@@ -72,6 +72,10 @@ export const useOfflineQueueStore = defineStore('offlineQueue', () => {
                     Parlet: {
                       monto: config.limitados?.Parlet?.monto || '',
                       numeros: serializeNumeros(config.limitados?.Parlet?.numeros)
+                    },
+                    Centena: {
+                      monto: config.limitados?.Centena?.monto || '',
+                      numeros: serializeNumeros(config.limitados?.Centena?.numeros)
                     }
                   },
                   noJuega: {
@@ -83,6 +87,9 @@ export const useOfflineQueueStore = defineStore('offlineQueue', () => {
                     },
                     Parlet: {
                       numeros: serializeNumeros(config.noJuega?.Parlet?.numeros)
+                    },
+                    Centena: {
+                      numeros: serializeNumeros(config.noJuega?.Centena?.numeros)
                     }
                   }
                 }

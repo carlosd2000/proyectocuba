@@ -44,6 +44,10 @@ const parsearDesdeFirestore = (firestoreData) => {
         Parlet: {
           monto: data.limitados?.Parlet?.monto || '',
           numeros: parsearNumeros(data.limitados?.Parlet?.numeros)
+        },
+        Centena: {
+          monto: data.limitados?.Centena?.monto || '',
+          numeros: parsearNumeros(data.limitados?.Centena?.numeros)
         }
       },
       noJuega: {
@@ -55,6 +59,9 @@ const parsearDesdeFirestore = (firestoreData) => {
         },
         Parlet: {
           numeros: parsearNumeros(data.noJuega?.Parlet?.numeros)
+        },
+        Centena: {
+          numeros: parsearNumeros(data.noJuega?.Centena?.numeros)
         }
       }
     };
