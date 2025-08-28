@@ -25,7 +25,7 @@ const props = defineProps({
         </h5>
       </div>
       <div v-if="bell" class="d-flex justify-content-center align-items-center">
-        <img src="../assets/icons/Notificacion.svg" alt="">
+        <img src="../assets/icons/Notificacion.svg" alt="" @click="$router.push(`/notifications/${$route.params.id}`)">
       </div>
     </div>
   </div>

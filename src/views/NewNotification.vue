@@ -1,7 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useToastStore } from '../stores/toast';
+import { useAuthStore } from '@/stores/authStore';
+import localforage from 'localforage';
 import Header from '../components/Header.vue';
 import ButtonDouble from '../components/ButtonDouble.vue';
 import Modal from '../components/Modal.vue';
@@ -21,6 +23,11 @@ const TypeUser = ref('Todos');
 const UsuariosEspecificos = ref([]);
 
 const toastStore = useToastStore();
+const authStore = useAuthStore();
+
+const notificationStore = localforage.createInstance({
+    name: 'notifications'
+});
 
 const caracteresRestantes = computed(() => {
     return MAX_CARACTERES - mensaje.value.length;
@@ -39,14 +46,46 @@ const imagenSelector = computed(() => {
     }
 })
 
-const enviarNotificacion = () => {
-    console.log('Enviar notificacion');
-    console.log('Tipo de usuario:', TypeUser.value);
-    console.log('Usuarios específicos:', UsuariosEspecificos.value);
-    console.log('Mensaje:', mensaje.value);
-    router.push(`/home/${route.params.id}`)
+const enviarNotificacion = async () => {
+  try {
+    // Crear objeto de notificación
+    const notification = {
+      id: Date.now().toString(),
+      message: mensaje.value,
+      sender: {
+        id: authStore.userId,
+        type: authStore.userType,
+        name: authStore.profile?.nombre || 'Usuario'
+      },
+      recipients: {
+        group: TypeUser.value,
+        specificUsers: UsuariosEspecificos.value.map(u => ({
+          uid: u.uid,
+          name: u.nombre,
+          type: u.tipo
+        }))
+      },
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    // Guardar notificación en el dispositivo del remitente
+    const existingNotifications = await notificationStore.getItem('sentNotifications') || [];
+    existingNotifications.push(notification);
+    await notificationStore.setItem('sentNotifications', existingNotifications);
+
+    // En un caso real, aquí enviarías la notificación a través de FCM a los usuarios/grupos
+    // Por ahora simulamos el envío guardando en el almacenamiento local
+    console.log('Notificación enviada:', notification);
+    
+    // Redirigir y mostrar toast
+    router.push(`/home/${route.params.id}`);
     toastStore.showToast('Notificación enviada con éxito', 'success', 3000, CheckIcon, 'top');
-}
+  } catch (error) {
+    console.error('Error al enviar notificación:', error);
+    toastStore.showToast('Error al enviar notificación', 'error', 3000);
+  }
+};
 
 const abrirModal = () => {
     modalActive.value = !modalActive.value
@@ -57,17 +96,19 @@ const Filters = (data) => {
     TypeUser.value = data.tipoUsuario;
     
     // Si hay un usuario específico, agregarlo al array
-    if (data.usuarioEspecifico) {
-        // Verificar si el usuario ya existe en el array para evitar duplicados
-        const usuarioExiste = UsuariosEspecificos.value.some(
-            usuario => usuario.uid === data.usuarioEspecifico.uid
-        );
-        
-        if (!usuarioExiste) {
-            UsuariosEspecificos.value.push(data.usuarioEspecifico);
-        }
+    if (data.usuariosEspecificos && data.usuariosEspecificos.length > 0) {
+        // Filtrar usuarios que no existan ya en el array
+        data.usuariosEspecificos.forEach(usuario => {
+            const usuarioExiste = UsuariosEspecificos.value.some(
+                u => u.uid === usuario.uid
+            );
+            
+            if (!usuarioExiste) {
+                UsuariosEspecificos.value.push(usuario);
+            }
+        });
     } else {
-        // Si no hay usuario específico, limpiar el array
+        // Si no hay usuarios específicos, limpiar el array
         UsuariosEspecificos.value = [];
     }
     

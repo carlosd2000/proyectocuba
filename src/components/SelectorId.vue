@@ -17,10 +17,10 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:id']) // Emitirá el ID seleccionado
+const emit = defineEmits(['update:id']) // Emitirá los IDs seleccionados
 
 const { usuariosCreados } = useUsuariosCreados()
-const usuarioSeleccionadoId = ref('')
+const usuariosSeleccionadosIds = ref([]) // Array para múltiples selecciones
 const mostrarModal = ref(false)
 const busqueda = ref('')
 const inputFocused = ref(false)
@@ -33,51 +33,36 @@ const usuariosFiltrados = computed(() => {
   )
 })
 
-// Verificar si el texto ingresado coincide exactamente con un usuario
-const usuarioCoincidente = computed(() => {
-  return usuariosCreados.value.find(usuario => 
-    usuario.nombre.toLowerCase() === busqueda.value.toLowerCase()
-  )
-})
+// Verificar si un usuario está seleccionado
+const estaSeleccionado = (usuarioId) => {
+  return usuariosSeleccionadosIds.value.includes(usuarioId)
+}
 
-// Watcher para detectar cambios en la búsqueda y emitir automáticamente
-watch(busqueda, (nuevoValor) => {
-  const usuarioEncontrado = usuariosCreados.value.find(usuario => 
-    usuario.nombre.toLowerCase() === nuevoValor.toLowerCase()
-  )
-  
-  if (usuarioEncontrado) {
-    // Si hay coincidencia exacta, emitir el ID
-    usuarioSeleccionadoId.value = usuarioEncontrado.uid
-    emit('update:id', usuarioEncontrado)
-  } else if (nuevoValor === '') {
-    // Si está vacío, limpiar la selección
-    usuarioSeleccionadoId.value = ''
-    emit('update:id', null)
+// Alternar selección de usuario
+const toggleSeleccionUsuario = (usuarioId) => {
+  const index = usuariosSeleccionadosIds.value.indexOf(usuarioId)
+  if (index === -1) {
+    // Agregar a la selección
+    usuariosSeleccionadosIds.value.push(usuarioId)
   } else {
-    // Si no hay coincidencia exacta, limpiar la selección
-    usuarioSeleccionadoId.value = ''
-    emit('update:id', null)
+    // Remover de la selección
+    usuariosSeleccionadosIds.value.splice(index, 1)
   }
-})
+  
+  // Emitir los usuarios seleccionados
+  const usuariosSeleccionados = usuariosCreados.value.filter(u => 
+    usuariosSeleccionadosIds.value.includes(u.uid)
+  )
+  emit('update:id', usuariosSeleccionados)
+}
 
-const usuarioSeleccionado = computed(() =>
-  usuariosCreados.value.find(u => u.uid === usuarioSeleccionadoId.value)
-)
-
-// Actualizar la búsqueda cuando se selecciona un usuario desde el modal
-watch(usuarioSeleccionado, (nuevoValor) => {
-  if (nuevoValor) {
-    busqueda.value = nuevoValor.nombre
-  }
-})
-
-const seleccionarDesdeModal = (id) => {
-  usuarioSeleccionadoId.value = id
+// Seleccionar usuario al hacer clic en el nombre (comportamiento original)
+const seleccionarUsuario = (usuario) => {
+  // Limpiar selecciones anteriores y seleccionar solo este usuario
+  usuariosSeleccionadosIds.value = [usuario.uid]
+  busqueda.value = usuario.nombre
   mostrarModal.value = false
-  const usuario = usuariosCreados.value.find(u => u.uid === id)
-  busqueda.value = usuario.nombre // Actualizar el input con el nombre seleccionado
-  emit('update:id', usuario)
+  emit('update:id', [usuario])
 }
 
 const abrirModal = () => {
@@ -94,7 +79,6 @@ const handleKeydown = (e) => {
     if (mostrarModal.value) {
       cerrarModal()
     } else if (inputFocused.value) {
-      // Si el input está enfocado, perder el foco al presionar Escape
       inputFocused.value = false
     }
   }
@@ -160,11 +144,25 @@ onUnmounted(() => {
                             <li
                                 v-for="usuario in usuariosFiltrados"
                                 :key="usuario.uid"
-                                @click="seleccionarDesdeModal(usuario.uid)"
                                 class="modal-item"
-                                :class="{ 'seleccionado': usuario.uid === usuarioSeleccionadoId }"
+                                :class="{ 'seleccionado': estaSeleccionado(usuario.uid) }"
                             >
-                                {{ usuario.nombre }} ({{ usuario.tipo }})
+                                <div class="d-flex align-items-center w-100">
+                                    <!-- Checkbox para selección múltiple -->
+                                    <input
+                                        type="checkbox"
+                                        :checked="estaSeleccionado(usuario.uid)"
+                                        @click.stop="toggleSeleccionUsuario(usuario.uid)"
+                                        class="me-2"
+                                    >
+                                    <!-- Nombre del usuario (comportamiento original) -->
+                                    <span 
+                                        @click="seleccionarUsuario(usuario)"
+                                        class="flex-grow-1"
+                                    >
+                                        {{ usuario.nombre }} ({{ usuario.tipo }})
+                                    </span>
+                                </div>
                             </li>
                             <li v-if="usuariosFiltrados.length === 0" class="modal-item no-results">
                                 No se encontraron resultados
@@ -338,5 +336,16 @@ onUnmounted(() => {
 
 .no-results:hover {
   background-color: transparent;
+}
+
+/* Estilo para el checkbox */
+.modal-item input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.flex-grow-1 {
+  flex-grow: 1;
 }
 </style>

@@ -34,7 +34,7 @@ const mostrarToastComplete = ref(false)
 
 const montoLimitado = ref(''); 
 const TypeUser = ref('Todos');
-const usuarioSeleccionado = ref(null);
+const usuariosSeleccionados = ref(null);
 
 const emit = defineEmits(['cerrar', 'guardarLimitados', 'guardarNotificacion']);
 
@@ -324,15 +324,15 @@ const guardarLimitados = () => {
     }
 }
 
-const manejarSeleccionUsuario = (usuario) => {
-    usuarioSeleccionado.value = usuario;
+const manejarSeleccionUsuarios = (usuarios) => {
+    usuariosSeleccionados.value = usuarios;
 };
 
 // Función para guardar la configuración de notificación
 const guardarNotificacion = () => {
     const datosNotificacion = {
-        tipoUsuario: TypeUser.value, // Envía el tipo seleccionado (Todos/Colectores/Listeros)
-        usuarioEspecifico: usuarioSeleccionado.value // Envía el usuario específico si hay
+        tipoUsuario: TypeUser.value,
+        usuariosEspecificos: usuariosSeleccionados.value,
     };
     
     // Emitir los datos de notificación
@@ -705,7 +705,7 @@ onMounted(() => {
                 <h5 class="body-bold">
                     Seleccionar por usuario
                 </h5>
-                <SelectorId type="" placeholder="Escribe o selecciona" @update:id="manejarSeleccionUsuario"/>
+                <SelectorId type="" placeholder="Escribe o selecciona" @update:id="manejarSeleccionUsuarios"/>
                 <ButtonSend title="Aplicar seleccion" :disabled="false" @click="guardarNotificacion"/>
             </div>
         </div>
