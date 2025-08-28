@@ -26,7 +26,11 @@ const cancelarButton = () => {
     // Opción simple: comprobar prefijo
     if (path.startsWith('/transferir')) {
         router.push(id ? `/fondo/${id}` : '/fondo')
-    } else {
+    }
+    else if (path.startsWith('/newnotification')) {
+        router.push(id ? `/notificar/${id}` : '/home')
+    } 
+    else {
         router.push(id ? `/payments/${id}` : '/home')
     }
 }

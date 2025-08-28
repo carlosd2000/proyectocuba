@@ -35,7 +35,7 @@ function handleToolClick(title) {
             router.push(`/payments/${authStore.userId}`);
             break;
         case 'Notificar':
-            router.push(`/home/${authStore.userId}`);
+            router.push(`/notificar/${authStore.userId}`);
             break;
         case 'Volumen':
             router.push(`/home/${authStore.userId}`);

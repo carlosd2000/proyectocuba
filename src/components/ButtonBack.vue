@@ -16,7 +16,11 @@ const regresar = () => {
   if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
     if (route.path.startsWith('/configpayments')) { // Usar route.path en lugar de path
       router.push(`/payments/${authStore.userId}`)
-    } else {
+    } 
+    else if (route.path.startsWith('/newnotification')) { // Usar route.path en lugar de path
+      router.push(`/notificar/${authStore.userId}`)
+    }
+    else {
       router.push(`/home/${authStore.userId}`)
     }
   } else {

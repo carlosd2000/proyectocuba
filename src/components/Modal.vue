@@ -6,6 +6,7 @@ import { database } from '../firebase/config.js'
 import { ref as dbRef, set } from 'firebase/database'
 import { useToastStore } from '../stores/toast.js'
 import { useAuthStore } from '../stores/authStore.js'
+import SelectorId from '../components/SelectorId.vue'
 import ButtonSend from '../components/ButtonSend.vue'
 import CheckIcon from '../assets/icons/Check.svg'
 import toggleon from '@/assets/icons/Toggleon.svg';
@@ -32,8 +33,10 @@ const mostrarToastError = ref(false)
 const mostrarToastComplete = ref(false)
 
 const montoLimitado = ref(''); 
+const TypeUser = ref('Todos');
+const usuarioSeleccionado = ref(null);
 
-const emit = defineEmits(['cerrar', 'guardarLimitados']);
+const emit = defineEmits(['cerrar', 'guardarLimitados', 'guardarNotificacion']);
 
 const props = defineProps({
     modal: {
@@ -68,6 +71,7 @@ const originalToggles = ref({
     tarde: false,
     noche: false
 });
+
 const originalHoras = ref({
     dia: '',
     tarde: '',
@@ -320,6 +324,24 @@ const guardarLimitados = () => {
     }
 }
 
+const manejarSeleccionUsuario = (usuario) => {
+    usuarioSeleccionado.value = usuario;
+};
+
+// Función para guardar la configuración de notificación
+const guardarNotificacion = () => {
+    const datosNotificacion = {
+        tipoUsuario: TypeUser.value, // Envía el tipo seleccionado (Todos/Colectores/Listeros)
+        usuarioEspecifico: usuarioSeleccionado.value // Envía el usuario específico si hay
+    };
+    
+    // Emitir los datos de notificación
+    emit('guardarNotificacion', datosNotificacion);
+    
+    // Cerrar el modal
+    emit('cerrar');
+};
+
 const actualizarActivoTurno = async (turnoNombre, estado) => {
     try {
         if (!authStore.bancoId) return;
@@ -372,7 +394,7 @@ const lanzarToast = () => {
 };
 
 const typeHeight = computed(() => {
-    return ['Limitado', 'NoJuega'].includes(props.type);
+    return ['Limitado', 'NoJuega', 'notification'].includes(props.type);
 });
 
 onMounted(() => {
@@ -648,6 +670,45 @@ onMounted(() => {
             </div>
             <ButtonSend :title="type === 'Limitado' ? 'Aplicar limitados' : 'Aplicar numeros'" :disabled="!completo" @click="guardarLimitados()"/>
         </div>
+        <div v-if="type === 'notification'" class="container-tiro d-flex flex-column justify-content-center align-items-center gap-3">
+            <div class="d-flex flex-column justify-content-center align-items-start gap-3 w-100">
+                <div class="d-flex justify-content-between gap-2 w-100">
+                    <img src="../assets/icons/Colectores Principales.svg" alt="" width="20" style="filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%);">
+                    <h2 class="d-flex justify-content-start w-100">
+                        Usuarios
+                    </h2>
+                    <img src="../assets/icons/Cerrar.svg" alt="" width="20" @click="emit('cerrar')">
+                </div>
+                <h5 class="small">
+                    Selecciona a quien va dirigifo la notificación
+                </h5>
+                <div class="d-flex flex-row justify-content-center align-items-center gap-2 w-100">
+                    <div class="filter-users" :class="TypeUser === 'Todos' ? 'purple' : ''" @click="TypeUser = 'Todos'">
+                        <img src="../assets/icons/Colectores Principales.svg" alt="" width="24" :class="TypeUser === 'Todos' ? 'img-white' : 'img-black'">
+                        <h5 class="navigation-label" :class="TypeUser === 'Todos' ? 'text-purple' : ''">
+                            Todos
+                        </h5>
+                    </div>
+                    <div class="filter-users" :class="TypeUser === 'Colectores' ? 'purple' : ''" @click="TypeUser = 'Colectores'">
+                        <img src="../assets/icons/Colectores.svg" alt="" width="24" :class="TypeUser === 'Colectores' ? 'img-black' : 'img-white'">
+                        <h5 class="navigation-label" :class="TypeUser === 'Colectores' ? 'text-purple' : ''">
+                            Colectores
+                        </h5>
+                    </div>
+                    <div class="filter-users" :class="TypeUser === 'Listeros' ? 'purple' : ''" @click="TypeUser = 'Listeros'">
+                        <img src="../assets/icons/User.svg" alt="" width="24" :class="TypeUser === 'Listeros' ? 'img-black' : 'img-white'">
+                        <h5 class="navigation-label" :class="TypeUser === 'Listeros' ? 'text-purple' : ''">
+                            Listeros
+                        </h5>
+                    </div>
+                </div>
+                <h5 class="body-bold">
+                    Seleccionar por usuario
+                </h5>
+                <SelectorId type="" placeholder="Escribe o selecciona" @update:id="manejarSeleccionUsuario"/>
+                <ButtonSend title="Aplicar seleccion" :disabled="false" @click="guardarNotificacion"/>
+            </div>
+        </div>
     </div>
 </template>
 <style scoped>
@@ -787,6 +848,42 @@ onMounted(() => {
 .parlet-inputs{
     max-width: 60px;
     color: #9B9BA2;
+}
+.filter-users{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    gap: 6px;
+    height: 62px;
+    background: #F3F3F3;
+    border-radius: 12px;
+    flex: 1;
+}
+.img-black{
+    filter: invert(100);
+}
+.img-white{
+    filter: invert(0%);
+}
+.purple{
+    background-color: #6665DD;
+}
+.text-purple{
+    color: #F3F3F3;
+}
+.input{
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px 8px 16px;
+    gap: 10px;
+    height: 48px;
+    width: 100%;
+    border: 1px solid #CDCDD1;
+    border-radius: 30px;
+    flex-grow: 1;
 }
 input::placeholder {
   color: #9B9BA2; /* O cualquier color */

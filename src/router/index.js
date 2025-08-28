@@ -99,7 +99,19 @@ const router = createRouter({
       name: 'configpayments',
       component: () => import('../views/ConfigPayments.vue'),
       meta: { requiresAuth: true },
-    }
+    },
+    {
+      path: '/notificar/:id',
+      name: 'notificar',
+      component: () => import('../views/Notificar.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/newnotification/:id',
+      name: 'newnotification',
+      component: () => import('../views/NewNotification.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
