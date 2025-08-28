@@ -2,10 +2,15 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { iniciarRelojGlobal } from '@/composables/useHoraGlobal'
+import { useHorariosMonitor } from '../composables/useSobrepasadoMonitor'
+import { obtenerConfigPagos } from '../scripts/obtenerConfigPagos.js'
 import Swal from 'sweetalert2'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const monitor = useHorariosMonitor() 
+const configPagosManager = obtenerConfigPagos()
 
 const formData = reactive({
   email: '',
@@ -50,6 +55,7 @@ const handleSubmit = async () => {
     
     if (result.success) {
       // Mostrar feedback al usuario
+      await iniciarRelojGlobal()
       await Swal.fire({
         title: '¡Bienvenido!',
         text: 'Has iniciado sesión correctamente',
@@ -57,7 +63,11 @@ const handleSubmit = async () => {
         timer: 1000,
         showConfirmButton: false
       })
-
+      
+      monitor.iniciar()
+      // 3. Iniciar monitor de horarios
+      await monitor.actualizarEstadosHorarios()
+      await configPagosManager.cargarConfigPagos(authStore.bancoId)
       // Redirección basada en el tipo de usuario según tu router
       const redirectPath = `/home/${authStore.userId}`
       router.push(redirectPath)

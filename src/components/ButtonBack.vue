@@ -1,19 +1,28 @@
 <template>
-  <div @click="regresar" class="px-2">
+  <div @click="regresar" class="px-1">
     <img src="../assets/icons/Chevron_left_alt.svg" alt="">
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const route = useRoute() 
 const authStore = useAuthStore()
 
 const regresar = () => {
   if (authStore.isAuthenticated && authStore.userType && authStore.userId) {
-    router.push(`/home/${authStore.userId}`)
+    if (route.path.startsWith('/configpayments')) { // Usar route.path en lugar de path
+      router.push(`/payments/${authStore.userId}`)
+    } 
+    else if (route.path.startsWith('/newnotification')) { // Usar route.path en lugar de path
+      router.push(`/notificar/${authStore.userId}`)
+    }
+    else {
+      router.push(`/home/${authStore.userId}`)
+    }
   } else {
     router.push('/')
   }

@@ -7,6 +7,10 @@ const props = defineProps({
     disabled: {
         type: Boolean,
         default: false
+    },
+    img: {
+        type: Boolean,
+        default: false
     }
 })
 
@@ -23,6 +27,7 @@ function handleClick() {
         <h5 class="label" :class="props.disabled ? 'disabled' : 'enabled'">
             {{ title }}
         </h5>
+        <img v-if="img" src="../assets/icons/Plus.svg" alt="">
     </div>
 </template>
 <style scoped>

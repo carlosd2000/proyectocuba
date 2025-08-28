@@ -1,5 +1,5 @@
 <script setup>
-import { toRef, reactive, watch, computed } from 'vue'
+import { toRef, reactive, watch, computed, onMounted } from 'vue'
 import useLista from '../scripts/Lista.js'
 import { useRouter, useRoute } from 'vue-router'
 import Swal from 'sweetalert2'
@@ -17,9 +17,13 @@ const props = defineProps({
 
 const fechaRef = toRef(props, 'fecha')
 const detallesVisibles = reactive(new Set())
-const valorBote = computed(() => Number(localStorage.getItem('valorBote')) || 100)
 
 const toggleDetalles = (personaId) => {
+  const apuesta = props.apuestas.find(a => a.id === personaId)
+  console.log('Información de apuesta:', {
+    ...apuesta,
+    ganadorType: typeof apuesta?.ganador
+  })
   if (detallesVisibles.has(personaId)) {
     detallesVisibles.delete(personaId)
   } else {
@@ -46,43 +50,221 @@ const {
 
 // Función para verificar si supera el bote
 const superaBote = (apuesta) => {
-  // Verificar círculo solo
-  if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > valorBote.value) {
-    return true
+  // Obtener configuración de pagos del horario actual
+  const configPagos = JSON.parse(localStorage.getItem('configPagos') || '{}');
+  const configHorario = configPagos[props.horario] || {};
+  
+  // Si bote no está activo para este horario, no supera bote
+  if (!configHorario.boteActivo) return false;
+  
+  // Tipos de apuestas que NO deben ir a bote
+  const tiposExcluidos = ['centena']; // Fácil de agregar más tipos
+  
+  // Si el tipo está excluido, no va a bote
+  if (apuesta.tipo && tiposExcluidos.includes(apuesta.tipo.toLowerCase())) {
+    return false;
+  }
+  
+  const { Fijo = 0, Corrido = 0, Parlet = 0 } = configHorario.boteMonto || {};
+  
+  // Verificar círculo solo (Parlet)
+  if (apuesta.circuloSolo && Number(apuesta.circuloSolo) > Parlet) {
+    return true;
   }
   
   // Verificar datos de apuesta
   if (apuesta.datos) {
     return apuesta.datos.some(d => {
-      const c1 = d.circulo1 ? Number(d.circulo1) : 0
-      const c2 = d.circulo2 ? Number(d.circulo2) : 0
-      return c1 > valorBote.value || c2 > valorBote.value
-    })
+      const c1 = d.circulo1 ? Number(d.circulo1) : 0;
+      const c2 = d.circulo2 ? Number(d.circulo2) : 0;
+      return c1 > Fijo || c2 > Corrido;
+    });
   }
-  return false
+  
+  return false;
 }
 
-// Filtramos las apuestas por horario Y por bote
 const apuestasFiltradas = computed(() => {
-  return apuestasCombinadas.value.filter(apuesta => {
-    // Primero filtramos por horario
+  return props.apuestas.filter(apuesta => {
     const mismoHorario = apuesta.horario?.toLowerCase() === props.horario?.toLowerCase()
-    if (!mismoHorario) return false
+    if (!mismoHorario) return false;
     
-    // Luego aplicamos filtro de bote según la opción
-    if (props.opcionSeleccionada === 'Bote') {
-      return superaBote(apuesta)
-    } else if (props.opcionSeleccionada === 'Lista') {
-      return !superaBote(apuesta)
-    }
-    return true
+    if (props.opcionSeleccionada === 'Bote') return superaBote(apuesta)
+    if (props.opcionSeleccionada === 'Lista') return !superaBote(apuesta)
+    return true;
   })
 })
 
-// Watcher para sincronizar cambios (se mantiene igual)
-watch(apuestasCombinadas, (newVal) => {
-  props.apuestas.splice(0, props.apuestas.length, ...newVal)
-}, { deep: true })
+const esNumeroGanador = (persona, tipoNumero, valor, mapa) => {
+  if (tipoNumero !== 'cuadrado') return false;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}');
+  const tiroGanador = tirosLocales[hoy]?.[persona.horario]?.tiro;
+  
+  if (!tiroGanador) return false;
+
+  const [primerNumero, corrido1, corrido2] = tiroGanador.split('-');
+  const fijo = primerNumero.slice(-2); // Últimos 2 dígitos del primer número
+  const cuadradoStr = valor.toString().padStart(2, '0');
+  const cuadrado3Str = valor.toString().padStart(3, '0');
+
+  // Verificar si es ganador independientemente del estado de persona.ganador
+  const esFijoGanador = cuadradoStr === fijo && 
+                        mapa.circulo1 !== undefined && 
+                        mapa.circulo1 !== null && 
+                        mapa.circulo1 !== '';
+  
+  const esCorridoGanador = (cuadradoStr === corrido1 || cuadradoStr === corrido2) && 
+                          mapa.circulo2 !== undefined && 
+                          mapa.circulo2 !== null && 
+                          mapa.circulo2 !== '';
+
+  const esCentenaGanador = cuadrado3Str === primerNumero && 
+                          persona.circuloSolo !== undefined && 
+                          persona.circuloSolo !== null && 
+                          persona.circuloSolo !== '';
+
+  // VERIFICAR PARLET - Si el número es parte de una combinación ganadora
+  let esParletGanador = false;
+  if (persona.circuloSolo !== undefined && persona.circuloSolo !== null && persona.circuloSolo !== '') {
+    // Obtener todos los cuadrados de la apuesta
+    const cuadrados = persona.datos
+      ?.map(mapa => mapa.cuadrado?.toString().padStart(2, '0'))
+      .filter(Boolean) || [];
+    
+    // Números del tiro para parlet (solo corrido1 y corrido2)
+    const numerosTiroParlet = [corrido1, corrido2];
+    
+    // Contar cuántos cuadrados coinciden con los números del tiro
+    const coincidencias = cuadrados.filter(cuadrado => 
+      numerosTiroParlet.includes(cuadrado)
+    );
+    
+    // Verificar si este número específico es parte de las coincidencias
+    // Y si hay al menos 2 coincidencias en total (para formar parlet)
+    esParletGanador = numerosTiroParlet.includes(cuadradoStr) && 
+                     coincidencias.length >= 2 &&
+                     coincidencias.includes(cuadradoStr);
+  }
+
+  return esFijoGanador || esCorridoGanador || esParletGanador || esCentenaGanador;
+};
+
+const calcularPremio = (persona) => {
+  if (!persona.ganador) return 0;
+  
+  const hoy = new Date().toISOString().slice(0, 10);
+  const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}');
+  const tiroGanador = tirosLocales[hoy]?.[persona.horario]?.tiro;
+  
+  if (!tiroGanador) return 0;
+  
+  const [primerNumero, corrido1, corrido2] = tiroGanador.split('-');
+  const fijo = primerNumero.slice(-2); // Últimos 2 dígitos del primer número
+  
+  // Obtener configuración del horario
+  const configPagos = JSON.parse(localStorage.getItem('configPagos') || '{}');
+  const configHorario = configPagos[persona.horario] || {};
+  const { montos = {}, limitados = {}, noJuega = {} } = configHorario;
+  
+  let premioTotal = 0;
+  
+  // Verificar cada fila de datos de la apuesta
+  persona.datos?.forEach(mapa => {
+    if (!mapa.cuadrado) return;
+    
+    const cuadradoStr = mapa.cuadrado.toString().padStart(2, '0');
+    const circulo1 = Number(mapa.circulo1) || 0;
+    const circulo2 = Number(mapa.circulo2) || 0;
+    
+    // Verificar si es Fijo ganador
+    if (cuadradoStr === fijo && circulo1 > 0) {
+      if (noJuega.Fijo?.numeros?.includes(cuadradoStr)) {
+        return; // No juega, no suma
+      }
+      
+      let multiplicador = montos.Fijo || 0;
+      if (limitados.Fijo?.numeros?.includes(cuadradoStr)) {
+        multiplicador = limitados.Fijo.monto || multiplicador;
+      }
+      
+      premioTotal += circulo1 * multiplicador;
+    }
+    
+    // Verificar si es Corrido ganador
+    if ((cuadradoStr === corrido1 || cuadradoStr === corrido2) && circulo2 > 0) {
+      if (noJuega.Corrido?.numeros?.includes(cuadradoStr)) {
+        return; // No juega, no suma
+      }
+      
+      let multiplicador = montos.Corrido || 0;
+      if (limitados.Corrido?.numeros?.includes(cuadradoStr)) {
+        multiplicador = limitados.Corrido.monto || multiplicador;
+      }
+      
+      premioTotal += circulo2 * multiplicador;
+    }
+  });
+
+  // CALCULAR PARLET - Combinaciones ganadoras
+  if (persona.circuloSolo !== undefined && persona.circuloSolo !== null && persona.circuloSolo !== '') {
+    const circuloSolo = Number(persona.circuloSolo) || 0;
+    
+    if (circuloSolo > 0) {
+      // Obtener todos los cuadrados de la apuesta
+      const cuadrados = persona.datos
+        ?.map(mapa => mapa.cuadrado?.toString().padStart(2, '0'))
+        .filter(Boolean) || [];
+      
+      // Números del tiro para parlet (solo corrido1 y corrido2)
+      const numerosTiroParlet = [corrido1, corrido2];
+      
+      // Contar cuántos cuadrados coinciden con los números del tiro
+      const coincidencias = cuadrados.filter(cuadrado => 
+        numerosTiroParlet.includes(cuadrado)
+      );
+      
+      // Calcular combinaciones ganadoras (n choose k = n! / (k!(n-k)!))
+      // Para parlet, necesitamos al menos 2 coincidencias
+      if (coincidencias.length >= 2) {
+        const n = coincidencias.length;
+        const combinacionesGanadoras = (n * (n - 1)) / 2; // n choose 2
+        
+        let multiplicadorParlet = montos.Parlet || 0;
+        
+        // Aplicar multiplicador por cada combinación ganadora
+        premioTotal += circuloSolo * multiplicadorParlet * combinacionesGanadoras;
+      }
+    }
+  }
+  
+  // CALCULAR CENTENA - Número de 3 dígitos que coincide con el fijo completo
+  if (persona.circuloSolo !== undefined && persona.circuloSolo !== null && persona.circuloSolo !== '') {
+    const circuloSolo = Number(persona.circuloSolo) || 0;
+    
+    if (circuloSolo > 0) {
+      // Buscar si algún cuadrado es la centena completa
+      const tieneCentena = persona.datos?.some(mapa => {
+        if (!mapa.cuadrado) return false;
+        const cuadrado3Str = mapa.cuadrado.toString().padStart(3, '0');
+        return cuadrado3Str === primerNumero;
+      });
+      
+      if (tieneCentena) {
+        let multiplicadorCentena = montos.Centena || 0;
+        premioTotal += circuloSolo * multiplicadorCentena;
+      }
+    }
+  }
+  
+  return premioTotal;
+}
+
+onMounted(() => {
+  console.log('📋 Apuestas combinadas:', apuestasCombinadas.value)
+  console.log('📋 Apuestas filtradas:', apuestasFiltradas.value)
+})
 
 const handleEditClick = (persona, event) => {
   event.stopPropagation()
@@ -107,9 +289,9 @@ const handleEditClick = (persona, event) => {
     <span v-if="isSyncing" class="ms-2">Sincronizando...</span>
   </div>
   
-  <div v-if="!apuestasFiltradas.length" class="h-100 d-flex justify-content-center align-items-center h-100">
+  <div v-if="!apuestasFiltradas.length" class="d-flex justify-content-center align-items-center h-100">
     <h5 class="body">
-      Aún no hay apuestas en la lista para este horario
+      Aún no hay jugadas en la lista
     </h5>
   </div>
   
@@ -121,10 +303,10 @@ const handleEditClick = (persona, event) => {
          'apuesta-pendiente': persona.estado === 'Pendiente',
          'apuesta-editada': persona.estado === 'EditadoOffline',
          'eliminando': persona.estado === 'Eliminando'
-       }">
-    
-    <header class="d-flex flex-row justify-content-between align-items-center h-100" @click="toggleDetalles(persona.id)">
+       }" @click="toggleDetalles(persona.id)">
+    <header class="d-flex flex-row justify-content-between align-items-center h-100">
       <div class="container-title d-flex justify-content-center align-items-center">
+        <img v-if="persona.ganador === true" src="../assets/icons/Star_fill.svg" alt="Avatar" class="avatar px-2">        
         <h5 class="body">{{ persona.nombre }}</h5>
       </div>
       <div class="container-cloud d-flex flex-row justify-content-center align-items-center">
@@ -133,7 +315,6 @@ const handleEditClick = (persona, event) => {
         <img src="../assets/icons/Expand.svg" alt="">
       </div>
     </header>
-    
     <main v-if="detallesVisibles.has(persona.id)" class="row m-0 p-0 w-100 gap-1">
       <div class="col-12 container-apuestas p-0 py-1 d-flex flex-row justify-content-center align-items-center">
         <div class="col-1 d-flex justify-content-center align-items-start h-100">
@@ -149,8 +330,10 @@ const handleEditClick = (persona, event) => {
           <div v-for="(mapa, index) in persona.datos" :key="index" class="my-1 w-100">
             <div class="d-flex align-items-center flex-wrap justify-content-around container-line">
               <div class="col-4">
-                <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number">
-                  <p class="label d-flex justify-content-center align-items-center">
+                <div v-if="'cuadrado' in mapa" class="d-flex justify-content-center align-items-center container-number"
+                  :class="{ 'numero-ganador': esNumeroGanador(persona, 'cuadrado', mapa['cuadrado'], mapa) }">
+                  <p class="label d-flex justify-content-center align-items-center"
+                  :class="{ 'numero-ganador': esNumeroGanador(persona, 'cuadrado', mapa['cuadrado'], mapa) }">
                     {{ mapa['cuadrado'] }}
                   </p>
                 </div>
@@ -178,9 +361,7 @@ const handleEditClick = (persona, event) => {
           </div>
         </div>
       </div>
-      
       <div class="line"></div>
-      
       <div class="p-2 d-flex flex-row justify-content-between align-items-center w-100">
         <div class="d-flex flex-column justify-content-center align-items-center gap-1">
           <h5 class="label">${{ Number(persona.totalGlobal) || 0 }}</h5>
@@ -190,14 +371,14 @@ const handleEditClick = (persona, event) => {
           </div>
         </div>
         <div class="d-flex flex-column justify-content-center align-items-center gap-1">
-          <h5 class="label">${{ Number(persona.totalGlobal) || 0 }}</h5>
+          <h5 class="label">${{ calcularPremio(persona) || 0 }}</h5>
           <div class="d-flex flex-row justify-content-center align-items-center gap-1">
             <img src="../assets/icons/Star.svg" alt="">
             <h5 class="body">Premio</h5>
           </div>
         </div>
         <div class="d-flex flex-column justify-content-center align-items-center gap-1">
-          <h5 class="label">${{ Number(persona.totalGlobal) - Number(persona.totalGlobal) }}</h5>
+          <h5 class="label">${{ Number(persona.totalGlobal) - calcularPremio(persona) || 0 }}</h5>
           <div class="d-flex flex-row justify-content-center align-items-center gap-1">
             <img src="../assets/icons/Ganancia.svg" alt="">
             <h5 class="body">Neto</h5>
@@ -205,7 +386,6 @@ const handleEditClick = (persona, event) => {
         </div>
       </div>
     </main>
-    
     <footer class="col-12 m-0 p-0 d-flex justify-conten-center align-items-center">
       <div class="col-12 m-0 p-0 d-flex justify-content-end align-items-center">
         <div class="mx-2 d-flex justify-content-center align-items-center">
@@ -220,23 +400,19 @@ const handleEditClick = (persona, event) => {
       </div>
     </footer>
   </div>
-
   <!-- Modal personalizado -->
   <div v-if="mostrarModal" class="custom-modal-backdrop" @click="cerrarModal">
     <div class="custom-modal" @click.stop>
       <div class="button-group">
         <button @click="editarPersona" class="btn editar btn-page">
-          <i class="bi bi-pencil-fill"></i>
           Editar
         </button>
         <button @click="confirmarEliminar" class="btn eliminar">
-          <i class="bi bi-trash3"></i>
           Eliminar
         </button>
       </div>
     </div>
   </div>
-
   <!-- Modal de confirmación de eliminación -->
   <div v-if="mostrarConfirmacionEliminar" class="custom-modal-backdrop" @click="mostrarConfirmacionEliminar = false">
     <div class="custom-modal-aceptar" @click.stop>
@@ -441,5 +617,12 @@ const handleEditClick = (persona, event) => {
   padding: 0.25em 0.4em;
   border-radius: 0.25rem;
   font-weight: 500;
+}
+.numero-ganador {
+  background-color: #6665DD !important; /* Verde para indicar ganador */
+  color: white !important;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(106, 139, 249, 0.6);
+  animation: pulse 1.5s infinite;
 }
 </style>

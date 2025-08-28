@@ -19,6 +19,24 @@ const userType = computed(() => authStore.userType)
 const creatorId = computed(() => authStore.profile?.creadorDirectoId)
 const creatorType = computed(() => authStore.profile?.creadorDirectoTipo)
 const bancoId = computed(() => authStore.bancoId)
+const horaGlobal = localStorage.getItem('horaGlobal')
+const fecha = new Date(horaGlobal)
+const horaCierre = localStorage.getItem('horaCierreCache')
+const cierre = new Date(horaCierre)
+
+// Función para formatear la hora a HH:MM:SS
+const formatearHora = (date) => {
+  if (!date || isNaN(date.getTime())) return '--:--:--'; // Si no hay hora válida
+  
+  const horas = String(date.getHours()).padStart(2, '0');
+  const minutos = String(date.getMinutes()).padStart(2, '0');
+  const segundos = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${horas}:${minutos}:${segundos}`;
+};
+const horaLegible = formatearHora(fecha);
+
+
 function mostrarTirosLocales(fecha = null) {
   const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
 
@@ -96,7 +114,9 @@ onMounted(async () => {
             <span>Cerrar</span>
         </button>
     </div>
-    <button @click="$router.push(`/horario/${$route.params.id}`)" class="m-5">click para ir a horarios</button>
+    <button @click="$router.push(`/horario/${$route.params.id}`)" class="m-3">click para ir a horarios</button>
+    <h2 class="text-center">{{ horaLegible }}</h2>
+    <h3 class="text-center">{{ horaCierre }}</h3>
     <mifondo class="m-3"/>
     <button v-if="userType !== 'listeros'" @click="$router.push(`/registrar/${$route.params.id}`)" class="m-5">ir a registrar</button>
     <h5 class="body mx-3">usuario "{{ userId }}" con el tipo "{{ userType }}", creado por "{{ creatorId }}" con el tipo "{{ creatorType }}", pertenece al banco "{{ bancoId }}"</h5>

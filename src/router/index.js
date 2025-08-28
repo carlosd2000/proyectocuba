@@ -87,7 +87,31 @@ const router = createRouter({
       name: 'transferir',
       component: () => import('../views/Transferir.vue'),
       meta: { requiresAuth: true },
-    }
+    },
+    {
+      path: '/payments/:id',
+      name: 'payments',
+      component: () => import('../views/Payments.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/configpayments/:id',
+      name: 'configpayments',
+      component: () => import('../views/ConfigPayments.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/notificar/:id',
+      name: 'notificar',
+      component: () => import('../views/Notificar.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/newnotification/:id',
+      name: 'newnotification',
+      component: () => import('../views/NewNotification.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

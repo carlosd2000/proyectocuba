@@ -1,7 +1,12 @@
 <script setup>
+import { computed } from 'vue'
 import { useToastStore } from '../stores/toast'
 
 const toastStore = useToastStore()
+
+const wrapperPosition = computed(() => {
+  return toastStore.toasts[0]?.position || 'bottom'
+})
 
 const toastClasses = (type) => {
   return {
@@ -18,7 +23,7 @@ const handleClose = (id) => {
 </script>
 
 <template>
-  <div class="toast-wrapper d-flex justify-content-center">
+  <div class="toast-wrapper d-flex justify-content-center" :class="wrapperPosition">
     <div 
       v-for="(toast, index) in toastStore.toasts" 
       :key="index"
@@ -52,11 +57,17 @@ const handleClose = (id) => {
 <style scoped>
 .toast-wrapper {
   position: fixed;
-  bottom: 170px;
-  left: 0;
+  left: 270;
+
   width: 100%;
   z-index: 9999;
   pointer-events: none;
+}
+.toast-wrapper.top{
+  bottom: 170px;
+}
+.toast-wrapper.bottom{
+  bottom: 80px;
 }
 
 .toast-container {

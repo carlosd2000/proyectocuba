@@ -3,12 +3,12 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import Header from '../components/Header.vue'
 import Dailyplay from '../components/Dailyplay.vue'
-import ToolsButton from '../components/ToolsButton.vue'
+import Tools from '../components/Tools.vue'
 import Footer from '../components/Footer.vue'
 import CardPrice from '../components/CardPrice.vue'
-import ModalTiro from '../components/ModalTiro.vue'
+import Modal from '../components/Modal.vue'
 
-const modalTiro = ref(false)
+const modalType = ref(null) 
 const authStore = useAuthStore()
 
 const userType = authStore.userType
@@ -23,8 +23,8 @@ const userType = authStore.userType
       <CardPrice/>
       <dailyplay moneytime="999"/>
       <div class="line w-100"></div>
-      <ToolsButton title="Herramientas" v-model:active="modalTiro"/>
-      <ModalTiro v-if="userType === 'bancos'" :modalTiro="modalTiro" @cerrar="modalTiro = false"/>
+      <Tools title="Herramientas" @open-modal="modalType = $event"/>
+      <Modal v-if="userType === 'bancos' && modalType" :type="modalType" @cerrar="modalType = null"/>
     </main>
     <footer>
       <Footer title="Home"/>

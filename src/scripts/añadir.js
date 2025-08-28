@@ -5,6 +5,7 @@ import { filasFijas, filasExtra, expandirApuestasPorLinea } from './operaciones'
 import { obtenerHoraCuba } from './horacuba.js';
 import { useAuthStore } from '@/stores/authStore'
 import localforage from '@/stores/localStorage';
+import GananciasService from '../firebase/gananciasService.js';
 
 // Variables reactivas
 export const nombreTemporal = ref('');
@@ -160,6 +161,7 @@ export async function guardarDatos() {
       horario: horarioSeleccionado.value,
       uuid: uuid,
       timestampLocal: timestamp,
+      fecha: new Date().toISOString().slice(0, 10),
       bancoId,
       fueraDeTiempo: false, // Asumimos que no está fuera de tiempo al guardar
       estado: 'Pendiente', // Siempre marcamos como pendiente para el día actual
@@ -197,6 +199,21 @@ export async function guardarDatos() {
                 await setDoc(doc(db, docPath), docParaFirebase);
             }
             
+            // Registrar ganancia solo para apuestas nuevas (no en edición) y cuando está online
+            if (!modoEdicion.value) {
+              try {
+                await GananciasService.procesarGananciaDesdeApuesta(
+                  uuid,
+                  bancoId,
+                  auth.currentUser?.uid,
+                  0.85 // 85% de ganancia
+                );
+              } catch (error) {
+                console.error('Error registrando ganancia:', error);
+                // No fallamos el proceso completo por un error en ganancias
+              }
+            }
+            
             // Actualizar estado en local
             const hoy = new Date().toISOString().split('T')[0];
             const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
@@ -215,7 +232,8 @@ export async function guardarDatos() {
             return { 
                 success: true, 
                 message: `Apuesta ${modoEdicion.value ? 'actualizada' : 'guardada'} correctamente`,
-                docId: uuid
+                docId: uuid,
+                totalGlobal // Añadimos totalGlobal al resultado para usarlo en Pagar.vue
             };
         } 
         catch (error) {
@@ -264,9 +282,6 @@ export async function sincronizarPendientes() {
         const apuestasPorFecha = await localforage.getItem('apuestasPorFecha') || {};
         const hoy = new Date().toISOString().split('T')[0];
         const pendientes = apuestasPorFecha[hoy] || [];
-        
-        console.log(`[SYNC] ${pendientes.length} apuestas encontradas para hoy`);
-
         const pendientesExitosos = [];
 
         for (const apuesta of pendientes) {
@@ -296,6 +311,18 @@ export async function sincronizarPendientes() {
                     sincronizadoEn: serverTimestamp()
                 });
 
+                // Registrar ganancia para apuestas pendientes que se sincronizan
+                try {
+                  await GananciasService.procesarGananciaDesdeApuesta(
+                    apuesta.uuid,
+                    bancoId,
+                    apuesta.id_usuario,
+                    0.85
+                  );
+                } catch (error) {
+                  console.error('Error registrando ganancia para apuesta pendiente:', error);
+                }
+
                 // Actualizar estado local pero mantener la apuesta
                 const index = pendientes.findIndex(p => p.uuid === apuesta.uuid);
                 if (index !== -1) {
@@ -311,8 +338,6 @@ export async function sincronizarPendientes() {
         // Guardar los cambios en las apuestas locales (estados actualizados)
         apuestasPorFecha[hoy] = pendientes;
         await localforage.setItem('apuestasPorFecha', apuestasPorFecha);
-        
-        console.log(`[SYNC] ${pendientesExitosos.length} apuestas procesadas`);
         window.dispatchEvent(new Event('apuestas-locales-actualizadas'));
     } catch (error) {
         console.error('[SYNC] Error general:', error);
@@ -330,7 +355,6 @@ let syncInProgress = {
 
 export async function sincronizarMutaciones() {
   if (syncInProgress.mutaciones) {
-    console.log('[SYNC-MUT] Sincronización ya en progreso');
     return { success: false, message: 'already-in-progress' };
   }
   
@@ -340,7 +364,6 @@ export async function sincronizarMutaciones() {
     if (!bancoId) throw new Error("No se pudo obtener bancoId");
 
     const mutaciones = await localforage.getItem('mutacionesPendientes') || [];
-    console.log(`[SYNC-MUT] ${mutaciones.length} mutaciones pendientes encontradas`);
 
     const resultados = {
       exitosas: 0,
@@ -373,6 +396,23 @@ export async function sincronizarMutaciones() {
           resultados.exitosas++;
         }
         else if (mutacion.tipo === 'ELIMINACION') {
+          // Primero eliminar el registro de ganancia si existe
+          if (mutacion.datosOriginales?.horario && mutacion.datosOriginales?.id_usuario) {
+            try {
+              await GananciasService.eliminarRegistroGanancia({
+                apuestaId: mutacion.idOriginal,
+                bancoId: bancoId,
+                userId: mutacion.datosOriginales.id_usuario,
+                horario: mutacion.datosOriginales.horario
+              });
+              console.log(`Registro de ganancia eliminado para apuesta ${mutacion.idOriginal}`);
+            } catch (error) {
+              console.error(`Error eliminando registro de ganancia para ${mutacion.idOriginal}:`, error);
+              // Continuamos con la eliminación aunque falle la eliminación de ganancia
+            }
+          }
+          
+          // Luego eliminar la apuesta
           await deleteDoc(docRef);
           resultados.exitosas++;
         }
@@ -392,8 +432,7 @@ export async function sincronizarMutaciones() {
     );
     
     await localforage.setItem('mutacionesPendientes', nuevasMutaciones);
-    
-    console.log(`[SYNC-MUT] Resultado: ${resultados.exitosas} exitosas, ${resultados.fallidas} fallidas`);
+  
     return { 
       success: resultados.fallidas === 0,
       count: resultados.exitosas,
@@ -404,9 +443,8 @@ export async function sincronizarMutaciones() {
     return { success: false, error: error.message };
   } finally {
     syncInProgress.mutaciones = false;
-    console.log('[SYNC-MUT] ===== FINALIZADA SINCRONIZACIÓN DE MUTACIONES =====');
   }
-}
+};
 
 // Para registrar ediciones
 export async function registrarEdicionOffline(apuestaOriginal, nuevosDatos) {

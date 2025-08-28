@@ -1,6 +1,7 @@
 <script setup>
+//AñadirJugada.vue
 import { useRoute } from 'vue-router';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import Header from '../components/Header.vue';
@@ -14,9 +15,10 @@ import Horario from '../components/SelectorHorario.vue';
 import Pagar from '../components/Pagar.vue';
 import { setModoEdicion, setHorario, tomarUUID } from '../scripts/añadir.js';
 import { useAuthStore } from '../stores/authStore';
+import { setConfigHorario, configHorarioActual, resetEstadoCompleto } from '../scripts/fieldValidator.js'
 import localforage from '@/stores/localStorage';
 
-const onHorarioSeleccionado = (nuevoHorario) => {
+const onHorarioSeleccionado = async (nuevoHorario) => {
   if (nuevoHorario === null) {
     hayHorariosDisponibles.value = false
     return
@@ -32,6 +34,8 @@ const onHorarioSeleccionado = (nuevoHorario) => {
     }
   })();
   setHorario(horarioSeleccionado);
+
+  await cargarConfiguracionHorario(horarioSeleccionado);
 }
 
 const route = useRoute();
@@ -43,6 +47,7 @@ const mostrarEnviando = ref(false);
 const hayHorariosDisponibles = ref(true)
 const hayCamposInvalidos = ref(false)
 const authStore = useAuthStore()
+const hayNumerosNoJuega = ref(false)
 
 const tipoJugada = computed(() => {
     return route.query.tipo || 'normal';
@@ -61,7 +66,39 @@ const componenteActual = computed(() => {
     }
 });
 
+async function cargarConfiguracionHorario(horario) {
+  try {
+    // Asumiendo que tienes acceso a la configuración de pagos
+    // Esto depende de cómo tengas almacenada la configuración
+    const configPagos = JSON.parse(localStorage.getItem('configPagos'))
+    // Verificar si existe la configuración para el horario específico
+    if (configPagos && configPagos[horario]) {
+      const configHorario = configPagos[horario];
+      
+      setConfigHorario(configHorario, horario);
+    } else {
+      console.warn(`No se encontró configuración para el horario: ${horario}`);
+      // Configuración por defecto
+      setConfigHorario({
+        boteActivo: false,
+        limitePorJugada: 0,
+        boteMonto: { Fijo: 0, Corrido: 0, Parlet: 0 }
+      });
+    }
+  } catch (error) {
+    console.error('Error cargando configuración del horario:', error);
+    // Configuración por defecto
+    setConfigHorario({
+      boteActivo: false,
+      limitePorJugada: 0,
+      boteMonto: { Fijo: 0, Corrido: 0, Parlet: 0 }
+    });
+  }
+}
+
 onMounted(async () => {
+  resetEstadoCompleto();
+
   if (idEditar.value) {
     setModoEdicion(true, idEditar.value);
     
@@ -72,7 +109,6 @@ onMounted(async () => {
       const apuestaLocal = apuestasPorFecha[hoy]?.find(a => a.uuid === idEditar.value);
       
       if (apuestaLocal) {
-        console.log(`[Edición] Cargando apuesta local (UUID: ${apuestaLocal.uuid})`);
         datosEdicion.value = {
           id: apuestaLocal.uuid,
           ...apuestaLocal,
@@ -95,7 +131,6 @@ onMounted(async () => {
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          console.log(`[Edición] Cargando apuesta de Firebase (ID: ${docSnap.id})`);
           datosEdicion.value = {
             id: docSnap.id,
             ...docSnap.data(),
@@ -112,11 +147,17 @@ onMounted(async () => {
     }
   } else {
     const nuevoUUID = tomarUUID();
-    console.log(`[Nueva Apuesta] UUID generado: ${nuevoUUID}`);
     setModoEdicion(false, null);
     horarioEdicion.value = 'Dia';
   }
 });
+
+watch(() => configHorarioActual, (newConfig) => {
+  // Disparar evento global para que los inputs se revaliden
+  window.dispatchEvent(new CustomEvent('horarioCambiado', { 
+    detail: newConfig 
+  }));
+}, { deep: true });
 </script>
 
 <template>
@@ -142,6 +183,7 @@ onMounted(async () => {
         :idEdicion="idEditar"
         :bancoId="bancoId"
         @update:hayCamposInvalidos="hayCamposInvalidos = $event"
+        @update:hayNumerosNoJuega="hayNumerosNoJuega = $event"
       />
       <div v-if="mostrarEnviando" class="modal-overlay gap-2">
         <img src="../assets/icons/Logo.svg" alt="Logo" />
@@ -149,7 +191,7 @@ onMounted(async () => {
       </div>
     </main>
     <footer>
-      <Pagar @update:mostrar-enviando="setMostrarEnviando" :hay-horarios-disponibles="hayHorariosDisponibles" :hay-campos-invalidos="hayCamposInvalidos"/>
+      <Pagar @update:mostrar-enviando="setMostrarEnviando" :hay-horarios-disponibles="hayHorariosDisponibles" :hay-campos-invalidos="hayCamposInvalidos || hayNumerosNoJuega"/>
     </footer>
 </template>
 

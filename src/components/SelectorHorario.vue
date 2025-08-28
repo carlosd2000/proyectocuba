@@ -2,7 +2,7 @@
 import { ref, computed, watch, defineEmits, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { verificarHorarioActivo, verificarHorarioBasico, leerEstadosHorariosCache, actualizarCacheHorarios } from '../scripts/FunctionHorarioActivo.js'
+import { leerEstadosHorariosCache, actualizarCacheHorarios } from '../scripts/FunctionHorarioActivo.js'
 
 import Dia from '../assets/icons/Dia.svg'
 import Tarde from '../assets/icons/Tarde.svg'
@@ -11,6 +11,7 @@ import Noche from '../assets/icons/Noche.svg'
 const props = defineProps({
   horarioEdicion: { type: String, default: 'Dia' },
   modoEdicion: { type: Boolean, default: false },
+  filtrarPorLocalStorage: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:selected', 'no-horarios-disponibles'])
@@ -18,11 +19,11 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const dropdownOpen = ref(false)
-const selectedValue = ref('1')
-const selectedIcon = ref(Dia)
-
+const selectedValue = ref(null)
+const selectedIcon = ref(null)
 const intervalId = ref(null)
 const yaInicializado = ref(false)
+const isLoading = ref(false)
 
 const allOptions = [
   { value: '1', icon: Dia, nombre: 'Dia' },
@@ -50,82 +51,137 @@ function valueToIcon(value) {
   }
 }
 
-async function actualizarHorarios() {
-  const bancoId = authStore.bancoId
-  if (!bancoId) return
-
-  const horarios = [
-    { firebaseKey: 'dia', nombre: 'Dia' },
-    { firebaseKey: 'tarde', nombre: 'Tarde' },
-    { firebaseKey: 'noche', nombre: 'Noche' }
-  ]
-
-  const activos = []
-  const esRutaAñadirJugada = route.path.startsWith('/anadirjugada')
-
-
-  // 🔁 Siempre actualiza el cache local para reflejar la hora actual vs hora cierre
-  await actualizarCacheHorarios(bancoId)
-
-  // ✅ Luego lee del cache local (ya actualizado)
-  const cache = leerEstadosHorariosCache()
-
-  for (const h of horarios) {
-    const estado = cache[h.firebaseKey]
-    if (!estado) continue
-
-    if (esRutaAñadirJugada) {
-      if (estado.activo && !estado.sobrepasado) {
-        const op = allOptions.find(o => o.nombre === h.nombre)
-        if (op) activos.push(op)
-      }
-    } else {
-      if (estado.activo) {
-        const op = allOptions.find(o => o.nombre === h.nombre)
-        if (op) activos.push(op)
-      }
-    }
-  }
-
-  options.value = activos
-
-  if (activos.length === 0) {
-    selectedValue.value = null
-    selectedIcon.value = null
-    emit('no-horarios-disponibles')
-    return
-  }
-
-  if (!yaInicializado.value) {
-    const val = horarioToValue(props.horarioEdicion)
-    const exists = activos.find(o => o.value === val)
-
-    if (exists) {
-      selectedValue.value = val
-      selectedIcon.value = exists.icon
-    } else if (activos.length > 0) {
-      selectedValue.value = activos[0].value
-      selectedIcon.value = activos[0].icon
-    }
-
-    emit('update:selected', selectedValue.value)
-    yaInicializado.value = true
+function horarioTieneDatos(nombreHorario) {
+  if (!props.filtrarPorLocalStorage) return false
+  try {
+    const configPagos = JSON.parse(localStorage.getItem('configPagos') || '{}')
+    return !!configPagos[nombreHorario]
+  } catch {
+    return false
   }
 }
 
-onMounted(() => {
-  actualizarHorarios()
-  intervalId.value = setInterval(actualizarHorarios, 10000) // cada 10 segundos
+async function actualizarHorarios() {
+  isLoading.value = true
+  try {
+    const bancoId = authStore.bancoId
+    if (!bancoId) {
+      return
+    }
+
+    const horarios = [
+      { firebaseKey: 'dia', nombre: 'Dia' },
+      { firebaseKey: 'tarde', nombre: 'Tarde' },
+      { firebaseKey: 'noche', nombre: 'Noche' }
+    ]
+
+    const activos = []
+    const esRutaAñadirJugada = route.path.startsWith('/anadirjugada')
+
+    await actualizarCacheHorarios(bancoId)
+    const cache = leerEstadosHorariosCache()
+
+    for (const h of horarios) {
+      const estado = cache[h.firebaseKey]
+      if (!estado) continue
+
+      // Solo aplicamos esta lógica si filtrarPorLocalStorage es true
+      if (props.filtrarPorLocalStorage) {
+        const tieneDatos = horarioTieneDatos(h.nombre)
+        const esHorarioEdicion = h.nombre === props.horarioEdicion
+        
+        // Modo edición: mostramos el horario actual + horarios sin datos
+        if (props.modoEdicion) {
+          if (esHorarioEdicion) {
+            // Siempre mostramos el horario que se está editando
+            const op = allOptions.find(o => o.nombre === h.nombre)
+            if (op) activos.push(op)
+          } else if (!tieneDatos && estado.activo) {
+            // Mostramos otros horarios solo si no tienen datos
+            const op = allOptions.find(o => o.nombre === h.nombre)
+            if (op) activos.push(op)
+          }
+          continue
+        }
+        // Modo normal: solo mostramos horarios sin datos
+        else if (tieneDatos) {
+          continue
+        }
+      }
+
+      if (esRutaAñadirJugada) {
+        if (estado.activo && !estado.sobrepasado) {
+          const op = allOptions.find(o => o.nombre === h.nombre)
+          if (op) activos.push(op)
+        }
+      } else {
+        if (estado.activo) {
+          const op = allOptions.find(o => o.nombre === h.nombre)
+          if (op) activos.push(op)
+        }
+      }
+    }
+
+    options.value = activos
+
+    if (activos.length === 0) {
+      selectedValue.value = null
+      selectedIcon.value = null
+      emit('no-horarios-disponibles')
+      return
+    }
+
+    // Inicialización
+    if (!yaInicializado.value) {
+      const val = horarioToValue(props.horarioEdicion)
+      
+      const exists = activos.find(o => o.value === val)
+
+      if (exists) {
+        selectedValue.value = val
+        selectedIcon.value = exists.icon
+      } else if (activos.length > 0) {
+        selectedValue.value = activos[0].value
+        selectedIcon.value = activos[0].icon
+      }
+
+      if (selectedValue.value) {
+        emit('update:selected', selectedValue.value)
+      }
+      yaInicializado.value = true
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+watch(selectedValue, (newVal) => {
+  if (newVal) {
+    selectedIcon.value = valueToIcon(newVal)
+    emit('update:selected', newVal)
+  }
+})
+
+watch(() => props.horarioEdicion, (newVal) => {
+  if (newVal && options.value.length > 0) {
+    const val = horarioToValue(newVal)
+    const exists = options.value.find(o => o.value === val)
+    if (exists && selectedValue.value !== val) {
+      selectedValue.value = val
+      selectedIcon.value = exists.icon
+    }
+  }
+}, { immediate: true })
+
+onMounted(async () => {
+  await actualizarHorarios()
+  intervalId.value = setInterval(actualizarHorarios, 10000)
 })
 
 onUnmounted(() => {
-  if (intervalId.value) clearInterval(intervalId.value)
-})
-
-
-watch(selectedValue, (newVal) => {
-  selectedIcon.value = valueToIcon(newVal)
-  emit('update:selected', newVal)
+  if (intervalId.value) {
+    clearInterval(intervalId.value)
+  }
 })
 
 const filteredOptions = computed(() => {
@@ -179,6 +235,7 @@ const isDisabled = computed(() => options.value.length === 0)
     </select>
   </div>
 </template>
+
 
 <style scoped>
 .disabled {

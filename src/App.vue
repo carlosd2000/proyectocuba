@@ -1,41 +1,69 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore } from './stores/authStore'
 import { database } from './firebase/config.js'
 import { ref as dbRef, onValue } from 'firebase/database'
+import { cargarLibreriasIniciales } from './composables/useAppInitializer.js'
+import { useInicializarHorarios } from './composables/useInicializarHorarios.js'
+import { useVerificarTirosLocales } from './composables/useVerificarTirosLocales.js'
+import { useSincronizarGanadores } from './composables/useSincronizarGanadores.js'
+import { useOfflineQueueStore } from './stores/offlineQueue'
 import ToastManager from './components/ToastManager.vue'
-import { cargarLibreriasIniciales } from './scripts/useAppInitializer.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const isAppReady = ref(false)
 
+const { inicializar } = useInicializarHorarios()
+const { tirosRecibidos, verificarTirosLocales } = useVerificarTirosLocales()
+
+const offlineQueue = useOfflineQueueStore()
+const isOnline = ref(navigator.onLine)
+
 let fondoManager = null
 let fondoCreadorManager = null
 let usuariosCreadosManager = null
 
+const checkConnection = () => {
+  isOnline.value = navigator.onLine
+  if (isOnline.value) {
+    offlineQueue.processQueue()
+  }
+}
+
 onMounted(async () => {
   try {
-    // await authStore.initializeAuthListener()
-    // if (authStore.user) {
-    //   await authStore.loadUserProfile()
-    // }
+        // Configurar listeners de conexión
+    window.addEventListener('online', checkConnection)
+    window.addEventListener('offline', checkConnection)
+    
+    // Procesar cola al cargar si hay conexión
+    if (isOnline.value) {
+      offlineQueue.processQueue()
+    }
+    
+    // Limpiar listeners al desmontar
+    onUnmounted(() => {
+      window.removeEventListener('online', checkConnection)
+      window.removeEventListener('offline', checkConnection)
+    })
+    verificarTirosLocales()
     isAppReady.value = true
   } catch (error) {
     console.error('Error inicializando Auth:', error)
     isAppReady.value = true
   }
-
 })
 
 let tiroRef = null
 let unsubscribeTiro = null
 
 watch(
-  () => authStore.user && authStore.profile && authStore.bancoId, // Solo se dispara cuando TODO está listo
+  () => authStore.user && authStore.profile && authStore.bancoId,
   async (ready) => {
     if (ready) {
+      await inicializar()
       const { 
         fondoManager: fondo, 
         fondoCreadorManager: fondoCreador, 
@@ -47,35 +75,29 @@ watch(
       usuariosCreadosManager = usuarios;
 
       const userType = authStore.userType;
-      if(userType !== 'bancos') {
-        const bancoId = authStore.bancoId;
-        if (bancoId) {
-          tiroRef = dbRef(database, `tirosPorBanco/${bancoId}`)
 
-          unsubscribeTiro = onValue(tiroRef, (snapshot) => {
+      const bancoId = authStore.bancoId;
+      if (bancoId) {
+        tiroRef = dbRef(database, `tirosPorBanco/${bancoId}`)
+
+        unsubscribeTiro = onValue(tiroRef, (snapshot) => {
+          (async () => {
             const data = snapshot.val()
             if (data) {
               const hoy = new Date().toISOString().slice(0, 10)
-
-              // Preparar objeto para almacenar localmente
               const tirosLocales = JSON.parse(localStorage.getItem('tirosLocales') || '{}')
 
-              // Iterar por los tiros del día (puede haber mañana, tarde, noche)
               for (const horario in data) {
                 const tiro = data[horario]
-
                 if (!tiro?.timestamp) continue
 
                 const fechaTiro = new Date(tiro.timestamp).toISOString().slice(0, 10)
 
-                // Solo guardar si el tiro es del día actual
                 if (fechaTiro === hoy) {
-                  // Asegurar estructura
                   if (!tirosLocales[hoy]) {
                     tirosLocales[hoy] = {}
                   }
 
-                  // Guardar por horario: mañana, tarde, noche...
                   tirosLocales[hoy][horario] = {
                     tiro: tiro.tiro,
                     timestamp: tiro.timestamp
@@ -85,12 +107,15 @@ watch(
                 }
               }
 
-              // Guardar de vuelta en localStorage
               localStorage.setItem('tirosLocales', JSON.stringify(tirosLocales))
+              const ganadores = await useSincronizarGanadores()
             }
-          })
-        }
+
+            verificarTirosLocales()
+          })()
+        })
       }
+
     }
   },
   { immediate: true }

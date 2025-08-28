@@ -26,9 +26,6 @@ const cargarUsuariosCreados = async (authStore) => {
     const q = query(colRef, where('creadorDirectoId', '==', userId))
     const snap = await getDocs(q)
 
-    console.log(`[Firestore] Consultando subcolección "${tipo}" en bancos/${bancoId}/${tipo}`)
-    console.log(`[Firestore] Resultados encontrados (${tipo}):`, snap.size)
-
     snap.forEach(docSnap => {
       const data = docSnap.data()
       nuevosUsuarios.push({

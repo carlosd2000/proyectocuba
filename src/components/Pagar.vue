@@ -43,13 +43,14 @@ const customLanzarToast = async () => {
     }
 
     // ONLINE: consulta en tiempo real
-    const horarioDisponible = await verificarHorarioActivo(bancoId, horarioKey)
+    const horarioDisponible = await verificarHorarioActivo(horarioKey)
     if (!horarioDisponible) {
       toastStore.showToast(
         'La apuesta está fuera de tiempo para este horario',
         'warning',
         4000,
-        ErrorIcon
+        ErrorIcon,
+        'top'
       )
       isLoading.value = false
       emit('update:mostrar-enviando', false)
@@ -63,7 +64,8 @@ const customLanzarToast = async () => {
         resultado.message,
         'error',
         3000,
-        ErrorIcon
+        ErrorIcon,
+        'top'
       )
     }
     if (resultado?.success && resultado.totalGlobal) {

@@ -1,139 +1,127 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref } from 'vue'
 import { useRouter } from 'vue-router';
-import { AuthService } from '@/firebase/auth';
+import { useAuthStore } from '@/stores/authStore'
+import buttonTools from './buttonTools.vue';
+import Modal from './Modal.vue';
 
-const router = useRouter();
+const router = useRouter()
+const authStore = useAuthStore()
 
-const desplegado2 = ref(true)
-
-const logout = async () => {
-    try {
-        await AuthService.logout();
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('bancoId');
-        localStorage.removeItem('cachedBancoId');
-        router.push('/');
-    } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-    }
-};
-
-onMounted(() => {
-    const savedDesplegado2 = localStorage.getItem('desplegado2');
-    if (savedDesplegado2 !== null) {
-        desplegado2.value = JSON.parse(savedDesplegado2);
+const props = defineProps({
+    title: {
+        type: String,
+        default: 'Herramientas'
     }
 });
+const emit = defineEmits(['update:active', 'open-modal'])
 
-watch(desplegado2, (newValue) => {
-    localStorage.setItem('desplegado2', JSON.stringify(newValue));
-});
+const userType = authStore.userType
+
+const Details = ref(false)
+
+// Esta función se llama al hacer clic
+function activarModal(tipo) {
+  emit('update:active', true) // si aún quieres mantener el booleano
+  emit('open-modal', tipo)    // nuevo evento con el tipo
+}
+
+function handleToolClick(title) {
+    switch (title) {
+        case 'Horario':
+            activarModal('horario')
+            break;
+        case 'Pagos':
+            router.push(`/payments/${authStore.userId}`);
+            break;
+        case 'Notificar':
+            router.push(`/notificar/${authStore.userId}`);
+            break;
+        case 'Volumen':
+            router.push(`/home/${authStore.userId}`);
+            break;
+        case 'Historico':
+            router.push(`/home/${authStore.userId}`);
+            break;
+        case 'Usuario':
+            router.push(`/usuario/${authStore.userId}`);
+            break;
+        default:
+            console.log('Botón desconocido:', title);
+    }
+}
+
 </script>
-
 <template>
-    <div class="col-12 mt-2 mb-2 p-0">
-        <div class="col-12 p-0 mt-2 mb-2 d-flex flex-nowrap justify-content-between align-items-center border-bottom border-1 border-dark">
-            <p class="title pt-1 pb-1 pe-2 text-truncate">Herramientas</p>
-            <button class="btn btn-light m-0 p-0 flex-shrink-0 bg-transparent" @click="desplegado2 = !desplegado2">
-                <i class="bi" :class="desplegado2 ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-        </div>
-        <div v-if="desplegado2" class="col-12">
-            <div class="col-12 row p-0 m-0">
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/horario/${$route.params.id}`)">
-                        <i class="bi bi-clock-history m-0 p-0"></i>
-                        <span>Horario</span>
-                    </button>
+    <div class="container m-0 p-0 d-flex justify-content-center align-items-center w-100">
+        <div class="container-tools d-flex flex-column justify-content-center align-items-center mb-3 w-100">
+            <div class="d-flex justify-content-between align-items-center w-100" @click="Details = !Details">
+                <h5 class="body2">
+                    {{ title }}
+                </h5>
+                <div v-if="userType === 'bancos'">
+                    <img v-if="Details === false" src="../assets/icons/Expand.svg" alt="">
+                    <img v-else src="../assets/icons/Cotraer.svg" alt="">
                 </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center" @click="$router.push(`/transacciones/${$route.params.id}`)">
-                        <i class="bi bi-cash-coin m-0 p-0"></i>
-                        <span>Pagos</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
-                        <i class="bi bi-exclamation-triangle m-0 p-0"></i>
-                        <span>Limitados</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
-                        <i class="bi bi-exclamation-triangle m-0 p-0"></i>
-                        <span>Limites</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
-                        <i class="bi bi-8-circle-fill m-0 p-0"></i>
-                        <span>Historico</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center">
-                        <i class="bi bi-receipt-cutoff m-0 p-0"></i>
-                        <span>Deuda</span>
-                    </button>
-                </div>
-                <div class="col-3 p-0 py-1 buttons-heith">
-                    <button class="w-100 p-0 px-0 pb-1 py-2 btn border-0 d-flex flex-column align-items-center justify-content-center"  @click="logout">
-                        <i class="bi bi-arrow-left m-0 p-0"></i>
-                        <span>Cerrar</span>
-                    </button>
-                </div>
+                <img v-else src="../assets/icons/Chevron_right.svg" alt="">
             </div>
-            <div class="col-12 row p-0 m-0 mt-0 mb-2 d-flex justify-content-center">
-                <button class="col-12 row p-2 d-flex justify-content-center btn-colab" @click="$router.push(`/monitoreolisteros/${$route.params.id}`)">
-                    <p>Colaboradores</p>
-                    <i class="bi bi-people-fill"></i>
-                </button>
+            <div class="d-flex flex-column justify-content-center align-items-center gap-3 w-100" v-if="Details === true">
+                <div class="d-flex flex-column justify-content-between align-items-center gap-2 w-100">
+                    <div class="d-flex justify-content-between align-items-center gap-2 w-100">
+                        <buttonTools title="Horario" :violet="false" @click="handleToolClick"/>
+                        <buttonTools title="Pagos" :violet="false" @click="handleToolClick"/>
+                        <buttonTools title="Notificar" :violet="false" @click="handleToolClick"/>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-2 w-100">
+                        <buttonTools title="Volumen" :violet="false" @click="handleToolClick"/>
+                        <buttonTools title="Historico" :violet="false" @click="handleToolClick"/>
+                        <buttonTools title="Usuario" :violet="true" @click="handleToolClick"/>
+                    </div>
+                </div>
+                <div class="line"></div>
+                <div v-if="userType === 'bancos' && Details === true" class="send-tiro d-flex justify-content-between align-items-center" @click="activarModal('tiro')">
+                    <div class="d-flex justify-content-center align-items-center gap-3">
+                        <img src="../assets/icons/Lista.svg" alt="" width="20" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);">
+                        <h5 class="label text-white">
+                            Enviar tiros
+                        </h5>
+                    </div>
+                    <img src="../assets/icons/Chevron_right.svg" alt="" style="filter: invert(1) sepia(0) saturate(0) hue-rotate(0deg) brightness(100) contrast(100);">
+                </div>
             </div>
         </div>
     </div>
 </template>
-
 <style scoped>
-.title {
-    font-weight: 700;
-    color: #000000;
-}
-.buttons-heith {
-    margin: -2px 0px;
-    padding: 0px;
-    height: 100%;
-    width: 100px;
-    transform: scale(0.9);
-}
-.btn-colab{
-    border: #000000 solid 2px;
-    box-shadow: #000000 2px 2px 2px;
-    border-radius: 6px;
-    background-color: #ffc107; /* Color original */
-    color: #000000; /* Texto negro */
-}
-.btn-colab:hover{
-    background-color: rgb(226, 226, 226);
-}
-.btn:hover{
-    background-color: rgb(226, 226, 226);
-}
 p{
-    padding: 0px;
-    margin: 1px;
+    margin: 0;
+    padding: 0;
 }
-span {
-    font-size: 0.8rem;
+.container-tools {
+    padding: 20px 16px;
+    gap: 16px;
+    background: #F0F0FC;
+    border-radius: 12px;
+    flex: none;
+    flex-grow: 0;
 }
-i{
-    font-size: 1.5rem;
+.send-tiro{
+    padding: 10px 12px 10px 16px;
+    gap: 16px;
+    height: 62px;
+    max-width: 400px;
+    width: 100%;
+    background: #050517;
+    border-radius: 12px;
+    flex: none;
+    flex-grow: 0;
 }
-button {
-    border: none;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.line{
+    width: 100%;
+    height: 2px;
+    border: 1px solid #C2C1F1;
+    flex: none;
+    align-self: stretch;
+    flex-grow: 0;
 }
 </style>

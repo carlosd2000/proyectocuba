@@ -3,13 +3,14 @@ import { ref } from 'vue'
 
 export const useToastStore = defineStore('toast', () => {
     const toasts = ref([])
-    const showToast = (message, type = 'info', duration = 3000, icon = null) => {
+    const showToast = (message, type = 'info', duration = 3000, icon = null, position = 'bottom') => {
         const toast = { 
             id: Date.now(),
             message, 
             type, 
             icon,
-            visible: true
+            position,
+            visible: true,
         }
         toasts.value.push(toast)
         

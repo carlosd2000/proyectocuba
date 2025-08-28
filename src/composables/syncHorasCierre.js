@@ -10,14 +10,12 @@ export async function sincronizarHorasDeCierre() {
     if (!bancoId) return
 
     const horarios = ['dia', 'tarde', 'noche']
-    const fechaKey = new Date().toISOString().slice(0, 10)
-    let cache = JSON.parse(localStorage.getItem('horaCierreCache') || '{}')
-    if (!cache[fechaKey]) cache[fechaKey] = {}
+    let horaCierreCache = {}
+    let horariosCache = {}
 
     for (const horarioKey of horarios) {
         try {
         const ref = doc(db, `bancos/${bancoId}/hora`, horarioKey)
-        console.log(`Sincronizando horario: ${horarioKey} para banco: ${bancoId}`)
         const snap = await getDoc(ref)
 
         if (snap.exists()) {
@@ -28,7 +26,8 @@ export async function sincronizarHorasDeCierre() {
             if (hora instanceof Timestamp || (hora && typeof hora.toDate === 'function')) {
                 const horaDate = hora.toDate()
                 const horaStr = horaDate.toTimeString().slice(0, 5) // 'HH:MM'
-                cache[fechaKey][horarioKey] = { hora: horaStr, activo }
+                horaCierreCache[horarioKey] = { hora: horaStr, activo }
+                horariosCache[horarioKey] = { activo, sobrepasado: false }
             }
         }
         } catch (err) {
@@ -36,5 +35,6 @@ export async function sincronizarHorasDeCierre() {
         }
     }
 
-    localStorage.setItem('horaCierreCache', JSON.stringify(cache))
+    localStorage.setItem('horaCierreCache', JSON.stringify(horaCierreCache))
+    localStorage.setItem('horariosCache', JSON.stringify(horariosCache))
 }
